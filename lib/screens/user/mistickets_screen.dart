@@ -6,11 +6,6 @@ import 'avisos_screen.dart';
 import 'perfil_screen.dart';
 class MisticketsScreen extends StatelessWidget {
   const MisticketsScreen({super.key});
-
-  // ================================================================
-  // ASSET DEL AVATAR
-  // ================================================================
-
   static const String defaultAvatar = 'assets/images/user.png';
 
   @override
@@ -20,10 +15,6 @@ class MisticketsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF060A17),
-
-      // ============================================================
-      // APP BAR
-      // ============================================================
       appBar: isDesktop
           ? null
           : AppBar(
@@ -49,16 +40,10 @@ class MisticketsScreen extends StatelessWidget {
               ],
             ),
 
-      // ============================================================
-      // DRAWER
-      // ============================================================
       drawer: isDesktop
           ? null
           : const AppNavigationDrawer(activeRoute: 'Mis tickets'),
 
-      // ============================================================
-      // BODY
-      // ============================================================
       body: Row(
         children: [
           if (isDesktop)
@@ -85,15 +70,7 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // HEADER
-  // ================================================================
-
   Widget _buildHeader(BuildContext context, bool isDesktop) {
-    // --------------------------------------------------------------
-    // MOBILE
-    // --------------------------------------------------------------
-
     if (!isDesktop) {
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,10 +91,6 @@ class MisticketsScreen extends StatelessWidget {
         ],
       );
     }
-
-    // --------------------------------------------------------------
-    // DESKTOP
-    // --------------------------------------------------------------
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -209,10 +182,6 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // TARJETA PRINCIPAL
-  // ================================================================
-
   Widget _buildMainCard(BuildContext context, bool isDesktop) {
     return Container(
       width: double.infinity,
@@ -285,10 +254,6 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // BUSCADOR
-  // ================================================================
-
   Widget _buildSearchBar() {
     return SizedBox(
       width: 280,
@@ -321,10 +286,6 @@ class MisticketsScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ================================================================
-  // LISTA DE TICKETS
-  // ================================================================
 
   Widget _buildTicketsList(bool isDesktop) {
     final List<Map<String, dynamic>> tickets = [
@@ -377,10 +338,6 @@ class MisticketsScreen extends StatelessWidget {
       },
     ];
 
-    // ============================================================
-    // MOBILE
-    // ============================================================
-
     if (!isDesktop) {
       return Column(
         children: tickets
@@ -388,10 +345,6 @@ class MisticketsScreen extends StatelessWidget {
             .toList(),
       );
     }
-
-    // ============================================================
-    // DESKTOP
-    // ============================================================
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -576,10 +529,6 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // HEADER TABLA
-  // ================================================================
-
   Widget _tableHeaderCell(String title, {bool alignRight = false}) {
     return TableCell(
       verticalAlignment: TableCellVerticalAlignment.middle,
@@ -601,10 +550,6 @@ class MisticketsScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ================================================================
-  // BADGE DE ESTADO
-  // ================================================================
 
   Widget _statusBadge(String text, String tipo) {
     Color bg;
@@ -658,10 +603,6 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // TICKET MOBILE
-  // ================================================================
-
   Widget _buildMobileTicketItem(Map<String, dynamic> ticket) {
     return Container(
       width: double.infinity,
@@ -675,9 +616,6 @@ class MisticketsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ========================================================
-          // FOLIO + ESTADO
-          // ========================================================
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -695,18 +633,11 @@ class MisticketsScreen extends StatelessWidget {
               ),
 
               const SizedBox(width: 8),
-
-              // Ya no usamos Flexible aquí.
-              // El badge tiene un ancho natural pequeño.
               _statusBadge(ticket['estado'], ticket['estadoTipo']),
             ],
           ),
 
           const SizedBox(height: 8),
-
-          // ========================================================
-          // TITULO
-          // ========================================================
           Text(
             ticket['titulo'],
             maxLines: 2,
@@ -719,10 +650,6 @@ class MisticketsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 3),
-
-          // ========================================================
-          // DESCRIPCION
-          // ========================================================
           Text(
             ticket['subtitulo'],
             maxLines: 3,
@@ -731,27 +658,16 @@ class MisticketsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 12),
-
-          // ========================================================
-          // FECHA Y ACCIONES
-          // ========================================================
           _buildMobileActions(ticket),
         ],
       ),
     );
   }
 
-  // ================================================================
-  // FECHA + BOTONES MOBILE
-  // ================================================================
-
   Widget _buildMobileActions(Map<String, dynamic> ticket) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // ----------------------------------------------------------
-        // FECHA
-        // ----------------------------------------------------------
         Expanded(
           child: Text(
             '${ticket['fecha']} - ${ticket['hora']}',
@@ -762,10 +678,6 @@ class MisticketsScreen extends StatelessWidget {
         ),
 
         const SizedBox(width: 4),
-
-        // ----------------------------------------------------------
-        // BOTÓN VER
-        // ----------------------------------------------------------
         SizedBox(
           width: 32,
           height: 32,
@@ -783,10 +695,6 @@ class MisticketsScreen extends StatelessWidget {
         ),
 
         const SizedBox(width: 2),
-
-        // ----------------------------------------------------------
-        // BOTÓN TOMAR
-        // ----------------------------------------------------------
         SizedBox(
           width: 32,
           height: 32,
@@ -808,10 +716,6 @@ class MisticketsScreen extends StatelessWidget {
     );
   }
 }
-
-// ==================================================================
-// LOGO
-// ==================================================================
 
 class AppLogo extends StatelessWidget {
   final double fontSize;
@@ -838,10 +742,6 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-// ==================================================================
-// DRAWER
-// ==================================================================
-
 class AppNavigationDrawer extends StatelessWidget {
   final String activeRoute;
 
@@ -861,10 +761,6 @@ class AppNavigationDrawer extends StatelessWidget {
             const AppLogo(fontSize: 26),
 
             const SizedBox(height: 24),
-
-            // ======================================================
-            // USUARIO
-            // ======================================================
             Row(
               children: [
                 Container(
@@ -916,9 +812,6 @@ class AppNavigationDrawer extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ======================================================
-            // INICIO
-            // ======================================================
             _drawerItem(
               icon: Icons.home_rounded,
               title: 'Inicio',
@@ -935,9 +828,6 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
-            // ======================================================
-            // MIS TICKETS
-            // ======================================================
             _drawerItem(
               icon: Icons.confirmation_number_outlined,
               title: 'Mis tickets',
@@ -954,9 +844,6 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
-            // ======================================================
-            // CREAR TICKET
-            // ======================================================
             _drawerItem(
               icon: Icons.build_outlined,
               title: 'Crear ticket',
@@ -973,9 +860,6 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
-            // ======================================================
-            // AVISOS
-            // ======================================================
             _drawerItem(
               icon: Icons.warning_amber_rounded,
               title: 'Avisos',
@@ -992,9 +876,6 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
-            // ======================================================
-            // PERFIL
-            // ======================================================
             _drawerItem(
               icon: Icons.person_outline_rounded,
               title: 'Mi perfil',
@@ -1012,10 +893,6 @@ class AppNavigationDrawer extends StatelessWidget {
             ),
 
             const Spacer(),
-
-            // ======================================================
-            // LOGOUT
-            // ======================================================
             _drawerItem(
               icon: Icons.logout_rounded,
               title: 'Cerrar sesión',
@@ -1027,10 +904,6 @@ class AppNavigationDrawer extends StatelessWidget {
       ),
     );
   }
-
-  // ================================================================
-  // ITEM DEL DRAWER
-  // ================================================================
 
   Widget _drawerItem({
     required IconData icon,

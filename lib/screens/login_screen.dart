@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import '../services/api_service.dart';
 import 'user/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,12 +19,143 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool recordarUsuario = false;
   bool mostrarPassword = false;
+  bool iniciandoSesion = false;
 
   @override
   void dispose() {
     correoController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> iniciarSesion() async {
+    if (iniciandoSesion) return;
+
+    final String correo = correoController.text.trim();
+    final String password = passwordController.text;
+
+    if (correo.isEmpty) {
+      mostrarMensaje('Ingresa tu correo electrónico.');
+      return;
+    }
+
+    if (password.isEmpty) {
+      mostrarMensaje('Ingresa tu contraseña.');
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      iniciandoSesion = true;
+    });
+
+    try {
+      final resultado = await ApiService.login(
+        email: correo,
+        password: password,
+        remember: recordarUsuario,
+      );
+
+      if (!mounted) return;
+
+      final bool success = resultado['success'] == true;
+      final bool mfaRequired =
+          resultado['mfa_required'] == true;
+
+      if (!success) {
+        mostrarMensaje(
+          resultado['message']?.toString() ??
+              'No fue posible iniciar sesión.',
+        );
+        return;
+      }
+
+      if (mfaRequired) {
+        mostrarMensaje(
+          'Se requiere verificación de autenticación.',
+        );
+        return;
+      }
+
+      final String? token =
+          resultado['token']?.toString();
+
+      if (token == null || token.isEmpty) {
+        mostrarMensaje(
+          'El servidor no devolvió un token de acceso.',
+        );
+        return;
+      }
+
+      final dynamic usuario = resultado['user'];
+
+      if (usuario is! Map<String, dynamic>) {
+        mostrarMensaje(
+          'No se recibieron los datos del usuario.',
+        );
+        return;
+      }
+
+      final String role =
+          usuario['role']?.toString().trim() ?? '';
+
+      final String privAdmin =
+          usuario['priv_admin']?.toString().trim() ?? 'N';
+
+      final bool rolPermitido =
+          role == 'Gerente Ti' ||
+          role == 'Soporte Tecnico' ||
+          role == 'Soporte técnico';
+
+      final bool accesoAdministrativo =
+          rolPermitido && privAdmin == 'Y';
+
+      if (accesoAdministrativo) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AdminScreen(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      mostrarMensaje(
+        'No se pudo conectar con el servidor.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          iniciandoSesion = false;
+        });
+      }
+    }
+  }
+
+  void mostrarMensaje(String mensaje) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(mensaje),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF16213E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
   }
 
   @override
@@ -102,9 +234,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   veryShortScreen ? 15 : 25;
 
               return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics:
+                    const BouncingScrollPhysics(),
                 keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
+                    ScrollViewKeyboardDismissBehavior
+                        .onDrag,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
@@ -130,18 +264,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             _buildLogo(
                               smallPhone: smallPhone,
                             ),
-
                             SizedBox(
                               height: logoSpacing,
                             ),
-
                             Column(
                               crossAxisAlignment:
                                   CrossAxisAlignment.center,
                               children: [
                                 Text(
                                   "Bienvenido de Nuevo",
-                                  textAlign: TextAlign.center,
+                                  textAlign:
+                                      TextAlign.center,
                                   style: TextStyle(
                                     fontSize: titleSize,
                                     color: Colors.white,
@@ -150,66 +283,65 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 1.1,
                                   ),
                                 ),
-
-                                const SizedBox(height: 10),
-
+                                const SizedBox(
+                                  height: 10,
+                                ),
                                 Text(
                                   "Inicia sesión para gestionar\n"
                                   "y dar seguimiento a tus tickets",
-                                  textAlign: TextAlign.center,
+                                  textAlign:
+                                      TextAlign.center,
                                   style: TextStyle(
                                     fontSize:
-                                        smallPhone ? 14 : 16,
-                                    color: Colors.white54,
+                                        smallPhone
+                                            ? 14
+                                            : 16,
+                                    color:
+                                        Colors.white54,
                                     height: 1.45,
                                   ),
                                 ),
                               ],
                             ),
-
                             SizedBox(
                               height: formSpacing,
                             ),
-
                             _buildFormulario(
                               smallPhone: smallPhone,
-                              shortScreen: shortScreen,
+                              shortScreen:
+                                  shortScreen,
                             ),
-
                             SizedBox(
-                              height: veryShortScreen
-                                  ? 18
-                                  : 28,
+                              height:
+                                  veryShortScreen
+                                      ? 18
+                                      : 28,
                             ),
-
                             _buildCorporateAccessDivider(),
-
                             SizedBox(
-                              height: veryShortScreen
-                                  ? 18
-                                  : 24,
+                              height:
+                                  veryShortScreen
+                                      ? 18
+                                      : 24,
                             ),
-
                             _buildLoginButton(
                               smallPhone: smallPhone,
                             ),
-
                             SizedBox(
-                              height: veryShortScreen
-                                  ? 15
-                                  : 20,
+                              height:
+                                  veryShortScreen
+                                      ? 15
+                                      : 20,
                             ),
-
                             _buildSecurityCard(
                               smallPhone: smallPhone,
                             ),
-
                             SizedBox(
-                              height: veryShortScreen
-                                  ? 15
-                                  : 25,
+                              height:
+                                  veryShortScreen
+                                      ? 15
+                                      : 25,
                             ),
-
                             const Text(
                               "© 2026 Cymez",
                               style: TextStyle(
@@ -217,7 +349,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontSize: 11,
                               ),
                             ),
-
                             const SizedBox(height: 5),
                           ],
                         ),
@@ -236,7 +367,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLogo({
     required bool smallPhone,
   }) {
-    final double logoSize = smallPhone ? 34 : 40;
+    final double logoSize =
+        smallPhone ? 34 : 40;
 
     return Column(
       children: [
@@ -261,9 +393,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-
         const SizedBox(height: 4),
-
         Text(
           "Plataforma de soporte interno",
           style: TextStyle(
@@ -281,7 +411,8 @@ class _LoginScreenState extends State<LoginScreen> {
     required bool shortScreen,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         const Text(
           "Correo electrónico",
@@ -291,44 +422,65 @@ class _LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextField(
           controller: correoController,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
+          keyboardType:
+              TextInputType.emailAddress,
+          textInputAction:
+              TextInputAction.next,
+          enabled: !iniciandoSesion,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
           ),
           decoration: InputDecoration(
-            hintText: "Ingresa tu correo electrónico",
+            hintText:
+                "Ingresa tu correo electrónico",
             hintStyle: const TextStyle(
               color: Colors.white38,
               fontSize: 14,
             ),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.04),
+            fillColor:
+                Colors.white.withOpacity(0.04),
             prefixIcon: const Icon(
               LucideIcons.mail,
               color: Color(0xFF4A94FF),
               size: 20,
             ),
-            enabledBorder: OutlineInputBorder(
+            enabledBorder:
+                OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withOpacity(0.10),
+                color:
+                    Colors.white.withOpacity(
+                  0.10,
+                ),
                 width: 1,
               ),
             ),
-            focusedBorder: OutlineInputBorder(
+            focusedBorder:
+                OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(14),
-              borderSide: const BorderSide(
+              borderSide:
+                  const BorderSide(
                 color: Color(0xFF3D8BFF),
                 width: 1.5,
+              ),
+            ),
+            disabledBorder:
+                OutlineInputBorder(
+              borderRadius:
+                  BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color:
+                    Colors.white.withOpacity(
+                  0.06,
+                ),
+                width: 1,
               ),
             ),
             contentPadding:
@@ -338,9 +490,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-
         const SizedBox(height: 18),
-
         const Text(
           "Contraseña",
           style: TextStyle(
@@ -349,37 +499,43 @@ class _LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextField(
           controller: passwordController,
           obscureText: !mostrarPassword,
-          textInputAction: TextInputAction.done,
+          textInputAction:
+              TextInputAction.done,
+          enabled: !iniciandoSesion,
+          onSubmitted: (_) =>
+              iniciarSesion(),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
           ),
           decoration: InputDecoration(
-            hintText: "Ingresa tu contraseña",
+            hintText:
+                "Ingresa tu contraseña",
             hintStyle: const TextStyle(
               color: Colors.white38,
               fontSize: 14,
             ),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.04),
+            fillColor:
+                Colors.white.withOpacity(0.04),
             prefixIcon: const Icon(
               LucideIcons.lock,
               color: Color(0xFF4A94FF),
               size: 20,
             ),
             suffixIcon: IconButton(
-              onPressed: () {
-                setState(() {
-                  mostrarPassword =
-                      !mostrarPassword;
-                });
-              },
+              onPressed: iniciandoSesion
+                  ? null
+                  : () {
+                      setState(() {
+                        mostrarPassword =
+                            !mostrarPassword;
+                      });
+                    },
               icon: Icon(
                 mostrarPassword
                     ? LucideIcons.eye_off
@@ -388,20 +544,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 size: 20,
               ),
             ),
-            enabledBorder: OutlineInputBorder(
+            enabledBorder:
+                OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withOpacity(0.10),
+                color:
+                    Colors.white.withOpacity(
+                  0.10,
+                ),
                 width: 1,
               ),
             ),
-            focusedBorder: OutlineInputBorder(
+            focusedBorder:
+                OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(14),
-              borderSide: const BorderSide(
+              borderSide:
+                  const BorderSide(
                 color: Color(0xFF3D8BFF),
                 width: 1.5,
+              ),
+            ),
+            disabledBorder:
+                OutlineInputBorder(
+              borderRadius:
+                  BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color:
+                    Colors.white.withOpacity(
+                  0.06,
+                ),
+                width: 1,
               ),
             ),
             contentPadding:
@@ -411,11 +585,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-
         SizedBox(
           height: shortScreen ? 8 : 12,
         ),
-
         Row(
           mainAxisAlignment:
               MainAxisAlignment.spaceBetween,
@@ -424,27 +596,38 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Flexible(
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                    MainAxisSize.min,
                 children: [
                   Checkbox(
                     value: recordarUsuario,
-                    onChanged: (value) {
-                      setState(() {
-                        recordarUsuario =
-                            value ?? false;
-                      });
-                    },
+                    onChanged:
+                        iniciandoSesion
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  recordarUsuario =
+                                      value ??
+                                          false;
+                                });
+                              },
                     activeColor:
-                        const Color(0xFF1677FF),
-                    checkColor: Colors.white,
-                    side: const BorderSide(
+                        const Color(
+                      0xFF1677FF,
+                    ),
+                    checkColor:
+                        Colors.white,
+                    side:
+                        const BorderSide(
                       color: Colors.white38,
                       width: 1.5,
                     ),
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(5),
+                          BorderRadius.circular(
+                        5,
+                      ),
                     ),
                     visualDensity:
                         VisualDensity.compact,
@@ -452,14 +635,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         MaterialTapTargetSize
                             .shrinkWrap,
                   ),
-
                   const Flexible(
                     child: Text(
                       "Recuérdame",
                       overflow:
                           TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white70,
+                        color:
+                            Colors.white70,
                         fontSize: 13,
                       ),
                     ),
@@ -467,15 +650,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-
             const SizedBox(width: 8),
-
             Flexible(
               child: TextButton(
-                onPressed: () {
-                  // Recuperar contraseña
-                },
-                style: TextButton.styleFrom(
+                onPressed:
+                    iniciandoSesion
+                        ? null
+                        : () {},
+                style:
+                    TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize:
                       const Size(0, 40),
@@ -485,14 +668,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Text(
                   "¿Olvidaste tu contraseña?",
-                  textAlign: TextAlign.right,
+                  textAlign:
+                      TextAlign.right,
                   maxLines: 2,
                   overflow:
                       TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Color(0xFF4A94FF),
+                    color:
+                        Color(0xFF4A94FF),
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                   ),
                 ),
               ),
@@ -509,12 +695,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Expanded(
           child: Container(
             height: 1,
-            color: Colors.white.withOpacity(0.12),
+            color:
+                Colors.white.withOpacity(
+              0.12,
+            ),
           ),
         ),
-
         const SizedBox(width: 12),
-
         const Text(
           "ACCESO CORPORATIVO",
           style: TextStyle(
@@ -524,13 +711,14 @@ class _LoginScreenState extends State<LoginScreen> {
             letterSpacing: 1.2,
           ),
         ),
-
         const SizedBox(width: 12),
-
         Expanded(
           child: Container(
             height: 1,
-            color: Colors.white.withOpacity(0.12),
+            color:
+                Colors.white.withOpacity(
+              0.12,
+            ),
           ),
         ),
       ],
@@ -544,35 +732,21 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       height: smallPhone ? 52 : 55,
       child: ElevatedButton(
-        onPressed: () {
-          final String correo =
-              correoController.text.trim();
-
-          final String password =
-              passwordController.text;
-
-          debugPrint("Correo: $correo");
-          debugPrint("Password: $password");
-          debugPrint(
-            "Recordar: $recordarUsuario",
-          );
-
-          // ==========================================
-          // NAVEGAR A HOMESCREEN
-          // ==========================================
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const HomeScreen(),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
+        onPressed:
+            iniciandoSesion
+                ? null
+                : iniciarSesion,
+        style:
+            ElevatedButton.styleFrom(
           backgroundColor:
               const Color(0xFF1677FF),
-          foregroundColor: Colors.white,
+          disabledBackgroundColor:
+              const Color(0xFF1677FF)
+                  .withOpacity(0.55),
+          foregroundColor:
+              Colors.white,
+          disabledForegroundColor:
+              Colors.white70,
           elevation: 8,
           shadowColor:
               const Color(0xFF1677FF)
@@ -583,27 +757,43 @@ class _LoginScreenState extends State<LoginScreen> {
                 BorderRadius.circular(15),
           ),
         ),
-        child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            const Icon(
-              LucideIcons.log_in,
-              size: 20,
-            ),
-
-            const SizedBox(width: 10),
-
-            const Text(
-              "INICIAR SESIÓN",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
+        child: iniciandoSesion
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child:
+                    CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor:
+                      AlwaysStoppedAnimation<
+                          Color>(
+                    Colors.white,
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .center,
+                children: [
+                  const Icon(
+                    LucideIcons.log_in,
+                    size: 20,
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  const Text(
+                    "INICIAR SESIÓN",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          FontWeight.w700,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -636,10 +826,8 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         children: [
           Container(
-            width:
-                smallPhone ? 42 : 44,
-            height:
-                smallPhone ? 42 : 44,
+            width: smallPhone ? 42 : 44,
+            height: smallPhone ? 42 : 44,
             decoration: BoxDecoration(
               color:
                   const Color(0xFF1677FF)
@@ -655,9 +843,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   smallPhone ? 22 : 23,
             ),
           ),
-
           const SizedBox(width: 13),
-
           const Expanded(
             child: Column(
               crossAxisAlignment:
@@ -672,9 +858,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         FontWeight.w700,
                   ),
                 ),
-
                 SizedBox(height: 4),
-
                 Text(
                   "Tus datos están protegidos",
                   style: TextStyle(
@@ -686,6 +870,34 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AdminScreen extends StatelessWidget {
+  const AdminScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF070B18),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0D1630),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'Tecnologías',
+        ),
+      ),
+      body: const Center(
+        child: Text(
+          'Área de Tecnologías',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
