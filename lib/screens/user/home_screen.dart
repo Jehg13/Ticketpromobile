@@ -1,10 +1,120 @@
 import 'package:flutter/material.dart';
+
+import '../../services/session_service.dart';
 import 'mistickets_screen.dart';
 import 'creartickets_screen.dart';
 import 'avisos_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Map<String, dynamic>? usuario;
+  bool cargandoUsuario = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarUsuario();
+  }
+
+  Future<void> _cargarUsuario() async {
+    try {
+      final usuarioGuardado = await SessionService.getUser();
+
+      if (!mounted) return;
+
+      setState(() {
+        usuario = usuarioGuardado;
+        cargandoUsuario = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        usuario = null;
+        cargandoUsuario = false;
+      });
+    }
+  }
+
+  String _datoUsuario(
+    String campo, {
+    String defecto = 'No disponible',
+  }) {
+    final valor = usuario?[campo];
+
+    if (valor == null) {
+      return defecto;
+    }
+
+    final texto = valor.toString().trim();
+
+    if (texto.isEmpty || texto == 'null') {
+      return defecto;
+    }
+
+    return texto;
+  }
+
+  String get nombreUsuario {
+    final nombre = _datoUsuario(
+      'name',
+      defecto: '',
+    );
+
+    if (nombre.isNotEmpty) {
+      return nombre;
+    }
+
+    return _datoUsuario(
+      'login',
+      defecto: 'Usuario',
+    );
+  }
+
+  String get loginUsuario {
+    return _datoUsuario(
+      'login',
+      defecto: 'Usuario',
+    );
+  }
+
+  String get emailUsuario {
+    return _datoUsuario('email');
+  }
+
+  String get rolUsuario {
+    return _datoUsuario('role');
+  }
+
+  String get empresaUsuario {
+    return _datoUsuario('empresa');
+  }
+
+  String get departamentoUsuario {
+    return _datoUsuario('departamento');
+  }
+
+  String get oficinaUsuario {
+    return _datoUsuario('oficina');
+  }
+
+  String get ubicacionUsuario {
+    return _datoUsuario('ubicacion');
+  }
+
+  String get empleadoUsuario {
+    return _datoUsuario('numero_empleado');
+  }
+
+  String get fechaIngresoUsuario {
+    return _datoUsuario('fecha_ingreso');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +123,18 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF060A17),
+
       appBar: isDesktop
           ? null
           : AppBar(
               backgroundColor: const Color(0xFF0B1021),
               elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              title: const AppLogo(fontSize: 20),
+              iconTheme: const IconThemeData(
+                color: Colors.white,
+              ),
+              title: const AppLogo(
+                fontSize: 20,
+              ),
               actions: [
                 IconButton(
                   icon: const Icon(
@@ -30,11 +145,17 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.only(right: 16),
-                  child: UserAvatar(radius: 16),
+                  child: UserAvatar(
+                    radius: 16,
+                  ),
                 ),
               ],
             ),
-      drawer: isDesktop ? null : const AppNavigationDrawer(),
+
+      drawer: isDesktop
+          ? null
+          : const AppNavigationDrawer(),
+
       body: Row(
         children: [
           if (isDesktop)
@@ -42,15 +163,23 @@ class HomeScreen extends StatelessWidget {
               width: 260,
               child: AppNavigationDrawer(),
             ),
+
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context, isDesktop),
+                  _buildHeader(
+                    context,
+                    isDesktop,
+                  ),
                   const SizedBox(height: 20),
-                  _buildLayout(context, isDesktop),
+                  _buildLayout(
+                    context,
+                    isDesktop,
+                  ),
                 ],
               ),
             ),
@@ -60,32 +189,37 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // HEADER
-  // ============================================================
-
-  Widget _buildHeader(BuildContext context, bool isDesktop) {
+  Widget _buildHeader(
+    BuildContext context,
+    bool isDesktop,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 500;
+        final compact =
+            constraints.maxWidth < 500;
 
         if (compact) {
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bienvenido, Juan Perez',
-                    style: TextStyle(
+                    cargandoUsuario
+                        ? 'Cargando...'
+                        : 'Bienvenido, $nombreUsuario',
+                    style: const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 3),
-                  Text(
+                  const SizedBox(height: 3),
+                  const Text(
                     'Inicio / Dashboard',
                     style: TextStyle(
                       color: Colors.grey,
@@ -94,21 +228,35 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+
               const SizedBox(height: 12),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    padding: const EdgeInsets.symmetric(
+                    backgroundColor:
+                        const Color(0xFF2563EB),
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const CrearticketsScreen(),
+                      ),
+                    );
+                  },
                   icon: const Icon(
                     Icons.add,
                     color: Colors.white,
@@ -117,7 +265,8 @@ class HomeScreen extends StatelessWidget {
                     'Nuevo ticket',
                     style: TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ),
@@ -127,22 +276,28 @@ class HomeScreen extends StatelessWidget {
         }
 
         return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bienvenido, Juan Perez',
-                    style: TextStyle(
+                    cargandoUsuario
+                        ? 'Cargando...'
+                        : 'Bienvenido, $nombreUsuario',
+                    style: const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Inicio / Dashboard',
                     style: TextStyle(
                       color: Colors.grey,
@@ -152,19 +307,33 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(width: 16),
+
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                padding: const EdgeInsets.symmetric(
+                backgroundColor:
+                    const Color(0xFF2563EB),
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const CrearticketsScreen(),
+                  ),
+                );
+              },
               icon: const Icon(
                 Icons.add,
                 color: Colors.white,
@@ -173,7 +342,8 @@ class HomeScreen extends StatelessWidget {
                 'Nuevo ticket',
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
               ),
             ),
@@ -183,10 +353,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // LAYOUT PRINCIPAL
-  // ============================================================
-
   Widget _buildLayout(
     BuildContext context,
     bool isDesktop,
@@ -195,7 +361,8 @@ class HomeScreen extends StatelessWidget {
       children: [
         if (isDesktop)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: _buildUserInfo(),
@@ -216,7 +383,8 @@ class HomeScreen extends StatelessWidget {
 
         if (isDesktop)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -231,7 +399,9 @@ class HomeScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _buildRecentTickets(isDesktop),
+                    _buildRecentTickets(
+                      isDesktop,
+                    ),
                     const SizedBox(height: 16),
                     _buildNotices(),
                   ],
@@ -252,10 +422,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // TARJETA BASE
-  // ============================================================
-
   Widget _buildCard({
     required String title,
     required Widget child,
@@ -266,22 +432,27 @@ class HomeScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0D1427),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.15),
+          color:
+              Colors.blue.withOpacity(0.15),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment:
+                CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                     fontSize: 16,
                     color: Colors.white,
                   ),
@@ -300,58 +471,77 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // MI INFORMACIÓN
-  // ============================================================
-
   Widget _buildUserInfo() {
     return _buildCard(
       title: 'Mi información',
       child: Column(
         children: [
           const Center(
-            child: UserAvatar(radius: 36),
+            child: UserAvatar(
+              radius: 36,
+            ),
           ),
+
           const SizedBox(height: 16),
+
           _infoRow(
             Icons.person_outline,
             'Nombre:',
-            'Juan Perez',
+            nombreUsuario,
           ),
+
+          _infoRow(
+            Icons.account_circle_outlined,
+            'Usuario:',
+            loginUsuario,
+          ),
+
           _infoRow(
             Icons.business_outlined,
             'Empresa:',
-            'CYMEZ',
+            empresaUsuario,
           ),
+
           _infoRow(
             Icons.apartment_outlined,
             'Departamento:',
-            'Soporte tecnico',
+            departamentoUsuario,
           ),
+
           _infoRow(
             Icons.email_outlined,
             'Correo:',
-            'jperez@cymez.com',
+            emailUsuario,
           ),
+
           _infoRow(
             Icons.location_city_outlined,
             'Oficina:',
-            'Reynosa, centro',
+            oficinaUsuario,
           ),
+
           _infoRow(
             Icons.place_outlined,
             'Ubicación:',
-            'Edificio A, piso 2 Area administrativa',
+            ubicacionUsuario,
           ),
+
           _infoRow(
             Icons.badge_outlined,
             'Empleado:',
-            'EMP-00125',
+            empleadoUsuario,
           ),
+
           _infoRow(
             Icons.calendar_today_outlined,
             'Fecha ingreso:',
-            '10 enero 2024',
+            fechaIngresoUsuario,
+          ),
+
+          _infoRow(
+            Icons.work_outline,
+            'Rol:',
+            rolUsuario,
           ),
         ],
       ),
@@ -364,9 +554,13 @@ class HomeScreen extends StatelessWidget {
     String value,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 4,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
@@ -374,6 +568,7 @@ class HomeScreen extends StatelessWidget {
             color: Colors.grey,
           ),
           const SizedBox(width: 8),
+
           SizedBox(
             width: 105,
             child: Text(
@@ -381,17 +576,20 @@ class HomeScreen extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontWeight:
+                    FontWeight.w600,
               ),
             ),
           ),
+
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 11,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
           ),
@@ -399,10 +597,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ============================================================
-  // RESUMEN DE TICKETS
-  // ============================================================
 
   Widget _buildTicketSummary() {
     return _buildCard(
@@ -450,13 +644,18 @@ class HomeScreen extends StatelessWidget {
   ) {
     return Container(
       width: 72,
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        border: Border.all(color: color),
-        borderRadius: BorderRadius.circular(8),
+        color:
+            color.withOpacity(0.1),
+        border: Border.all(
+          color: color,
+        ),
+        borderRadius:
+            BorderRadius.circular(8),
       ),
       child: Column(
         children: [
@@ -464,7 +663,8 @@ class HomeScreen extends StatelessWidget {
             count,
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
               color: color,
             ),
           ),
@@ -475,44 +675,49 @@ class HomeScreen extends StatelessWidget {
               fontSize: 10,
               color: Colors.white70,
             ),
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // ÚLTIMO TICKET
-  // ============================================================
-
   Widget _buildLastTicket() {
     return _buildCard(
       title: 'Último ticket',
       trailing: TextButton(
         onPressed: () {},
-        child: const Text('Ver detalles'),
+        child: const Text(
+          'Ver detalles',
+        ),
       ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding:
+            const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: const Color(0xFF141C33),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius:
+              BorderRadius.circular(8),
         ),
         child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Text(
               'TKT-2026-0015',
               style: TextStyle(
                 color: Colors.blue,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
             SizedBox(height: 8),
+
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
@@ -523,18 +728,23 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 SizedBox(width: 8),
+
                 Text(
                   'Alta',
                   style: TextStyle(
                     color: Colors.red,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
+
             SizedBox(height: 4),
+
             Text(
               'Asignado: Carlos Mtz',
               style: TextStyle(
@@ -548,11 +758,9 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // TICKETS RECIENTES
-  // ============================================================
-
-  Widget _buildRecentTickets(bool isDesktop) {
+  Widget _buildRecentTickets(
+    bool isDesktop,
+  ) {
     final tickets = [
       {
         'folio': 'TKT-2026-0015',
@@ -590,36 +798,47 @@ class HomeScreen extends StatelessWidget {
       title: 'Mis tickets recientes',
       trailing: TextButton(
         onPressed: () {},
-        child: const Text('Ver todos'),
+        child: const Text(
+          'Ver todos',
+        ),
       ),
       child: isDesktop
           ? SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+              scrollDirection:
+                  Axis.horizontal,
               child: DataTable(
                 columnSpacing: 12,
                 columns: const [
                   DataColumn(
                     label: Text(
                       'Folio',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   DataColumn(
                     label: Text(
                       'Tipo',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   DataColumn(
                     label: Text(
                       'Estado',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   DataColumn(
                     label: Text(
                       'Acción',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -629,18 +848,22 @@ class HomeScreen extends StatelessWidget {
                       DataCell(
                         Text(
                           t['folio'] as String,
-                          style: const TextStyle(
+                          style:
+                              const TextStyle(
                             fontSize: 11,
-                            color: Colors.white,
+                            color:
+                                Colors.white,
                           ),
                         ),
                       ),
                       DataCell(
                         Text(
                           t['tipo'] as String,
-                          style: const TextStyle(
+                          style:
+                              const TextStyle(
                             fontSize: 11,
-                            color: Colors.white,
+                            color:
+                                Colors.white,
                           ),
                         ),
                       ),
@@ -648,17 +871,22 @@ class HomeScreen extends StatelessWidget {
                         Text(
                           t['estado'] as String,
                           style: TextStyle(
-                            color: t['color'] as Color,
+                            color:
+                                t['color']
+                                    as Color,
                             fontSize: 11,
                           ),
                         ),
                       ),
                       DataCell(
                         IconButton(
-                          icon: const Icon(
-                            Icons.visibility_outlined,
+                          icon:
+                              const Icon(
+                            Icons
+                                .visibility_outlined,
                             size: 18,
-                            color: Colors.blueAccent,
+                            color:
+                                Colors.blueAccent,
                           ),
                           onPressed: () {},
                         ),
@@ -669,62 +897,97 @@ class HomeScreen extends StatelessWidget {
               ),
             )
           : Column(
-              children: tickets.map((t) {
+              children:
+                  tickets.map((t) {
                 return Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
+                  width:
+                      double.infinity,
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 8,
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 8,
                   ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141C33),
-                    borderRadius: BorderRadius.circular(6),
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        const Color(
+                      0xFF141C33,
+                    ),
+                    borderRadius:
+                        BorderRadius
+                            .circular(6),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                              CrossAxisAlignment
+                                  .start,
                           children: [
                             Text(
-                              t['folio'] as String,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              t['folio']
+                                  as String,
+                              style:
+                                  const TextStyle(
+                                fontWeight:
+                                    FontWeight
+                                        .bold,
                                 fontSize: 12,
-                                color: Colors.white,
+                                color:
+                                    Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(
+                              height: 2,
+                            ),
                             Text(
-                              t['tipo'] as String,
-                              style: const TextStyle(
-                                color: Colors.grey,
+                              t['tipo']
+                                  as String,
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.grey,
                                 fontSize: 11,
                               ),
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              overflow:
+                                  TextOverflow
+                                      .ellipsis,
                             ),
                             Text(
-                              t['estado'] as String,
-                              style: TextStyle(
-                                color: t['color'] as Color,
+                              t['estado']
+                                  as String,
+                              style:
+                                  TextStyle(
+                                color:
+                                    t['color']
+                                        as Color,
                                 fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontWeight:
+                                    FontWeight
+                                        .w600,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(
-                          Icons.visibility_outlined,
-                          color: Colors.blueAccent,
+                        icon:
+                            const Icon(
+                          Icons
+                              .visibility_outlined,
+                          color:
+                              Colors.blueAccent,
                           size: 20,
                         ),
                         onPressed: () {},
-                        tooltip: 'Ver ticket',
+                        tooltip:
+                            'Ver ticket',
                       ),
                     ],
                   ),
@@ -733,10 +996,6 @@ class HomeScreen extends StatelessWidget {
             ),
     );
   }
-
-  // ============================================================
-  // ACTIVIDAD
-  // ============================================================
 
   Widget _buildActivity() {
     return _buildCard(
@@ -769,7 +1028,10 @@ class HomeScreen extends StatelessWidget {
     Color color,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 6,
+      ),
       child: Row(
         children: [
           Icon(
@@ -780,19 +1042,24 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   text,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     fontSize: 12,
-                    color: Colors.white,
+                    color:
+                        Colors.white,
                   ),
                 ),
                 Text(
                   time,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.grey,
                     fontSize: 10,
                   ),
                 ),
@@ -804,16 +1071,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // AVISOS
-  // ============================================================
-
   Widget _buildNotices() {
     return _buildCard(
       title: 'Avisos importantes',
       trailing: TextButton(
         onPressed: () {},
-        child: const Text('Ver todos'),
+        child: const Text(
+          'Ver todos',
+        ),
       ),
       child: Column(
         children: [
@@ -848,11 +1113,16 @@ class HomeScreen extends StatelessWidget {
   ) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      margin:
+          const EdgeInsets.only(
+        bottom: 8,
+      ),
+      padding:
+          const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: const Color(0xFF141C33),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius:
+            BorderRadius.circular(6),
       ),
       child: Row(
         children: [
@@ -862,33 +1132,44 @@ class HomeScreen extends StatelessWidget {
             size: 20,
           ),
           const SizedBox(width: 10),
+
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontWeight:
+                        FontWeight.bold,
+                    color:
+                        Colors.white,
                   ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow:
+                      TextOverflow.ellipsis,
                 ),
                 Text(
                   date,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.grey,
                     fontSize: 10,
                   ),
                 ),
               ],
             ),
           ),
+
           IconButton(
-            icon: const Icon(
-              Icons.chevron_right_rounded,
+            icon:
+                const Icon(
+              Icons
+                  .chevron_right_rounded,
               color: Colors.grey,
               size: 22,
             ),
@@ -900,10 +1181,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// AVATAR LOCAL / SIN INTERNET
-// ============================================================
 
 class UserAvatar extends StatelessWidget {
   final double radius;
@@ -917,7 +1194,8 @@ class UserAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: const Color(0xFF2563EB),
+      backgroundColor:
+          const Color(0xFF2563EB),
       child: Icon(
         Icons.person,
         color: Colors.white,
@@ -926,10 +1204,6 @@ class UserAvatar extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// LOGO
-// ============================================================
 
 class AppLogo extends StatelessWidget {
   final double fontSize;
@@ -945,7 +1219,8 @@ class AppLogo extends StatelessWidget {
       text: TextSpan(
         style: TextStyle(
           fontSize: fontSize,
-          fontWeight: FontWeight.bold,
+          fontWeight:
+              FontWeight.bold,
         ),
         children: const [
           TextSpan(
@@ -966,66 +1241,121 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-// ============================================================
-// DRAWER / MENÚ
-// ============================================================
-
-class AppNavigationDrawer extends StatelessWidget {
-  const AppNavigationDrawer({super.key});
+class AppNavigationDrawer
+    extends StatelessWidget {
+  const AppNavigationDrawer({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
         color: const Color(0xFF0B1021),
-        padding: const EdgeInsets.symmetric(
+        padding:
+            const EdgeInsets.symmetric(
           vertical: 36,
           horizontal: 16,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            const AppLogo(fontSize: 26),
+            const AppLogo(
+              fontSize: 26,
+            ),
 
             const SizedBox(height: 24),
 
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                  padding:
+                      const EdgeInsets.all(2),
+                  decoration:
+                      BoxDecoration(
+                    shape:
+                        BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF2563EB),
+                      color:
+                          const Color(
+                        0xFF2563EB,
+                      ),
                       width: 2,
                     ),
                   ),
-                  child: const UserAvatar(radius: 20),
+                  child:
+                      const UserAvatar(
+                    radius: 20,
+                  ),
                 ),
 
                 const SizedBox(width: 12),
 
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Juan Pérez',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Administración',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+                Expanded(
+                  child: FutureBuilder<
+                      Map<String, dynamic>?>(
+                    future:
+                        SessionService.getUser(),
+                    builder:
+                        (context, snapshot) {
+                      final user =
+                          snapshot.data;
+
+                      final nombre =
+                          user?['name']
+                                      ?.toString()
+                                      .trim()
+                                      .isNotEmpty ==
+                                  true
+                              ? user!['name']
+                                  .toString()
+                              : user?['login']
+                                      ?.toString() ??
+                                  'Usuario';
+
+                      final rol =
+                          user?['role']
+                                  ?.toString() ??
+                              '';
+
+                      return Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
+                        children: [
+                          Text(
+                            nombre,
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow
+                                    .ellipsis,
+                            style:
+                                const TextStyle(
+                              fontSize: 14,
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
+                              color:
+                                  Colors.white,
+                            ),
+                          ),
+                          Text(
+                            rol,
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow
+                                    .ellipsis,
+                            style:
+                                const TextStyle(
+                              fontSize: 12,
+                              color:
+                                  Colors.grey,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1044,18 +1374,12 @@ class AppNavigationDrawer extends StatelessWidget {
               icon: Icons.home_rounded,
               title: 'Inicio',
               isActive: true,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HomeScreen(),
-                  ),
-                );
-              },
+              onTap: () {},
             ),
 
             _drawerItem(
-              icon: Icons.confirmation_number_outlined,
+              icon:
+                  Icons.confirmation_number_outlined,
               title: 'Mis tickets',
               onTap: () {
                 Navigator.push(
@@ -1069,7 +1393,8 @@ class AppNavigationDrawer extends StatelessWidget {
             ),
 
             _drawerItem(
-              icon: Icons.build_outlined,
+              icon:
+                  Icons.build_outlined,
               title: 'Crear ticket',
               onTap: () {
                 Navigator.push(
@@ -1083,7 +1408,8 @@ class AppNavigationDrawer extends StatelessWidget {
             ),
 
             _drawerItem(
-              icon: Icons.warning_amber_rounded,
+              icon:
+                  Icons.warning_amber_rounded,
               title: 'Avisos',
               onTap: () {
                 Navigator.push(
@@ -1097,7 +1423,8 @@ class AppNavigationDrawer extends StatelessWidget {
             ),
 
             _drawerItem(
-              icon: Icons.person_outline_rounded,
+              icon:
+                  Icons.person_outline_rounded,
               title: 'Mi perfil',
               onTap: () {},
             ),
@@ -1105,10 +1432,26 @@ class AppNavigationDrawer extends StatelessWidget {
             const Spacer(),
 
             _drawerItem(
-              icon: Icons.logout_rounded,
+              icon:
+                  Icons.logout_rounded,
               title: 'Cerrar sesión',
               color: Colors.white70,
-              onTap: () {},
+              onTap: () async {
+                // Ya no usamos ApiService.logout().
+                // La sesión local se elimina desde
+                // SessionService.
+                await SessionService.clearSession();
+
+                if (!context.mounted) {
+                  return;
+                }
+
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/',
+                  (route) => false,
+                );
+              },
             ),
           ],
         ),
@@ -1124,20 +1467,30 @@ class AppNavigationDrawer extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final Color itemColor =
-        color ?? (isActive ? Colors.white : Colors.grey);
+        color ??
+        (isActive
+            ? Colors.white
+            : Colors.grey);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding:
+          const EdgeInsets.symmetric(
+        vertical: 4,
+      ),
       child: Material(
         color: isActive
             ? const Color(0xFF2563EB)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
+        borderRadius:
+            BorderRadius.circular(10),
+        clipBehavior:
+            Clip.antiAlias,
         child: ListTile(
           dense: true,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(10),
           ),
           leading: Icon(
             icon,

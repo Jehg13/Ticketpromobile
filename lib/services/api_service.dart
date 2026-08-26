@@ -9,7 +9,7 @@ class ApiService {
       FlutterSecureStorage();
 
   static Future<Map<String, dynamic>> login({
-    required String email,
+    required String usuario,
     required String password,
     bool remember = false,
   }) async {
@@ -21,7 +21,7 @@ class ApiService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'email': email,
+          'usuario': usuario.trim(),
           'password': password,
           'remember': remember,
         }),
@@ -44,40 +44,7 @@ class ApiService {
         final user = data['user'];
 
         if (user is Map<String, dynamic>) {
-          await storage.write(
-            key: 'user_login',
-            value: user['login']?.toString() ?? '',
-          );
-
-          await storage.write(
-            key: 'user_email',
-            value: user['email']?.toString() ?? '',
-          );
-
-          await storage.write(
-            key: 'user_name',
-            value: user['name']?.toString() ?? '',
-          );
-
-          await storage.write(
-            key: 'user_role',
-            value: user['role']?.toString() ?? '',
-          );
-
-          await storage.write(
-            key: 'user_priv_admin',
-            value: user['priv_admin']?.toString() ?? 'N',
-          );
-
-          await storage.write(
-            key: 'user_active',
-            value: user['active']?.toString() ?? 'N',
-          );
-
-          await storage.write(
-            key: 'user_mfa',
-            value: user['mfa']?.toString() ?? 'N',
-          );
+          await _guardarUsuario(user);
         }
       }
 
@@ -88,6 +55,7 @@ class ApiService {
         'message': data['message']?.toString() ?? '',
         'token': data['token'],
         'user': data['user'],
+        'login': data['login'],
         'data': data,
       };
     } catch (e) {
@@ -100,6 +68,45 @@ class ApiService {
         'data': null,
       };
     }
+  }
+
+  static Future<void> _guardarUsuario(
+    Map<String, dynamic> user,
+  ) async {
+    await storage.write(
+      key: 'user_login',
+      value: user['login']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_email',
+      value: user['email']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_name',
+      value: user['name']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_role',
+      value: user['role']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_priv_admin',
+      value: user['priv_admin']?.toString() ?? 'N',
+    );
+
+    await storage.write(
+      key: 'user_active',
+      value: user['active']?.toString() ?? 'N',
+    );
+
+    await storage.write(
+      key: 'user_mfa',
+      value: user['mfa']?.toString() ?? 'N',
+    );
   }
 
   static Future<String?> getToken() async {
@@ -164,12 +171,61 @@ class ApiService {
       key: 'user_priv_admin',
     );
 
-    final bool rolPermitido =
-        role == 'Gerente Ti' ||
-        role == 'Soporte Tecnico' ||
-        role == 'Soporte técnico';
+    final rolNormalizado = role
+        ?.trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
 
-    return rolPermitido && privAdmin == 'Y';
+    final bool rolPermitido =
+        rolNormalizado == 'gerente ti' ||
+        rolNormalizado == 'soporte tecnico';
+
+    return rolPermitido &&
+        privAdmin?.trim().toUpperCase() == 'Y';
+  }
+
+  static Future<bool> puedeAccederTecnologias() async {
+    return await isAdmin();
+  }
+
+  static Future<bool> esUsuarioNormal() async {
+    final admin = await isAdmin();
+
+    return !admin;
+  }
+
+  static Future<String?> getLogin() async {
+    return await storage.read(
+      key: 'user_login',
+    );
+  }
+
+  static Future<String?> getEmail() async {
+    return await storage.read(
+      key: 'user_email',
+    );
+  }
+
+  static Future<String?> getNombre() async {
+    return await storage.read(
+      key: 'user_name',
+    );
+  }
+
+  static Future<String?> getRol() async {
+    return await storage.read(
+      key: 'user_role',
+    );
+  }
+
+  static Future<String?> getPrivAdmin() async {
+    return await storage.read(
+      key: 'user_priv_admin',
+    );
   }
 
   static Future<Map<String, dynamic>> getUser() async {
@@ -201,42 +257,10 @@ class ApiService {
       if (response.statusCode == 200 &&
           data['success'] == true &&
           data['user'] is Map<String, dynamic>) {
-        final user = data['user'] as Map<String, dynamic>;
+        final user =
+            data['user'] as Map<String, dynamic>;
 
-        await storage.write(
-          key: 'user_login',
-          value: user['login']?.toString() ?? '',
-        );
-
-        await storage.write(
-          key: 'user_email',
-          value: user['email']?.toString() ?? '',
-        );
-
-        await storage.write(
-          key: 'user_name',
-          value: user['name']?.toString() ?? '',
-        );
-
-        await storage.write(
-          key: 'user_role',
-          value: user['role']?.toString() ?? '',
-        );
-
-        await storage.write(
-          key: 'user_priv_admin',
-          value: user['priv_admin']?.toString() ?? 'N',
-        );
-
-        await storage.write(
-          key: 'user_active',
-          value: user['active']?.toString() ?? 'N',
-        );
-
-        await storage.write(
-          key: 'user_mfa',
-          value: user['mfa']?.toString() ?? 'N',
-        );
+        await _guardarUsuario(user);
       }
 
       if (response.statusCode == 401) {
