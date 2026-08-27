@@ -8,6 +8,10 @@ class ApiService {
   static const FlutterSecureStorage storage =
       FlutterSecureStorage();
 
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
   static Future<Map<String, dynamic>> login({
     required String usuario,
     required String password,
@@ -70,6 +74,10 @@ class ApiService {
     }
   }
 
+  // ============================================================
+  // GUARDAR USUARIO
+  // ============================================================
+
   static Future<void> _guardarUsuario(
     Map<String, dynamic> user,
   ) async {
@@ -107,13 +115,41 @@ class ApiService {
       key: 'user_mfa',
       value: user['mfa']?.toString() ?? 'N',
     );
+
+    await storage.write(
+      key: 'user_empresa',
+      value: user['empresa']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_departamento',
+      value: user['departamento']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_oficina',
+      value: user['oficina']?.toString() ?? '',
+    );
+
+    await storage.write(
+      key: 'user_numero_empleado',
+      value: user['numero_empleado']?.toString() ?? '',
+    );
   }
+
+  // ============================================================
+  // TOKEN
+  // ============================================================
 
   static Future<String?> getToken() async {
     return await storage.read(
       key: 'auth_token',
     );
   }
+
+  // ============================================================
+  // USUARIO GUARDADO
+  // ============================================================
 
   static Future<Map<String, dynamic>?> getStoredUser() async {
     final login = await storage.read(
@@ -144,23 +180,51 @@ class ApiService {
       key: 'user_mfa',
     );
 
+    final empresa = await storage.read(
+      key: 'user_empresa',
+    );
+
+    final departamento = await storage.read(
+      key: 'user_departamento',
+    );
+
+    final oficina = await storage.read(
+      key: 'user_oficina',
+    );
+
+    final numeroEmpleado = await storage.read(
+      key: 'user_numero_empleado',
+    );
+
     if (login == null &&
         email == null &&
         name == null &&
-        role == null) {
+        role == null &&
+        empresa == null &&
+        departamento == null &&
+        oficina == null &&
+        numeroEmpleado == null) {
       return null;
     }
 
     return {
-      'login': login,
-      'email': email,
-      'name': name,
-      'role': role,
+      'login': login ?? '',
+      'email': email ?? '',
+      'name': name ?? '',
+      'role': role ?? '',
       'priv_admin': privAdmin ?? 'N',
       'active': active ?? 'N',
-      'mfa': mfa ?? 'N',
+      'mfa': mfa ?? '',
+      'empresa': empresa ?? '',
+      'departamento': departamento ?? '',
+      'oficina': oficina ?? '',
+      'numero_empleado': numeroEmpleado ?? '',
     };
   }
+
+  // ============================================================
+  // COMPROBAR ADMINISTRADOR
+  // ============================================================
 
   static Future<bool> isAdmin() async {
     final role = await storage.read(
@@ -188,6 +252,10 @@ class ApiService {
         privAdmin?.trim().toUpperCase() == 'Y';
   }
 
+  // ============================================================
+  // PERMISOS
+  // ============================================================
+
   static Future<bool> puedeAccederTecnologias() async {
     return await isAdmin();
   }
@@ -197,6 +265,10 @@ class ApiService {
 
     return !admin;
   }
+
+  // ============================================================
+  // GETTERS
+  // ============================================================
 
   static Future<String?> getLogin() async {
     return await storage.read(
@@ -227,6 +299,34 @@ class ApiService {
       key: 'user_priv_admin',
     );
   }
+
+  static Future<String?> getEmpresa() async {
+    return await storage.read(
+      key: 'user_empresa',
+    );
+  }
+
+  static Future<String?> getDepartamento() async {
+    return await storage.read(
+      key: 'user_departamento',
+    );
+  }
+
+  static Future<String?> getOficina() async {
+    return await storage.read(
+      key: 'user_oficina',
+    );
+  }
+
+  static Future<String?> getNumeroEmpleado() async {
+    return await storage.read(
+      key: 'user_numero_empleado',
+    );
+  }
+
+  // ============================================================
+  // OBTENER USUARIO DESDE API
+  // ============================================================
 
   static Future<Map<String, dynamic>> getUser() async {
     final token = await getToken();
@@ -285,6 +385,10 @@ class ApiService {
     }
   }
 
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
   static Future<Map<String, dynamic>> logout() async {
     final token = await getToken();
 
@@ -334,9 +438,17 @@ class ApiService {
     }
   }
 
+  // ============================================================
+  // LIMPIAR SESIÓN
+  // ============================================================
+
   static Future<void> clearSession() async {
     await storage.deleteAll();
   }
+
+  // ============================================================
+  // COMPROBAR SESIÓN
+  // ============================================================
 
   static Future<bool> hasSession() async {
     final token = await getToken();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import '../services/api_service.dart';
+import '../services/session_service.dart';
 import 'user/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -103,6 +104,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
+
+      await SessionService.saveSession(
+        token: token,
+        user: usuarioDatos,
+      );
 
       final String role =
           usuarioDatos['role']
@@ -710,8 +716,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             : (value) {
                                 setState(() {
                                   recordarUsuario =
-                                      value ??
-                                          false;
+                                      value ?? false;
                                 });
                               },
                     activeColor:

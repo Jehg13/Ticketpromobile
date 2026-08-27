@@ -1,7 +1,10 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
 import 'home_screen.dart';
 import 'mistickets_screen.dart';
 import 'avisos_screen.dart';
+import '../../services/crear_ticket_service.dart';
 
 class CrearticketsScreen extends StatefulWidget {
   const CrearticketsScreen({super.key});
@@ -13,20 +16,452 @@ class CrearticketsScreen extends StatefulWidget {
 class _CrearticketsScreenState extends State<CrearticketsScreen> {
   String selectedPriority = 'Media';
   String? selectedFailureType;
+  String? selectedEquipo;
 
   bool afectaOtros = false;
   bool esRecurrente = false;
+  bool enviandoTicket = false;
+  bool cargandoEquipos = false;
+
+  List<Map<String, dynamic>> equipos = [];
+
+  final List<PlatformFile> evidencias = [];
+
+  final TextEditingController tituloController = TextEditingController();
+  final TextEditingController descripcionController =
+      TextEditingController();
+  final TextEditingController comentariosController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    tituloController.dispose();
+    descripcionController.dispose();
+    comentariosController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _cargarEquipos() async {
+    if (cargandoEquipos || enviandoTicket) {
+      return;
+    }
+
+    setState(() {
+      cargandoEquipos = true;
+      selectedEquipo = null;
+    });
+
+    try {
+      final resultado = await CrearTicketService.obtenerEquipos();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        equipos = resultado;
+        cargandoEquipos = false;
+      });
+
+      if (equipos.isEmpty) {
+        _mostrarMensaje(
+          'No tienes equipos vinculados disponibles',
+          esError: true,
+        );
+      }
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        equipos = [];
+        cargandoEquipos = false;
+        selectedEquipo = null;
+      });
+
+      var mensaje = e.toString();
+
+      if (mensaje.startsWith('Exception: ')) {
+        mensaje = mensaje.substring('Exception: '.length);
+      }
+
+      if (mensaje.trim().isEmpty) {
+        mensaje = 'No se pudieron cargar los equipos';
+      }
+
+      _mostrarMensaje(
+        mensaje,
+        esError: true,
+        duracion: const Duration(seconds: 5),
+      );
+    }
+  }
+
+ Future<void> _seleccionarEvidencias() async {
+  if (enviandoTicket) {
+    return;
+  }
+
+  try {
+    final archivos = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [
+        'jpg',
+        'jpeg',
+        'png',
+        'pdf',
+        'mp4',
+      ],
+      allowMultiple: true,
+    );
+
+    if (!mounted || archivos.isEmpty) {
+      return;
+    }
+
+    final nuevasEvidencias = <PlatformFile>[];
+
+    for (final archivo in archivos) {
+      try {
+        final bytes = await archivo.readAsBytes();
+
+        if (bytes.isEmpty) {
+          debugPrint(
+            'No se pudieron leer los bytes de: ${archivo.name}',
+          );
+          continue;
+        }
+
+        nuevasEvidencias.add(archivo);
+
+        debugPrint(
+          'Archivo seleccionado: ${archivo.name}',
+        );
+
+        debugPrint(
+          'Bytes: ${bytes.length}',
+        );
+      } catch (e) {
+        debugPrint(
+          'Error leyendo ${archivo.name}: $e',
+        );
+      }
+    }
+
+    if (nuevasEvidencias.isEmpty) {
+      _mostrarMensaje(
+        'No se pudieron leer los archivos seleccionados',
+        esError: true,
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      evidencias.addAll(nuevasEvidencias);
+    });
+
+    debugPrint(
+      'Total de evidencias: ${evidencias.length}',
+    );
+  } catch (e) {
+    if (!mounted) {
+      return;
+    }
+
+    debugPrint(
+      'Error seleccionando evidencias: $e',
+    );
+
+    _mostrarMensaje(
+      'No se pudieron seleccionar los archivos',
+      esError: true,
+    );
+  }
+}
+
+  void _eliminarEvidencia(int index) {
+    if (enviandoTicket) {
+      return;
+    }
+
+    if (index < 0 || index >= evidencias.length) {
+      return;
+    }
+
+    setState(() {
+      evidencias.removeAt(index);
+    });
+  }
+
+  Future<void> _crearTicket() async {
+    if (enviandoTicket) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final titulo = tituloController.text.trim();
+    final descripcion = descripcionController.text.trim();
+    final comentarios = comentariosController.text.trim();
+
+    if (titulo.isEmpty) {
+      _mostrarMensaje(
+        'Ingresa el título del ticket',
+        esError: true,
+      );
+      return;
+    }
+
+    final tipoFalla = selectedFailureType?.trim();
+
+    if (tipoFalla == null || tipoFalla.isEmpty) {
+      _mostrarMensaje(
+        'Selecciona el tipo de falla',
+        esError: true,
+      );
+      return;
+    }
+
+    if (tipoFalla.toLowerCase() == 'hardware' &&
+        (selectedEquipo == null || selectedEquipo!.trim().isEmpty)) {
+      _mostrarMensaje(
+        'Selecciona el equipo',
+        esError: true,
+      );
+      return;
+    }
+
+    if (descripcion.isEmpty) {
+      _mostrarMensaje(
+        'Ingresa una descripción del problema',
+        esError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      enviandoTicket = true;
+    });
+
+    try {
+      final response = await CrearTicketService.crearTicket(
+        titulo: titulo,
+        tipoFalla: tipoFalla,
+        equipo: tipoFalla.toLowerCase() == 'hardware'
+            ? selectedEquipo
+            : null,
+        prioridad: selectedPriority,
+        descripcion: descripcion,
+        afectaOtros: afectaOtros,
+        esRecurrente: esRecurrente,
+        comentarios: comentarios.isEmpty ? null : comentarios,
+        evidencias: evidencias.isEmpty
+            ? null
+            : List<PlatformFile>.from(evidencias),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final mensajeBackend = response['message']?.toString().trim();
+
+      final mensaje =
+          mensajeBackend != null && mensajeBackend.isNotEmpty
+              ? mensajeBackend
+              : 'El ticket fue creado correctamente';
+
+      _limpiarFormulario();
+
+      await _mostrarDialogoExito(mensaje);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      var mensaje = e.toString();
+
+      if (mensaje.startsWith('Exception: ')) {
+        mensaje = mensaje.substring('Exception: '.length);
+      }
+
+      if (mensaje.trim().isEmpty) {
+        mensaje = 'No se pudo crear el ticket';
+      }
+
+      _mostrarMensaje(
+        mensaje,
+        esError: true,
+        duracion: const Duration(seconds: 5),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          enviandoTicket = false;
+        });
+      }
+    }
+  }
+
+  void _limpiarFormulario() {
+    tituloController.clear();
+    descripcionController.clear();
+    comentariosController.clear();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      selectedPriority = 'Media';
+      selectedFailureType = null;
+      selectedEquipo = null;
+      afectaOtros = false;
+      esRecurrente = false;
+      cargandoEquipos = false;
+      equipos = [];
+      evidencias.clear();
+    });
+  }
+
+  Future<void> _mostrarDialogoExito(String mensaje) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0B1021),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF10B981),
+                size: 26,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Ticket creado',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            mensaje,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text(
+                'Continuar',
+                style: TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MisticketsScreen(),
+      ),
+    );
+  }
+
+  void _mostrarMensaje(
+    String mensaje, {
+    bool esError = false,
+    Duration duracion = const Duration(seconds: 3),
+  }) {
+    if (!mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                esError
+                    ? Icons.error_outline_rounded
+                    : Icons.check_circle_outline_rounded,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  mensaje,
+                  style: const TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: esError
+              ? const Color(0xFFB91C1C)
+              : const Color(0xFF047857),
+          behavior: SnackBarBehavior.floating,
+          duration: duracion,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+  }
+
+  void _irAInicio() {
+    if (enviandoTicket) {
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HomeScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= 1024;
+    final width = MediaQuery.sizeOf(context).width;
+    final isDesktop = width >= 1024;
 
     return Scaffold(
       backgroundColor: const Color(0xFF060A17),
-
-      // ============================================================
-      // APP BAR MOBILE
-      // ============================================================
       appBar: isDesktop
           ? null
           : AppBar(
@@ -38,15 +473,8 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               title: const AppLogo(
                 fontSize: 20,
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {},
-                ),
-                const Padding(
+              actions: const [
+                Padding(
                   padding: EdgeInsets.only(right: 16),
                   child: UserAvatar(
                     radius: 16,
@@ -54,19 +482,11 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                 ),
               ],
             ),
-
-      // ============================================================
-      // DRAWER MOBILE
-      // ============================================================
       drawer: isDesktop
           ? null
           : const AppNavigationDrawer(
               activeRoute: 'Crear ticket',
             ),
-
-      // ============================================================
-      // BODY
-      // ============================================================
       body: Row(
         children: [
           if (isDesktop)
@@ -76,21 +496,18 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                 activeRoute: 'Crear ticket',
               ),
             ),
-
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(
+                isDesktop ? 24 : 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(isDesktop),
-
                   const SizedBox(height: 24),
-
-                  _buildUserInfoCard(isDesktop),
-
+                  _buildUserInfoCard(),
                   const SizedBox(height: 20),
-
                   _buildFormAndEvidenceLayout(isDesktop),
                 ],
               ),
@@ -100,10 +517,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       ),
     );
   }
-
-  // ================================================================
-  // HEADER
-  // ================================================================
 
   Widget _buildHeader(bool isDesktop) {
     return Row(
@@ -133,7 +546,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
             ],
           ),
         ),
-
         if (isDesktop)
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -153,18 +565,14 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                 ),
                 onPressed: () {},
               ),
-
               const SizedBox(width: 16),
-
               const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   UserAvatar(
                     radius: 18,
                   ),
-
                   SizedBox(width: 10),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -185,9 +593,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                       ),
                     ],
                   ),
-
                   SizedBox(width: 4),
-
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
                     color: Colors.grey,
@@ -201,11 +607,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // INFORMACIÓN DEL USUARIO
-  // ================================================================
-
-  Widget _buildUserInfoCard(bool isDesktop) {
+  Widget _buildUserInfoCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -236,9 +638,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth >= 800) {
@@ -338,9 +738,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
             color: Colors.grey,
             size: 20,
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,9 +751,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(height: 2),
-
                 Text(
                   value,
                   overflow: TextOverflow.ellipsis,
@@ -373,10 +769,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // FORMULARIO + EVIDENCIA
-  // ================================================================
-
   Widget _buildFormAndEvidenceLayout(bool isDesktop) {
     if (isDesktop) {
       return Row(
@@ -386,9 +778,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
             flex: 7,
             child: _buildTicketFormCard(),
           ),
-
           const SizedBox(width: 20),
-
           Expanded(
             flex: 3,
             child: _buildEvidenceCard(),
@@ -400,19 +790,16 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     return Column(
       children: [
         _buildTicketFormCard(),
-
         const SizedBox(height: 20),
-
         _buildEvidenceCard(),
       ],
     );
   }
 
-  // ================================================================
-  // FORMULARIO
-  // ================================================================
-
   Widget _buildTicketFormCard() {
+    final isHardware =
+        selectedFailureType?.toLowerCase() == 'hardware';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -443,18 +830,12 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // ========================================================
-          // TÍTULO
-          // ========================================================
-
           _formLabel('Título del ticket'),
-
           const SizedBox(height: 8),
-
           TextField(
+            controller: tituloController,
+            enabled: !enviandoTicket,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
@@ -463,39 +844,44 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               'Ej. Impresora de administración sin conexión',
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // ========================================================
-          // TIPO DE FALLA + PRIORIDAD
-          // ========================================================
-
           LayoutBuilder(
             builder: (context, constraints) {
-              // En espacios pequeños los ponemos uno debajo del otro.
               if (constraints.maxWidth < 600) {
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     _buildFailureType(),
-
+                    if (isHardware) ...[
+                      const SizedBox(height: 20),
+                      _buildEquipo(),
+                    ],
                     const SizedBox(height: 20),
-
                     _buildPriority(),
                   ],
                 );
               }
 
               return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     flex: 5,
-                    child: _buildFailureType(),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        _buildFailureType(),
+                        if (isHardware) ...[
+                          const SizedBox(height: 20),
+                          _buildEquipo(),
+                        ],
+                      ],
+                    ),
                   ),
-
                   const SizedBox(width: 16),
-
                   Expanded(
                     flex: 6,
                     child: _buildPriority(),
@@ -504,18 +890,12 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               );
             },
           ),
-
           const SizedBox(height: 20),
-
-          // ========================================================
-          // DESCRIPCIÓN
-          // ========================================================
-
           _formLabel('Descripción del problema'),
-
           const SizedBox(height: 8),
-
           TextField(
+            controller: descripcionController,
+            enabled: !enviandoTicket,
             maxLines: 4,
             style: const TextStyle(
               color: Colors.white,
@@ -525,37 +905,35 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               'Describe detalladamente el problema que estás experimentando...',
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // ========================================================
-          // AFECTA / RECURRENTE
-          // ========================================================
-
           LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth < 600) {
                 return Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     _buildYesNoSection(
                       '¿Afecta a otros usuarios?',
                       afectaOtros,
                       (value) {
-                        setState(() {
-                          afectaOtros = value;
-                        });
+                        if (!enviandoTicket) {
+                          setState(() {
+                            afectaOtros = value;
+                          });
+                        }
                       },
                     ),
-
                     const SizedBox(height: 16),
-
                     _buildYesNoSection(
                       '¿Es una falla recurrente?',
                       esRecurrente,
                       (value) {
-                        setState(() {
-                          esRecurrente = value;
-                        });
+                        if (!enviandoTicket) {
+                          setState(() {
+                            esRecurrente = value;
+                          });
+                        }
                       },
                     ),
                   ],
@@ -569,23 +947,25 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                       '¿Afecta a otros usuarios?',
                       afectaOtros,
                       (value) {
-                        setState(() {
-                          afectaOtros = value;
-                        });
+                        if (!enviandoTicket) {
+                          setState(() {
+                            afectaOtros = value;
+                          });
+                        }
                       },
                     ),
                   ),
-
                   const SizedBox(width: 16),
-
                   Expanded(
                     child: _buildYesNoSection(
                       '¿Es una falla recurrente?',
                       esRecurrente,
                       (value) {
-                        setState(() {
-                          esRecurrente = value;
-                        });
+                        if (!enviandoTicket) {
+                          setState(() {
+                            esRecurrente = value;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -593,18 +973,12 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               );
             },
           ),
-
           const SizedBox(height: 20),
-
-          // ========================================================
-          // COMENTARIOS
-          // ========================================================
-
           _formLabel('Comentarios adicionales'),
-
           const SizedBox(height: 8),
-
           TextField(
+            controller: comentariosController,
+            enabled: !enviandoTicket,
             maxLines: 3,
             style: const TextStyle(
               color: Colors.white,
@@ -619,35 +993,23 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // TIPO DE FALLA
-  // ================================================================
-
   Widget _buildFailureType() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _formLabel('Tipo de falla'),
-
         const SizedBox(height: 8),
-
         DropdownButtonFormField<String>(
           value: selectedFailureType,
-
-          // ESTA ES LA CORRECCIÓN PRINCIPAL DEL OVERFLOW
           isExpanded: true,
-
           dropdownColor: const Color(0xFF0B1021),
-
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,
           ),
-
           decoration: _inputDecoration(
             'Selecciona el tipo de falla',
           ),
-
           items: const [
             DropdownMenuItem(
               value: 'hardware',
@@ -671,58 +1033,142 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ),
           ],
+          onChanged: enviandoTicket
+              ? null
+              : (value) async {
+                  setState(() {
+                    selectedFailureType = value;
+                    selectedEquipo = null;
+                    equipos = [];
+                  });
 
-          onChanged: (value) {
-            setState(() {
-              selectedFailureType = value;
-            });
-          },
+                  if (value?.toLowerCase() == 'hardware') {
+                    await _cargarEquipos();
+                  }
+                },
         ),
       ],
     );
   }
 
-  // ================================================================
-  // PRIORIDAD
-  // ================================================================
+  Widget _buildEquipo() {
+    final valoresValidos = equipos
+        .map(
+          (equipo) =>
+              equipo['nombre_equipo']?.toString().trim() ?? '',
+        )
+        .where(
+          (nombre) => nombre.isNotEmpty,
+        )
+        .toSet()
+        .toList();
+
+    final valorSeleccionado =
+        valoresValidos.contains(selectedEquipo)
+            ? selectedEquipo
+            : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _formLabel('Equipo'),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: valorSeleccionado,
+          isExpanded: true,
+          dropdownColor: const Color(0xFF0B1021),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+          ),
+          decoration: _inputDecoration(
+            cargandoEquipos
+                ? 'Cargando equipos...'
+                : valoresValidos.isEmpty
+                    ? 'No hay equipos disponibles'
+                    : 'Selecciona el equipo',
+          ),
+          items: equipos
+              .map<DropdownMenuItem<String>?>(
+                (equipo) {
+                  final nombre =
+                      equipo['nombre_equipo']
+                              ?.toString()
+                              .trim() ??
+                          '';
+
+                  final idEquipo =
+                      equipo['id_equipo']
+                              ?.toString()
+                              .trim() ??
+                          '';
+
+                  if (nombre.isEmpty) {
+                    return null;
+                  }
+
+                  final texto = idEquipo.isNotEmpty
+                      ? '$nombre ($idEquipo)'
+                      : nombre;
+
+                  return DropdownMenuItem<String>(
+                    value: nombre,
+                    child: Text(
+                      texto,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+              )
+              .whereType<DropdownMenuItem<String>>()
+              .toList(),
+          onChanged: enviandoTicket ||
+                  cargandoEquipos ||
+                  valoresValidos.isEmpty
+              ? null
+              : (value) {
+                  setState(() {
+                    selectedEquipo = value;
+                  });
+                },
+        ),
+      ],
+    );
+  }
 
   Widget _buildPriority() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _formLabel('Prioridad'),
-
         const SizedBox(height: 8),
-
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               _priorityBtn(
                 'Crítica',
+                'Critica',
                 Icons.warning_amber_rounded,
                 const Color(0xFFEF4444),
               ),
-
               const SizedBox(width: 6),
-
               _priorityBtn(
+                'Alta',
                 'Alta',
                 Icons.arrow_upward_rounded,
                 const Color(0xFFF97316),
               ),
-
               const SizedBox(width: 6),
-
               _priorityBtn(
+                'Media',
                 'Media',
                 Icons.remove_rounded,
                 const Color(0xFFEAB308),
               ),
-
               const SizedBox(width: 6),
-
               _priorityBtn(
+                'Normal',
                 'Normal',
                 Icons.check_circle_outline_rounded,
                 const Color(0xFF10B981),
@@ -734,10 +1180,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // SECCIÓN SI / NO
-  // ================================================================
-
   Widget _buildYesNoSection(
     String title,
     bool value,
@@ -747,9 +1189,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _formLabel(title),
-
         const SizedBox(height: 8),
-
         _yesNoToggle(
           value: value,
           onChanged: onChanged,
@@ -757,10 +1197,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       ],
     );
   }
-
-  // ================================================================
-  // EVIDENCIA
-  // ================================================================
 
   Widget _buildEvidenceCard() {
     return Container(
@@ -782,9 +1218,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                 color: Colors.white,
                 size: 20,
               ),
-
               SizedBox(width: 8),
-
               Text(
                 'Evidencia',
                 style: TextStyle(
@@ -795,9 +1229,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           const Text(
             'Adjunta evidencia de la falla',
             style: TextStyle(
@@ -806,16 +1238,11 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // ========================================================
-          // ÁREA DE ARCHIVOS
-          // ========================================================
-
           InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: () {},
+            onTap:
+                enviandoTicket ? null : _seleccionarEvidencias,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
@@ -837,9 +1264,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                     size: 36,
                     color: Colors.blue.shade400,
                   ),
-
                   const SizedBox(height: 12),
-
                   const Text(
                     'Haz click para seleccionar archivos',
                     textAlign: TextAlign.center,
@@ -849,9 +1274,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 4),
-
                   const Text(
                     'JPG, JPEG, PNG, PDF o MP4',
                     textAlign: TextAlign.center,
@@ -864,39 +1287,88 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ),
           ),
+          if (evidencias.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ...List.generate(
+              evidencias.length,
+              (index) {
+                final archivo = evidencias[index];
 
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF060A17),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white12,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.insert_drive_file_outlined,
+                        color: Color(0xFF3B82F6),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          archivo.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity:
+                            VisualDensity.compact,
+                        onPressed: enviandoTicket
+                            ? null
+                            : () =>
+                                _eliminarEvidencia(index),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.redAccent,
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 40),
-
-          // ========================================================
-          // BOTONES
-          // ========================================================
-
           LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth < 350) {
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.stretch,
                   children: [
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
                           color: Colors.white12,
                         ),
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                            const EdgeInsets.symmetric(
                           vertical: 14,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HomeScreen(),
-                          ),
-                        );
-                      },
+                      onPressed:
+                          enviandoTicket ? null : _irAInicio,
                       child: const Text(
                         'Cancelar',
                         style: TextStyle(
@@ -906,62 +1378,34 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.send_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      label: const Text(
-                        'Enviar ticket',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    _buildSendButton(),
                   ],
                 );
               }
 
               return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment:
+                    MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
                         color: Colors.white12,
                       ),
-                      padding: const EdgeInsets.symmetric(
+                      padding:
+                          const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 14,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      shape:
+                          RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HomeScreen(),
-                        ),
-                      );
-                    },
+                    onPressed:
+                        enviandoTicket ? null : _irAInicio,
                     child: const Text(
                       'Cancelar',
                       style: TextStyle(
@@ -971,35 +1415,8 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    label: const Text(
-                      'Enviar ticket',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  _buildSendButton(),
                 ],
               );
             },
@@ -1009,9 +1426,48 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // LABEL
-  // ================================================================
+  Widget _buildSendButton() {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF2563EB),
+        disabledBackgroundColor:
+            const Color(0xFF1E3A8A),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 14,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      onPressed: enviandoTicket ? null : _crearTicket,
+      icon: enviandoTicket
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(
+                  Colors.white,
+                ),
+              ),
+            )
+          : const Icon(
+              Icons.send_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+      label: Text(
+        enviandoTicket ? 'Enviando...' : 'Enviar ticket',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 
   Widget _formLabel(String text) {
     return Text(
@@ -1024,61 +1480,69 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 
-  // ================================================================
-  // INPUT DECORATION
-  // ================================================================
-
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-
       hintStyle: const TextStyle(
         color: Colors.grey,
         fontSize: 12,
       ),
-
       filled: true,
-
       fillColor: const Color(0xFF060A17),
-
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 14,
         vertical: 12,
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(
           color: Colors.white12,
         ),
       ),
-
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(
+          color: Colors.white12,
+        ),
+      ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(
           color: Color(0xFF2563EB),
         ),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(
+          color: Color(0xFFEF4444),
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(
+          color: Color(0xFFEF4444),
+        ),
+      ),
     );
   }
 
-  // ================================================================
-  // BOTÓN PRIORIDAD
-  // ================================================================
-
   Widget _priorityBtn(
     String label,
+    String valorBackend,
     IconData icon,
     Color color,
   ) {
-    final bool isSelected = selectedPriority == label;
+    final isSelected =
+        selectedPriority == valorBackend;
 
     return InkWell(
-      onTap: () {
-        setState(() {
-          selectedPriority = label;
-        });
-      },
+      onTap: enviandoTicket
+          ? null
+          : () {
+              setState(() {
+                selectedPriority = valorBackend;
+              });
+            },
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -1091,9 +1555,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               : const Color(0xFF060A17),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isSelected
-                ? color
-                : Colors.white12,
+            color: isSelected ? color : Colors.white12,
           ),
         ),
         child: Row(
@@ -1104,9 +1566,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               size: 14,
               color: color,
             ),
-
             const SizedBox(width: 4),
-
             Text(
               label,
               style: TextStyle(
@@ -1120,10 +1580,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       ),
     );
   }
-
-  // ================================================================
-  // TOGGLE SI / NO
-  // ================================================================
 
   Widget _yesNoToggle({
     required bool value,
@@ -1145,23 +1601,23 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
-                onTap: () {
-                  onChanged(true);
-                },
+                onTap: enviandoTicket
+                    ? null
+                    : () => onChanged(true),
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: value
                         ? const Color(0xFF1E3A8A)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius:
+                        BorderRadius.circular(6),
                   ),
                   child: Text(
                     'Sí',
                     style: TextStyle(
-                      color: value
-                          ? Colors.white
-                          : Colors.grey,
+                      color:
+                          value ? Colors.white : Colors.grey,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1170,29 +1626,28 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               ),
             ),
           ),
-
           Expanded(
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
-                onTap: () {
-                  onChanged(false);
-                },
+                onTap: enviandoTicket
+                    ? null
+                    : () => onChanged(false),
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: !value
                         ? const Color(0xFF1E3A8A)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius:
+                        BorderRadius.circular(6),
                   ),
                   child: Text(
                     'No',
                     style: TextStyle(
-                      color: !value
-                          ? Colors.white
-                          : Colors.grey,
+                      color:
+                          !value ? Colors.white : Colors.grey,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1206,19 +1661,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     );
   }
 }
-
-// ==================================================================
-// AVATAR SIN NETWORKIMAGE
-// ==================================================================
-//
-// Quitamos:
-// https://i.pravatar.cc/150?img=12
-//
-// porque Flutter Web estaba devolviendo:
-// net::ERR_FAILED 200 (OK)
-//
-// Así no tendrás ese error.
-// ==================================================================
 
 class UserAvatar extends StatelessWidget {
   final double radius;
@@ -1251,10 +1693,6 @@ class UserAvatar extends StatelessWidget {
     );
   }
 }
-
-// ==================================================================
-// LOGO
-// ==================================================================
 
 class AppLogo extends StatelessWidget {
   final double fontSize;
@@ -1291,10 +1729,6 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-// ==================================================================
-// DRAWER
-// ==================================================================
-
 class AppNavigationDrawer extends StatelessWidget {
   final String activeRoute;
 
@@ -1302,6 +1736,27 @@ class AppNavigationDrawer extends StatelessWidget {
     super.key,
     this.activeRoute = 'Inicio',
   });
+
+  void _navegar(
+    BuildContext context,
+    String route,
+    Widget screen,
+  ) {
+    if (activeRoute == route) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => screen,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1315,25 +1770,23 @@ class AppNavigationDrawer extends StatelessWidget {
             horizontal: 16,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               const AppLogo(
                 fontSize: 26,
               ),
-
               const SizedBox(height: 24),
-
-              Row(
+              const Row(
                 children: [
-                  const UserAvatar(
+                  UserAvatar(
                     radius: 20,
                   ),
-
-                  const SizedBox(width: 12),
-
-                  const Expanded(
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Juan Pérez',
@@ -1357,121 +1810,74 @@ class AppNavigationDrawer extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
               const Divider(
                 color: Colors.white12,
                 height: 1,
               ),
-
               const SizedBox(height: 20),
-
-              // ====================================================
-              // INICIO
-              // ====================================================
-
               _drawerItem(
                 icon: Icons.home_rounded,
                 title: 'Inicio',
                 isActive: activeRoute == 'Inicio',
                 onTap: () {
-                  if (activeRoute == 'Inicio') {
-                    return;
-                  }
-
-                  Navigator.pushReplacement(
+                  _navegar(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const HomeScreen(),
-                    ),
+                    'Inicio',
+                    const HomeScreen(),
                   );
                 },
               ),
-
-              // ====================================================
-              // MIS TICKETS
-              // ====================================================
-
               _drawerItem(
-                icon: Icons.confirmation_number_outlined,
+                icon:
+                    Icons.confirmation_number_outlined,
                 title: 'Mis tickets',
-                isActive: activeRoute == 'Mis tickets',
+                isActive:
+                    activeRoute == 'Mis tickets',
                 onTap: () {
-                  if (activeRoute == 'Mis tickets') {
-                    return;
-                  }
-
-                  Navigator.pushReplacement(
+                  _navegar(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const MisticketsScreen(),
-                    ),
+                    'Mis tickets',
+                    const MisticketsScreen(),
                   );
                 },
               ),
-
-              // ====================================================
-              // CREAR TICKET
-              // ====================================================
-
               _drawerItem(
                 icon: Icons.build_outlined,
                 title: 'Crear ticket',
-                isActive: activeRoute == 'Crear ticket',
+                isActive:
+                    activeRoute == 'Crear ticket',
                 onTap: () {
-                  if (activeRoute == 'Crear ticket') {
-                    return;
-                  }
-
-                  Navigator.pushReplacement(
+                  _navegar(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CrearticketsScreen(),
-                    ),
+                    'Crear ticket',
+                    const CrearticketsScreen(),
                   );
                 },
               ),
-
-              // ====================================================
-              // AVISOS
-              // ====================================================
-
-               _drawerItem(
-                icon: Icons.warning_amber_rounded,
-                title: 'Avisos',
-                isActive: activeRoute == 'Avisos',
-                onTap: () {
-                  if (activeRoute == 'Crear ticket') {
-                    return;
-                  }
-
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AvisosScreen(),
-                    ),
-                  );
-                },
-              ),
-
-              // ====================================================
-              // PERFIL
-              // ====================================================
-
               _drawerItem(
-                icon: Icons.person_outline_rounded,
+                icon:
+                    Icons.warning_amber_rounded,
+                title: 'Avisos',
+                isActive:
+                    activeRoute == 'Avisos',
+                onTap: () {
+                  _navegar(
+                    context,
+                    'Avisos',
+                    const AvisosScreen(),
+                  );
+                },
+              ),
+              _drawerItem(
+                icon:
+                    Icons.person_outline_rounded,
                 title: 'Mi perfil',
-                isActive: activeRoute == 'Mi perfil',
+                isActive:
+                    activeRoute == 'Mi perfil',
                 onTap: () {},
               ),
-
               const Spacer(),
-
-              // ====================================================
-              // CERRAR SESIÓN
-              // ====================================================
-
               _drawerItem(
                 icon: Icons.logout_rounded,
                 title: 'Cerrar sesión',
@@ -1485,10 +1891,6 @@ class AppNavigationDrawer extends StatelessWidget {
     );
   }
 
-  // =================================================================
-  // ITEM DEL DRAWER
-  // =================================================================
-
   Widget _drawerItem({
     required IconData icon,
     required String title,
@@ -1496,7 +1898,7 @@ class AppNavigationDrawer extends StatelessWidget {
     Color? color,
     required VoidCallback onTap,
   }) {
-    final Color itemColor =
+    final itemColor =
         color ?? (isActive ? Colors.white : Colors.grey);
 
     return Padding(
@@ -1507,23 +1909,16 @@ class AppNavigationDrawer extends StatelessWidget {
         color: isActive
             ? const Color(0xFF2563EB)
             : Colors.transparent,
-
         borderRadius: BorderRadius.circular(10),
-
         clipBehavior: Clip.antiAlias,
-
         child: ListTile(
           dense: true,
-
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-          ),
-
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12),
           leading: Icon(
             icon,
             color: itemColor,
           ),
-
           title: Text(
             title,
             style: TextStyle(
@@ -1533,11 +1928,9 @@ class AppNavigationDrawer extends StatelessWidget {
                   : FontWeight.normal,
             ),
           ),
-
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-
           onTap: onTap,
         ),
       ),
