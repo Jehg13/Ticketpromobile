@@ -5,6 +5,7 @@ import 'home_screen.dart';
 import 'mistickets_screen.dart';
 import 'avisos_screen.dart';
 import '../../services/crear_ticket_service.dart';
+import '../../services/session_service.dart';
 
 class CrearticketsScreen extends StatefulWidget {
   const CrearticketsScreen({super.key});
@@ -1761,134 +1762,191 @@ class AppNavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF0B1021),
-      child: SafeArea(
-        child: Container(
-          color: const Color(0xFF0B1021),
-          padding: const EdgeInsets.symmetric(
-            vertical: 36,
-            horizontal: 16,
+  backgroundColor: const Color(0xFF0B1021),
+  child: SafeArea(
+    child: Container(
+      color: const Color(0xFF0B1021),
+      padding: const EdgeInsets.symmetric(
+        vertical: 36,
+        horizontal: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ============================================================
+          // LOGO
+          // ============================================================
+
+          const AppLogo(
+            fontSize: 26,
           ),
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+
+          const SizedBox(height: 24),
+
+          // ============================================================
+          // USUARIO
+          // ============================================================
+
+          const Row(
             children: [
-              const AppLogo(
-                fontSize: 26,
+              UserAvatar(
+                radius: 20,
               ),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  UserAvatar(
-                    radius: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Juan Pérez',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Administración',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+
+              SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Juan Pérez',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(
-                color: Colors.white12,
-                height: 1,
-              ),
-              const SizedBox(height: 20),
-              _drawerItem(
-                icon: Icons.home_rounded,
-                title: 'Inicio',
-                isActive: activeRoute == 'Inicio',
-                onTap: () {
-                  _navegar(
-                    context,
-                    'Inicio',
-                    const HomeScreen(),
-                  );
-                },
-              ),
-              _drawerItem(
-                icon:
-                    Icons.confirmation_number_outlined,
-                title: 'Mis tickets',
-                isActive:
-                    activeRoute == 'Mis tickets',
-                onTap: () {
-                  _navegar(
-                    context,
-                    'Mis tickets',
-                    const MisticketsScreen(),
-                  );
-                },
-              ),
-              _drawerItem(
-                icon: Icons.build_outlined,
-                title: 'Crear ticket',
-                isActive:
-                    activeRoute == 'Crear ticket',
-                onTap: () {
-                  _navegar(
-                    context,
-                    'Crear ticket',
-                    const CrearticketsScreen(),
-                  );
-                },
-              ),
-              _drawerItem(
-                icon:
-                    Icons.warning_amber_rounded,
-                title: 'Avisos',
-                isActive:
-                    activeRoute == 'Avisos',
-                onTap: () {
-                  _navegar(
-                    context,
-                    'Avisos',
-                    const AvisosScreen(),
-                  );
-                },
-              ),
-              _drawerItem(
-                icon:
-                    Icons.person_outline_rounded,
-                title: 'Mi perfil',
-                isActive:
-                    activeRoute == 'Mi perfil',
-                onTap: () {},
-              ),
-              const Spacer(),
-              _drawerItem(
-                icon: Icons.logout_rounded,
-                title: 'Cerrar sesión',
-                color: Colors.white70,
-                onTap: () {},
+
+                    Text(
+                      'Administración',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          const Divider(
+            color: Colors.white12,
+            height: 1,
+          ),
+
+          const SizedBox(height: 20),
+
+          // ============================================================
+          // INICIO
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.home_rounded,
+            title: 'Inicio',
+            isActive: activeRoute == 'Inicio',
+            onTap: () {
+              _navegar(
+                context,
+                'Inicio',
+                const HomeScreen(),
+              );
+            },
+          ),
+
+          // ============================================================
+          // MIS TICKETS
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.confirmation_number_outlined,
+            title: 'Mis tickets',
+            isActive: activeRoute == 'Mis tickets',
+            onTap: () {
+              _navegar(
+                context,
+                'Mis tickets',
+                const MisticketsScreen(),
+              );
+            },
+          ),
+
+          // ============================================================
+          // CREAR TICKET
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.build_outlined,
+            title: 'Crear ticket',
+            isActive: activeRoute == 'Crear ticket',
+            onTap: () {
+              _navegar(
+                context,
+                'Crear ticket',
+                const CrearticketsScreen(),
+              );
+            },
+          ),
+
+          // ============================================================
+          // AVISOS
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.warning_amber_rounded,
+            title: 'Avisos',
+            isActive: activeRoute == 'Avisos',
+            onTap: () {
+              _navegar(
+                context,
+                'Avisos',
+                const AvisosScreen(),
+              );
+            },
+          ),
+
+          // ============================================================
+          // MI PERFIL
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.person_outline_rounded,
+            title: 'Mi perfil',
+            isActive: activeRoute == 'Mi perfil',
+            onTap: () {
+              // Aquí agregaremos MiPerfilScreen
+            },
+          ),
+
+          const Spacer(),
+
+          // ============================================================
+          // CERRAR SESIÓN
+          // ============================================================
+
+          _drawerItem(
+            icon: Icons.logout_rounded,
+            title: 'Cerrar sesión',
+            color: Colors.white70,
+            onTap: () async {
+              // Cerrar Drawer
+              Navigator.pop(context);
+
+              // Limpiar sesión
+              await SessionService.clearSession();
+
+              if (!context.mounted) {
+                return;
+              }
+
+              // Regresar al inicio
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _drawerItem({

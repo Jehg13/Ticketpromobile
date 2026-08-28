@@ -142,16 +142,14 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                const AdminScreen(),
+            builder: (context) => const AdminScreen(),
           ),
         );
       } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                const HomeScreen(),
+            builder: (context) => const HomeScreen(),
           ),
         );
       }
@@ -179,11 +177,10 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: Text(mensaje),
           behavior: SnackBarBehavior.floating,
-          backgroundColor:
-              const Color(0xFF16213E),
+          backgroundColor: const Color(0xFF16213E),
+          margin: const EdgeInsets.all(14),
           shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       );
@@ -193,240 +190,311 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor:
-          const Color(0xFF070B18),
+      backgroundColor: const Color(0xFF050814),
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 0, 47, 122),
-              Color(0xFF123B82),
-              Color(0xFF0D1630),
+              Color(0xFF001F56),
+              Color(0xFF082B67),
+              Color(0xFF0B1D45),
               Color(0xFF070B18),
+              Color(0xFF050814),
             ],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
             stops: [
               0.0,
-              0.25,
-              0.65,
+              0.22,
+              0.48,
+              0.76,
               1.0,
             ],
           ),
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final double width =
-                  constraints.maxWidth;
-
-              final double height =
-                  constraints.maxHeight;
-
-              final bool smallPhone =
-                  width < 360;
-
-              final bool phone =
-                  width < 600;
-
-              final bool tablet =
-                  width >= 600;
-
-              final bool shortScreen =
-                  height < 700;
-
-              final bool veryShortScreen =
-                  height < 620;
-
-              final double horizontalPadding =
-                  smallPhone
-                      ? 16
-                      : phone
-                          ? 22
-                          : 40;
-
-              final double maxContentWidth =
-                  tablet ? 560 : double.infinity;
-
-              final double titleSize =
-                  smallPhone
-                      ? 29
-                      : phone
-                          ? 34
-                          : 42;
-
-              final double topPadding =
-                  veryShortScreen
-                      ? 10
-                      : shortScreen
-                          ? 15
-                          : 22;
-
-              final double logoSpacing =
-                  veryShortScreen
-                      ? 18
-                      : shortScreen
-                          ? 24
-                          : 35;
-
-              final double formSpacing =
-                  veryShortScreen
-                      ? 20
-                      : shortScreen
-                          ? 25
-                          : 35;
-
-              final double bottomSpacing =
-                  veryShortScreen ? 15 : 25;
-
-              return SingleChildScrollView(
-                physics:
-                    const BouncingScrollPhysics(),
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior
-                        .onDrag,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight:
-                        constraints.maxHeight,
+        child: Stack(
+          children: [
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _LoginGridPainter(),
+                ),
+              ),
+            ),
+            Positioned(
+              top: -160,
+              right: -120,
+              child: IgnorePointer(
+                child: Container(
+                  width: 380,
+                  height: 380,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Color(0x663D8BFF),
+                        Color(0x183D8BFF),
+                        Colors.transparent,
+                      ],
+                      stops: [
+                        0.0,
+                        0.45,
+                        1.0,
+                      ],
+                    ),
                   ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(
-                        maxWidth:
-                            maxContentWidth,
-                      ),
-                      child: Padding(
-                        padding:
-                            EdgeInsets.fromLTRB(
-                          horizontalPadding,
-                          topPadding,
-                          horizontalPadding,
-                          bottomSpacing,
-                        ),
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .center,
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .center,
-                          children: [
-                            _buildLogo(
-                              smallPhone:
-                                  smallPhone,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -180,
+              left: -140,
+              child: IgnorePointer(
+                child: Container(
+                  width: 400,
+                  height: 400,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Color(0x442E7BFF),
+                        Color(0x142E7BFF),
+                        Colors.transparent,
+                      ],
+                      stops: [
+                        0.0,
+                        0.45,
+                        1.0,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 260,
+              left: -120,
+              child: IgnorePointer(
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Color(0x222F7DFF),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double width =
+                      constraints.maxWidth;
+
+                  final double height =
+                      constraints.maxHeight;
+
+                  final bool smallPhone =
+                      width < 360;
+
+                  final bool phone =
+                      width < 600;
+
+                  final bool tablet =
+                      width >= 600;
+
+                  final bool shortScreen =
+                      height < 700;
+
+                  final bool veryShortScreen =
+                      height < 620;
+
+                  final double horizontalPadding =
+                      smallPhone
+                          ? 12
+                          : phone
+                              ? 18
+                              : 28;
+
+                  final double titleSize =
+                      smallPhone
+                          ? 27
+                          : phone
+                              ? 32
+                              : 40;
+
+                  final double contentWidth =
+                      tablet ? 560 : width;
+
+                  final double topPadding =
+                      veryShortScreen
+                          ? 8
+                          : shortScreen
+                              ? 12
+                              : 18;
+
+                  final double logoSpacing =
+                      veryShortScreen
+                          ? 14
+                          : shortScreen
+                              ? 19
+                              : 27;
+
+                  final double formSpacing =
+                      veryShortScreen
+                          ? 15
+                          : shortScreen
+                              ? 20
+                              : 26;
+
+                  return SizedBox(
+                    width: width,
+                    height: height,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: Padding(
+                            padding:
+                                EdgeInsets.fromLTRB(
+                              horizontalPadding,
+                              topPadding,
+                              horizontalPadding,
+                              veryShortScreen
+                                  ? 8
+                                  : 14,
                             ),
-                            SizedBox(
-                              height: logoSpacing,
-                            ),
-                            Column(
+                            child: Column(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.center,
                               crossAxisAlignment:
-                                  CrossAxisAlignment
-                                      .center,
+                                  CrossAxisAlignment.center,
                               children: [
+                                _buildAccessPill(),
+                                SizedBox(
+                                  height:
+                                      veryShortScreen
+                                          ? 10
+                                          : 14,
+                                ),
+                                _buildLogo(
+                                  smallPhone:
+                                      smallPhone,
+                                ),
+                                SizedBox(
+                                  height:
+                                      logoSpacing,
+                                ),
                                 Text(
-                                  "Bienvenido de Nuevo",
+                                  'Bienvenido de Nuevo',
                                   textAlign:
-                                      TextAlign
-                                          .center,
+                                      TextAlign.center,
                                   style: TextStyle(
                                     fontSize:
                                         titleSize,
-                                    color:
-                                        Colors.white,
+                                    color: Colors.white,
                                     fontWeight:
-                                        FontWeight
-                                            .bold,
-                                    height: 1.1,
+                                        FontWeight.w800,
+                                    letterSpacing:
+                                        -0.8,
+                                    height: 1.05,
                                   ),
                                 ),
                                 const SizedBox(
-                                  height: 10,
+                                  height: 8,
                                 ),
                                 Text(
-                                  "Inicia sesión para gestionar\n"
-                                  "y dar seguimiento a tus tickets",
+                                  'Inicia sesión para gestionar y dar '
+                                  'seguimiento a tus tickets',
                                   textAlign:
-                                      TextAlign
-                                          .center,
+                                      TextAlign.center,
                                   style: TextStyle(
                                     fontSize:
                                         smallPhone
-                                            ? 14
-                                            : 16,
+                                            ? 12.5
+                                            : 14,
+                                    color: Colors.white
+                                        .withOpacity(0.55),
+                                    height: 1.4,
+                                    letterSpacing:
+                                        0.1,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height:
+                                      formSpacing,
+                                ),
+                                _buildFormCard(
+                                  smallPhone:
+                                      smallPhone,
+                                  shortScreen:
+                                      shortScreen,
+                                ),
+                                SizedBox(
+                                  height:
+                                      veryShortScreen
+                                          ? 14
+                                          : 20,
+                                ),
+                                _buildCorporateAccessDivider(),
+                                SizedBox(
+                                  height:
+                                      veryShortScreen
+                                          ? 14
+                                          : 18,
+                                ),
+                                _buildLoginButton(
+                                  smallPhone:
+                                      smallPhone,
+                                ),
+                                SizedBox(
+                                  height:
+                                      veryShortScreen
+                                          ? 12
+                                          : 17,
+                                ),
+                                _buildSecurityCard(
+                                  smallPhone:
+                                      smallPhone,
+                                ),
+                                SizedBox(
+                                  height:
+                                      veryShortScreen
+                                          ? 10
+                                          : 17,
+                                ),
+                                const Text(
+                                  '© 2026 Cymez',
+                                  style: TextStyle(
                                     color:
-                                        Colors
-                                            .white54,
-                                    height: 1.45,
+                                        Colors.white30,
+                                    fontSize: 10,
+                                    fontWeight:
+                                        FontWeight.w400,
+                                    letterSpacing:
+                                        0.2,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(
-                              height: formSpacing,
-                            ),
-                            _buildFormulario(
-                              smallPhone:
-                                  smallPhone,
-                              shortScreen:
-                                  shortScreen,
-                            ),
-                            SizedBox(
-                              height:
-                                  veryShortScreen
-                                      ? 18
-                                      : 28,
-                            ),
-                            _buildCorporateAccessDivider(),
-                            SizedBox(
-                              height:
-                                  veryShortScreen
-                                      ? 18
-                                      : 24,
-                            ),
-                            _buildLoginButton(
-                              smallPhone:
-                                  smallPhone,
-                            ),
-                            SizedBox(
-                              height:
-                                  veryShortScreen
-                                      ? 15
-                                      : 20,
-                            ),
-                            _buildSecurityCard(
-                              smallPhone:
-                                  smallPhone,
-                            ),
-                            SizedBox(
-                              height:
-                                  veryShortScreen
-                                      ? 15
-                                      : 25,
-                            ),
-                            const Text(
-                              "© 2026 Cymez",
-                              style: TextStyle(
-                                color:
-                                    Colors.white30,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -435,46 +503,178 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLogo({
     required bool smallPhone,
   }) {
-    final double logoSize =
-        smallPhone ? 34 : 40;
+    final double logoTextSize =
+        smallPhone ? 31 : 37;
 
     return Column(
       children: [
+        Container(
+          width: smallPhone ? 48 : 55,
+          height: smallPhone ? 48 : 55,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF4A94FF),
+                Color(0xFF174FAE),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius:
+                BorderRadius.circular(17),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1677FF)
+                    .withOpacity(0.34),
+                blurRadius: 24,
+                spreadRadius: 1,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: const Color(0xFF1677FF)
+                    .withOpacity(0.10),
+                blurRadius: 45,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Icon(
+            LucideIcons.ticket_check,
+            color: Colors.white,
+            size: smallPhone ? 24 : 28,
+          ),
+        ),
+        const SizedBox(height: 10),
         Text.rich(
           TextSpan(
-            text: "TICKET",
+            text: 'TICKET',
             style: TextStyle(
-              fontSize: logoSize,
-              color:
-                  const Color(0xFF3D8BFF),
-              fontWeight:
-                  FontWeight.bold,
+              color: const Color(0xFF4A94FF),
+              fontSize: logoTextSize,
+              fontWeight: FontWeight.w800,
               letterSpacing: 0.5,
+              height: 1,
             ),
             children: [
               TextSpan(
-                text: "PRO",
+                text: 'PRO',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: logoSize,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontSize: logoTextSize,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         Text(
-          "Plataforma de soporte interno",
+          'Plataforma de soporte interno',
           style: TextStyle(
-            fontSize:
-                smallPhone ? 14 : 16,
-            color: Colors.white38,
-            letterSpacing: 0.3,
+            fontSize: smallPhone ? 11 : 12,
+            color: Colors.white.withOpacity(0.35),
+            letterSpacing: 0.6,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAccessPill() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 13,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF102653)
+            .withOpacity(0.58),
+        borderRadius:
+            BorderRadius.circular(30),
+        border: Border.all(
+          color: const Color(0xFF75A1FF)
+              .withOpacity(0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1677FF)
+                .withOpacity(0.08),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            LucideIcons.shield_check,
+            color: Color(0xFF70A5FF),
+            size: 14,
+          ),
+          SizedBox(width: 7),
+          Text(
+            'ACCESO SEGURO',
+            style: TextStyle(
+              color: Color(0xFFD8E4FF),
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormCard({
+    required bool smallPhone,
+    required bool shortScreen,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(
+        smallPhone ? 14 : 18,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF142E62)
+                .withOpacity(0.72),
+            const Color(0xFF09152F)
+                .withOpacity(0.86),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius:
+            BorderRadius.circular(23),
+        border: Border.all(
+          color: const Color(0xFF75A1FF)
+              .withOpacity(0.16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 35,
+            spreadRadius: -5,
+            offset: const Offset(0, 18),
+          ),
+          BoxShadow(
+            color: const Color(0xFF1677FF)
+                .withOpacity(0.07),
+            blurRadius: 35,
+            spreadRadius: -10,
+          ),
+        ],
+      ),
+      child: _buildFormulario(
+        smallPhone: smallPhone,
+        shortScreen: shortScreen,
+      ),
     );
   }
 
@@ -487,229 +687,211 @@ class _LoginScreenState extends State<LoginScreen> {
           CrossAxisAlignment.start,
       children: [
         const Text(
-          "Usuario o correo electrónico",
+          'Usuario o correo electrónico',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             color: Colors.white,
-            fontWeight:
-                FontWeight.w600,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller:
-              usuarioController,
-          keyboardType:
-              TextInputType.text,
+        _buildTextField(
+          controller: usuarioController,
+          hint: 'Ingresa tu usuario o correo',
+          icon: LucideIcons.user,
+          enabled: !iniciandoSesion,
+          keyboardType: TextInputType.text,
           textInputAction:
               TextInputAction.next,
-          enabled:
-              !iniciandoSesion,
-          autocorrect: false,
-          enableSuggestions: false,
-          textCapitalization:
-              TextCapitalization.none,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
-          decoration:
-              InputDecoration(
-            hintText:
-                "Ingresa tu usuario o correo",
-            hintStyle:
-                const TextStyle(
-              color: Colors.white38,
-              fontSize: 14,
-            ),
-            filled: true,
-            fillColor:
-                Colors.white
-                    .withOpacity(0.04),
-            prefixIcon:
-                const Icon(
-              LucideIcons.user,
-              color:
-                  Color(0xFF4A94FF),
-              size: 20,
-            ),
-            enabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  BorderSide(
-                color: Colors.white
-                    .withOpacity(0.10),
-                width: 1,
-              ),
-            ),
-            focusedBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  const BorderSide(
-                color:
-                    Color(0xFF3D8BFF),
-                width: 1.5,
-              ),
-            ),
-            disabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  BorderSide(
-                color: Colors.white
-                    .withOpacity(0.06),
-                width: 1,
-              ),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 15),
         const Text(
-          "Contraseña",
+          'Contraseña',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             color: Colors.white,
-            fontWeight:
-                FontWeight.w600,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller:
-              passwordController,
-          obscureText:
-              !mostrarPassword,
-          textInputAction:
-              TextInputAction.done,
-          enabled:
-              !iniciandoSesion,
-          onSubmitted: (_) =>
-              iniciarSesion(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
-          decoration:
-              InputDecoration(
-            hintText:
-                "Ingresa tu contraseña",
-            hintStyle:
-                const TextStyle(
-              color: Colors.white38,
-              fontSize: 14,
-            ),
-            filled: true,
-            fillColor:
-                Colors.white
-                    .withOpacity(0.04),
-            prefixIcon:
-                const Icon(
-              LucideIcons.lock,
-              color:
-                  Color(0xFF4A94FF),
-              size: 20,
-            ),
-            suffixIcon:
-                IconButton(
-              onPressed:
-                  iniciandoSesion
-                      ? null
-                      : () {
-                          setState(() {
-                            mostrarPassword =
-                                !mostrarPassword;
-                          });
-                        },
-              icon: Icon(
-                mostrarPassword
-                    ? LucideIcons.eye_off
-                    : LucideIcons.eye,
-                color:
-                    Colors.white54,
-                size: 20,
-              ),
-            ),
-            enabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  BorderSide(
-                color: Colors.white
-                    .withOpacity(0.10),
-                width: 1,
-              ),
-            ),
-            focusedBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  const BorderSide(
-                color:
-                    Color(0xFF3D8BFF),
-                width: 1.5,
-              ),
-            ),
-            disabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-              borderSide:
-                  BorderSide(
-                color: Colors.white
-                    .withOpacity(0.06),
-                width: 1,
-              ),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
-        ),
+        _buildPasswordField(),
         SizedBox(
-          height:
-              shortScreen ? 8 : 12,
+          height: shortScreen ? 8 : 10,
         ),
-        Row(
-          mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceBetween,
-          crossAxisAlignment:
-              CrossAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Row(
-                mainAxisSize:
-                    MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value:
-                        recordarUsuario,
+        _buildRememberRow(),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    required bool enabled,
+    required TextInputType keyboardType,
+    required TextInputAction textInputAction,
+  }) {
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      autocorrect: false,
+      enableSuggestions: false,
+      textCapitalization:
+          TextCapitalization.none,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          color: Colors.white38,
+          fontSize: 13,
+        ),
+        filled: true,
+        fillColor:
+            Colors.white.withOpacity(0.045),
+        prefixIcon: Icon(
+          icon,
+          color: const Color(0xFF4A94FF),
+          size: 19,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color:
+                Colors.white.withOpacity(0.09),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: Color(0xFF4A94FF),
+            width: 1.4,
+          ),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color:
+                Colors.white.withOpacity(0.05),
+          ),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 15,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextField(
+      controller: passwordController,
+      obscureText: !mostrarPassword,
+      enabled: !iniciandoSesion,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => iniciarSesion(),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+      ),
+      decoration: InputDecoration(
+        hintText: 'Ingresa tu contraseña',
+        hintStyle: const TextStyle(
+          color: Colors.white38,
+          fontSize: 13,
+        ),
+        filled: true,
+        fillColor:
+            Colors.white.withOpacity(0.045),
+        prefixIcon: const Icon(
+          LucideIcons.lock,
+          color: Color(0xFF4A94FF),
+          size: 19,
+        ),
+        suffixIcon: IconButton(
+          onPressed: iniciandoSesion
+              ? null
+              : () {
+                  setState(() {
+                    mostrarPassword =
+                        !mostrarPassword;
+                  });
+                },
+          icon: Icon(
+            mostrarPassword
+                ? LucideIcons.eye_off
+                : LucideIcons.eye,
+            color: Colors.white54,
+            size: 19,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color:
+                Colors.white.withOpacity(0.09),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: Color(0xFF4A94FF),
+            width: 1.4,
+          ),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color:
+                Colors.white.withOpacity(0.05),
+          ),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 15,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRememberRow() {
+    return SizedBox(
+      height: 38,
+      child: Row(
+        children: [
+          InkWell(
+            borderRadius:
+                BorderRadius.circular(8),
+            onTap: iniciandoSesion
+                ? null
+                : () {
+                    setState(() {
+                      recordarUsuario =
+                          !recordarUsuario;
+                    });
+                  },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: Checkbox(
+                    value: recordarUsuario,
                     onChanged:
                         iniciandoSesion
                             ? null
@@ -720,84 +902,68 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                     activeColor:
-                        const Color(
-                      0xFF1677FF,
-                    ),
-                    checkColor:
-                        Colors.white,
-                    side:
-                        const BorderSide(
+                        const Color(0xFF1677FF),
+                    checkColor: Colors.white,
+                    side: BorderSide(
                       color:
-                          Colors.white38,
-                      width: 1.5,
+                          Colors.white.withOpacity(
+                        0.32,
+                      ),
+                      width: 1.4,
                     ),
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius
-                              .circular(5),
+                          BorderRadius.circular(5),
                     ),
                     visualDensity:
-                        VisualDensity
-                            .compact,
+                        VisualDensity.compact,
                     materialTapTargetSize:
                         MaterialTapTargetSize
                             .shrinkWrap,
                   ),
-                  const Flexible(
-                    child: Text(
-                      "Recuérdame",
-                      overflow:
-                          TextOverflow
-                              .ellipsis,
-                      style: TextStyle(
-                        color:
-                            Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: TextButton(
-                onPressed:
-                    iniciandoSesion
-                        ? null
-                        : () {},
-                style:
-                    TextButton.styleFrom(
-                  padding:
-                      EdgeInsets.zero,
-                  minimumSize:
-                      const Size(0, 40),
-                  tapTargetSize:
-                      MaterialTapTargetSize
-                          .shrinkWrap,
                 ),
-                child:
-                    const Text(
-                  "¿Olvidaste tu contraseña?",
-                  textAlign:
-                      TextAlign.right,
-                  maxLines: 2,
-                  overflow:
-                      TextOverflow.ellipsis,
+                const SizedBox(width: 5),
+                const Text(
+                  'Recuérdame',
+                  maxLines: 1,
                   style: TextStyle(
-                    color:
-                        Color(0xFF4A94FF),
-                    fontSize: 13,
-                    fontWeight:
-                        FontWeight.w600,
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed:
+                iniciandoSesion ? null : () {},
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.only(
+                left: 8,
+                right: 0,
+              ),
+              minimumSize: Size.zero,
+              tapTargetSize:
+                  MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              '¿Olvidaste tu contraseña?',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                color: Color(0xFF5A9BFF),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -807,27 +973,57 @@ class _LoginScreenState extends State<LoginScreen> {
         Expanded(
           child: Container(
             height: 1,
-            color: Colors.white
-                .withOpacity(0.12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Colors.white.withOpacity(0.14),
+                ],
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 12),
-        const Text(
-          "ACCESO CORPORATIVO",
-          style: TextStyle(
-            color: Colors.white38,
-            fontSize: 10,
-            fontWeight:
-                FontWeight.w700,
-            letterSpacing: 1.2,
+        Padding(
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 13,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 4,
+                height: 4,
+                decoration:
+                    const BoxDecoration(
+                  color: Color(0xFF4A94FF),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 7),
+              const Text(
+                'ACCESO CORPORATIVO',
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 12),
         Expanded(
           child: Container(
             height: 1,
-            color: Colors.white
-                .withOpacity(0.12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.14),
+                  Colors.transparent,
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -837,49 +1033,50 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginButton({
     required bool smallPhone,
   }) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height:
-          smallPhone ? 52 : 55,
+      height: smallPhone ? 51 : 55,
+      decoration: BoxDecoration(
+        borderRadius:
+            BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1677FF)
+                .withOpacity(0.28),
+            blurRadius: 24,
+            spreadRadius: -3,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         onPressed:
             iniciandoSesion
                 ? null
                 : iniciarSesion,
-        style:
-            ElevatedButton.styleFrom(
+        style: ElevatedButton.styleFrom(
           backgroundColor:
-              const Color(
-            0xFF1677FF,
-          ),
+              const Color(0xFF1677FF),
           disabledBackgroundColor:
-              const Color(
-            0xFF1677FF,
-          ).withOpacity(0.55),
-          foregroundColor:
-              Colors.white,
+              const Color(0xFF1677FF)
+                  .withOpacity(0.55),
+          foregroundColor: Colors.white,
           disabledForegroundColor:
               Colors.white70,
-          elevation: 8,
-          shadowColor:
-              const Color(
-            0xFF1677FF,
-          ).withOpacity(0.35),
+          elevation: 0,
           shape:
               RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(
-              15,
-            ),
+                BorderRadius.circular(16),
           ),
         ),
         child: iniciandoSesion
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 21,
+                height: 21,
                 child:
                     CircularProgressIndicator(
-                  strokeWidth: 2.5,
+                  strokeWidth: 2.3,
                   valueColor:
                       AlwaysStoppedAnimation<
                           Color>(
@@ -887,25 +1084,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               )
-            : Row(
+            : const Row(
                 mainAxisAlignment:
-                    MainAxisAlignment
-                        .center,
+                    MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     LucideIcons.log_in,
-                    size: 20,
+                    size: 19,
                   ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  const Text(
-                    "INICIAR SESIÓN",
+                  SizedBox(width: 9),
+                  Text(
+                    'INICIAR SESIÓN',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight:
                           FontWeight.w700,
-                      letterSpacing: 0.6,
+                      letterSpacing: 0.65,
                     ),
                   ),
                 ],
@@ -920,83 +1114,91 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(
-        smallPhone ? 13 : 15,
+        smallPhone ? 12 : 14,
       ),
-      decoration:
-          BoxDecoration(
-        gradient:
-            LinearGradient(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
           colors: [
-            const Color(0xFF0B1733)
-                .withOpacity(0.95),
+            const Color(0xFF0C1D3F)
+                .withOpacity(0.90),
             const Color(0xFF102653)
-                .withOpacity(0.70),
+                .withOpacity(0.58),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius:
-            BorderRadius.circular(
-          17,
-        ),
+            BorderRadius.circular(17),
         border: Border.all(
-          color:
-              const Color(
-            0xFF3D8BFF,
-          ).withOpacity(0.15),
+          color: const Color(0xFF4A94FF)
+              .withOpacity(0.13),
         ),
       ),
       child: Row(
         children: [
           Container(
-            width:
-                smallPhone ? 42 : 44,
-            height:
-                smallPhone ? 42 : 44,
-            decoration:
-                BoxDecoration(
-              color:
-                  const Color(
-                0xFF1677FF,
-              ).withOpacity(0.11),
+            width: smallPhone ? 40 : 43,
+            height: smallPhone ? 40 : 43,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1677FF)
+                  .withOpacity(0.10),
               borderRadius:
-                  BorderRadius.circular(
-                13,
+                  BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF4A94FF)
+                    .withOpacity(0.08),
               ),
             ),
             child: Icon(
               LucideIcons.shield_check,
               color:
-                  const Color(
-                0xFF4A94FF,
-              ),
-              size:
-                  smallPhone ? 22 : 23,
+                  const Color(0xFF5A9BFF),
+              size: smallPhone ? 21 : 22,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Acceso seguro",
+                  'Acceso seguro',
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style: TextStyle(
-                    color:
-                        Colors.white,
-                    fontSize: 13,
+                    color: Colors.white,
+                    fontSize: 12.5,
                     fontWeight:
                         FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 3),
                 Text(
-                  "Tus datos están protegidos",
+                  'Tus datos están protegidos',
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style: TextStyle(
-                    color:
-                        Colors.white54,
-                    fontSize: 11,
+                    color: Colors.white54,
+                    fontSize: 10.5,
                   ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 7,
+            height: 7,
+            decoration:
+                const BoxDecoration(
+              color: Color(0xFF57D697),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x8857D697),
+                  blurRadius: 9,
                 ),
               ],
             ),
@@ -1004,6 +1206,55 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
+  }
+}
+
+class _LoginGridPainter extends CustomPainter {
+  const _LoginGridPainter();
+
+  @override
+  void paint(
+    Canvas canvas,
+    Size size,
+  ) {
+    final paint = Paint()
+      ..color =
+          const Color(0xFF91B7FF)
+              .withOpacity(0.028)
+      ..strokeWidth = 1;
+
+    const double spacing = 36;
+
+    for (
+      double x = 0;
+      x < size.width;
+      x += spacing
+    ) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+
+    for (
+      double y = 0;
+      y < size.height;
+      y += spacing
+    ) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(
+    covariant CustomPainter oldDelegate,
+  ) {
+    return false;
   }
 }
 
@@ -1022,6 +1273,7 @@ class AdminScreen extends StatelessWidget {
             const Color(0xFF0D1630),
         foregroundColor:
             Colors.white,
+        elevation: 0,
         title: const Text(
           'Tecnologías',
         ),
@@ -1032,8 +1284,7 @@ class AdminScreen extends StatelessWidget {
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

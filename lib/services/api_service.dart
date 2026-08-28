@@ -1,12 +1,128 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // ============================================================
+  // URLS
+  // ============================================================
+
+  static const String serverUrl = 'http://127.0.0.1:8000';
+
+  static const String baseUrl = '$serverUrl/api';
+
+  // Todos los archivos que están dentro de storage/app/public
+  // serán servidos mediante:
+  //
+  // http://127.0.0.1:8000/archivo/ruta/del/archivo
+  //
+  static const String fileUrl = '$serverUrl/archivo';
 
   static const FlutterSecureStorage storage =
       FlutterSecureStorage();
+
+  // ============================================================
+  // ARCHIVOS / IMÁGENES
+  // ============================================================
+
+  /// Genera la URL para cualquier archivo almacenado
+  /// en storage/app/public.
+  ///
+  /// Ejemplos:
+  ///
+  /// profile-photos/usuario.jpg
+  /// firmas/firma_123.png
+  /// comentarios_tickets/documento.pdf
+  /// tickets/evidencia.jpg
+  ///
+  /// Resultado:
+  ///
+  /// http://127.0.0.1:8000/archivo/profile-photos/usuario.jpg
+  ///
+  static String storageFileUrl(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return '';
+    }
+
+    String cleanPath = path.trim();
+
+    // Si Laravel ya devuelve una URL completa,
+    // no hacemos ninguna modificación.
+    if (cleanPath.startsWith('http://') ||
+        cleanPath.startsWith('https://')) {
+      return cleanPath;
+    }
+
+    // Elimina / iniciales.
+    cleanPath = cleanPath.replaceFirst(
+      RegExp(r'^/+'),
+      '',
+    );
+
+    // Si por alguna razón viene como:
+    // storage/profile-photos/foto.jpg
+    //
+    // lo convertimos a:
+    // profile-photos/foto.jpg
+    if (cleanPath.startsWith('storage/')) {
+      cleanPath = cleanPath.substring(
+        'storage/'.length,
+      );
+    }
+
+    // Si viene como:
+    // api/profile-photos/foto.jpg
+    //
+    // eliminamos api/.
+    if (cleanPath.startsWith('api/')) {
+      cleanPath = cleanPath.substring(
+        'api/'.length,
+      );
+    }
+
+    return '$fileUrl/$cleanPath';
+  }
+
+  // ============================================================
+  // IMÁGENES DE PERFIL
+  // ============================================================
+
+  static String profileImageUrl(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return storageFileUrl(
+        'profile-photos/user.png',
+      );
+    }
+
+    return storageFileUrl(path);
+  }
+
+  // ============================================================
+  // IMAGEN GENÉRICA
+  // ============================================================
+
+  static String imagenUrl(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return storageFileUrl(
+        'profile-photos/user.png',
+      );
+    }
+
+    return storageFileUrl(path);
+  }
+
+  // ============================================================
+  // FIRMA
+  // ============================================================
+
+  static String firmaUrl(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return '';
+    }
+
+    return storageFileUrl(path);
+  }
 
   // ============================================================
   // LOGIN
@@ -152,49 +268,24 @@ class ApiService {
   // ============================================================
 
   static Future<Map<String, dynamic>?> getStoredUser() async {
-    final login = await storage.read(
-      key: 'user_login',
-    );
-
-    final email = await storage.read(
-      key: 'user_email',
-    );
-
-    final name = await storage.read(
-      key: 'user_name',
-    );
-
-    final role = await storage.read(
-      key: 'user_role',
-    );
-
-    final privAdmin = await storage.read(
-      key: 'user_priv_admin',
-    );
-
-    final active = await storage.read(
-      key: 'user_active',
-    );
-
-    final mfa = await storage.read(
-      key: 'user_mfa',
-    );
-
-    final empresa = await storage.read(
-      key: 'user_empresa',
-    );
-
-    final departamento = await storage.read(
-      key: 'user_departamento',
-    );
-
-    final oficina = await storage.read(
-      key: 'user_oficina',
-    );
-
-    final numeroEmpleado = await storage.read(
-      key: 'user_numero_empleado',
-    );
+    final login = await storage.read(key: 'user_login');
+    final email = await storage.read(key: 'user_email');
+    final name = await storage.read(key: 'user_name');
+    final role = await storage.read(key: 'user_role');
+    final privAdmin =
+        await storage.read(key: 'user_priv_admin');
+    final active =
+        await storage.read(key: 'user_active');
+    final mfa =
+        await storage.read(key: 'user_mfa');
+    final empresa =
+        await storage.read(key: 'user_empresa');
+    final departamento =
+        await storage.read(key: 'user_departamento');
+    final oficina =
+        await storage.read(key: 'user_oficina');
+    final numeroEmpleado =
+        await storage.read(key: 'user_numero_empleado');
 
     if (login == null &&
         email == null &&
@@ -223,7 +314,7 @@ class ApiService {
   }
 
   // ============================================================
-  // COMPROBAR ADMINISTRADOR
+  // ADMIN
   // ============================================================
 
   static Future<bool> isAdmin() async {
@@ -267,7 +358,7 @@ class ApiService {
   }
 
   // ============================================================
-  // GETTERS
+  // DATOS DEL USUARIO
   // ============================================================
 
   static Future<String?> getLogin() async {

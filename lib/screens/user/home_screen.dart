@@ -3119,202 +3119,298 @@ class AppNavigationDrawer
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Container(
-        color: const Color(0xFF0B1021),
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 36,
-          horizontal: 16,
+  child: Container(
+    color: const Color(0xFF0B1021),
+    padding: const EdgeInsets.symmetric(
+      vertical: 36,
+      horizontal: 16,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppLogo(
+          fontSize: 26,
         ),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+
+        const SizedBox(height: 24),
+
+        // ============================================================
+        // USUARIO
+        // ============================================================
+
+        Row(
           children: [
-            const AppLogo(
-              fontSize: 26,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.all(2),
-                  decoration:
-                      BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(
-                        0xFF2563EB,
-                      ),
-                      width: 2,
-                    ),
-                  ),
-                  child:
-                      const UserAvatar(
-                    radius: 20,
-                  ),
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF2563EB),
+                  width: 2,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FutureBuilder<
-                      Map<String,
-                          dynamic>?>(
-                    future:
-                        SessionService
-                            .getUser(),
-                    builder: (
-                      context,
-                      snapshot,
-                    ) {
-                      final user =
-                          snapshot.data;
-
-                      final nombre =
-                          _obtenerNombreDrawer(
-                        user,
-                      );
-
-                      final rol =
-                          _obtenerCampoDrawer(
-                        user,
-                        'role',
-                      );
-
-                      return Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-                        children: [
-                          Text(
-                            nombre,
-                            maxLines: 1,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style:
-                                const TextStyle(
-                              fontSize: 14,
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
-                              color:
-                                  Colors.white,
-                            ),
-                          ),
-                          Text(
-                            rol,
-                            maxLines: 1,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style:
-                                const TextStyle(
-                              fontSize: 12,
-                              color:
-                                  Colors.grey,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
+              child: const UserAvatar(
+                radius: 20,
+              ),
             ),
-            const SizedBox(height: 20),
-            const Divider(
-              color: Colors.white12,
-              height: 1,
-            ),
-            const SizedBox(height: 20),
-            _drawerItem(
-              icon: Icons.home_rounded,
-              title: 'Inicio',
-              isActive: true,
-              onTap: () {
-                if (Navigator.canPop(
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>?>(
+                future: SessionService.getUser(),
+                builder: (
                   context,
-                )) {
-                  Navigator.pop(
-                    context,
+                  snapshot,
+                ) {
+                  final user = snapshot.data;
+
+                  final nombre = _obtenerNombreDrawer(
+                    user,
                   );
-                }
-              },
-            ),
-            _drawerItem(
-              icon: Icons
-                  .confirmation_number_outlined,
-              title: 'Mis tickets',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const MisticketsScreen(),
-                  ),
-                );
-              },
-            ),
-            _drawerItem(
-              icon:
-                  Icons.build_outlined,
-              title: 'Crear ticket',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const CrearticketsScreen(),
-                  ),
-                );
-              },
-            ),
-            _drawerItem(
-              icon: Icons
-                  .warning_amber_rounded,
-              title: 'Avisos',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const AvisosScreen(),
-                  ),
-                );
-              },
-            ),
-            _drawerItem(
-              icon: Icons
-                  .person_outline_rounded,
-              title: 'Mi perfil',
-              onTap: () {},
-            ),
-            const Spacer(),
-            _drawerItem(
-              icon:
-                  Icons.logout_rounded,
-              title: 'Cerrar sesión',
-              color: Colors.white70,
-              onTap: () async {
-                await SessionService
-                    .clearSession();
 
-                if (!context.mounted) {
-                  return;
-                }
+                  final rol = _obtenerCampoDrawer(
+                    user,
+                    'role',
+                  );
 
-                Navigator
-                    .pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                );
-              },
+                  return Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        nombre,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      Text(
+                        rol,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
-      ),
-    );
+
+        const SizedBox(height: 20),
+
+        const Divider(
+          color: Colors.white12,
+          height: 1,
+        ),
+
+        const SizedBox(height: 20),
+
+        // ============================================================
+        // INICIO
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.home_rounded,
+          title: 'Inicio',
+          isActive: true,
+          onTap: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+
+        // ============================================================
+        // MIS TICKETS
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.confirmation_number_outlined,
+          title: 'Mis tickets',
+          onTap: () {
+            // Cerrar Drawer
+            Navigator.pop(context);
+
+            // Transición suave
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration:
+                    const Duration(milliseconds: 300),
+                reverseTransitionDuration:
+                    const Duration(milliseconds: 250),
+
+                pageBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                ) {
+                  return const MisticketsScreen();
+                },
+
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
+                    ),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+
+        // ============================================================
+        // CREAR TICKET
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.build_outlined,
+          title: 'Crear ticket',
+          onTap: () {
+            // Cerrar Drawer
+            Navigator.pop(context);
+
+            // Transición suave
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration:
+                    const Duration(milliseconds: 300),
+                reverseTransitionDuration:
+                    const Duration(milliseconds: 250),
+
+                pageBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                ) {
+                  return const CrearticketsScreen();
+                },
+
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
+                    ),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+
+        // ============================================================
+        // AVISOS
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.warning_amber_rounded,
+          title: 'Avisos',
+          onTap: () {
+            // Cerrar Drawer
+            Navigator.pop(context);
+
+            // Transición suave
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration:
+                    const Duration(milliseconds: 300),
+                reverseTransitionDuration:
+                    const Duration(milliseconds: 250),
+
+                pageBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                ) {
+                  return const AvisosScreen();
+                },
+
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
+                    ),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+
+        // ============================================================
+        // MI PERFIL
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.person_outline_rounded,
+          title: 'Mi perfil',
+          onTap: () {
+            // Aquí puedes colocar tu pantalla de perfil
+          },
+        ),
+
+        const Spacer(),
+
+        // ============================================================
+        // CERRAR SESIÓN
+        // ============================================================
+
+        _drawerItem(
+          icon: Icons.logout_rounded,
+          title: 'Cerrar sesión',
+          color: Colors.white70,
+          onTap: () async {
+            await SessionService.clearSession();
+
+            if (!context.mounted) {
+              return;
+            }
+
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/',
+              (route) => false,
+            );
+          },
+        ),
+      ],
+    ),
+  ),
+);
   }
 
   String _obtenerCampoDrawer(

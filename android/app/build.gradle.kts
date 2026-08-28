@@ -1,44 +1,75 @@
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+
+    // Flutter Gradle Plugin
+    // debe aplicarse después de Android y Kotlin
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.ticketpromobile"
-    compileSdk = flutter.compileSdkVersion
+
+    // ============================================================
+    // ANDROID SDK
+    // ============================================================
+
+    compileSdk = 37
+
     ndkVersion = flutter.ndkVersion
+
+    // ============================================================
+    // JAVA
+    // ============================================================
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // ============================================================
+    // CONFIGURACIÓN DE LA APP
+    // ============================================================
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.ticketpromobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+
+        targetSdk = 37
+
         versionCode = flutter.versionCode
+
         versionName = flutter.versionName
     }
 
+    // ============================================================
+    // BUILD TYPES
+    // ============================================================
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Por ahora usamos la firma de debug
+            // para poder ejecutar release.
+            signingConfig =
+                signingConfigs.getByName("debug")
         }
     }
 }
 
+// ================================================================
+// KOTLIN
+// ================================================================
+
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget =
+            org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
+
+// ================================================================
+// FLUTTER
+// ================================================================
 
 flutter {
     source = "../.."
