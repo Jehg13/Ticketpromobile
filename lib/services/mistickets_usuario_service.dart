@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api_service.dart';
@@ -72,6 +73,52 @@ class MisTicketsUsuarioService {
       rethrow;
     } catch(e) {
       debugPrint('❌ Error obteniendo resumen: $e');
+      throw Exception('No se pudo conectar con el servidor');
+    }
+  }
+  static Future<Map<String,dynamic>> agregarComentario({required int ticketId, required String mensaje, String? archivoPath, Uint8List? archivoBytes, String? archivoNombre}) async {
+    final token=await SessionService.getToken();
+    if(token==null||token.isEmpty) throw Exception('Sesión no válida');
+    final uri=Uri.parse('${ApiService.baseUrl}/mis-tickets/$ticketId/comentarios');
+    final texto=mensaje.trim();
+    final tieneArchivo = (archivoPath != null && archivoPath.trim().isNotEmpty) ||
+        (archivoBytes != null && archivoBytes.isNotEmpty);
+    if(texto.isEmpty && !tieneArchivo) {
+      throw Exception('Escribe un mensaje antes de enviar.');
+    }
+    try {
+      http.Response response;
+      if((archivoPath == null || archivoPath.trim().isEmpty) && (archivoBytes == null || archivoBytes.isEmpty)) {
+        response = await http.post(
+          uri,
+          headers:{'Accept':'application/json','Authorization':'Bearer $token','Content-Type':'application/json'},
+          body:jsonEncode({'mensaje':texto}),
+        );
+      } else {
+        final request=http.MultipartRequest('POST',uri)
+          ..headers['Accept']='application/json'
+          ..headers['Authorization']='Bearer $token'
+          ..fields['mensaje']=texto
+          ..files.add(archivoBytes != null
+              ? http.MultipartFile.fromBytes('archivo', archivoBytes, filename: archivoNombre ?? 'archivo')
+              : await http.MultipartFile.fromPath('archivo', archivoPath!));
+        final streamed=await request.send();
+        response = await http.Response.fromStream(streamed);
+      }
+      debugPrint('💬 POST $uri');
+      debugPrint('📥 Status: ${response.statusCode}');
+      debugPrint('📦 Body: ${response.body}');
+      final decoded=_decodificarRespuesta(response.body);
+      if(response.statusCode>=200&&response.statusCode<300) {
+        if(decoded['success']!=true) throw Exception(decoded['message']?.toString()??'No se pudo enviar el comentario');
+        return decoded;
+      }
+      await _manejarError(response.statusCode,decoded);
+      throw Exception('No se pudo enviar el comentario');
+    } on Exception {
+      rethrow;
+    } catch(e) {
+      debugPrint('❌ Error enviando comentario: $e');
       throw Exception('No se pudo conectar con el servidor');
     }
   }

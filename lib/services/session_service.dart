@@ -20,6 +20,7 @@ class SessionService {
 
   static const String numeroEmpleadoKey =
       'user_numero_empleado';
+  static const String pictureKey = 'user_picture';
 
   static Future<void> saveSession({
     required String token,
@@ -83,6 +84,12 @@ class SessionService {
     await _storage.write(
       key: numeroEmpleadoKey,
       value: _toString(user['numero_empleado']),
+    );
+    await _storage.write(
+      key: pictureKey,
+      value: _toString(
+        user['picture'] ?? user['foto'] ?? user['foto_perfil'],
+      ),
     );
   }
 
@@ -166,6 +173,14 @@ class SessionService {
     );
   }
 
+  static Future<String?> getPicture() async {
+    return await _storage.read(key: pictureKey);
+  }
+
+  static Future<void> updatePicture(String picture) async {
+    await _storage.write(key: pictureKey, value: picture.trim());
+  }
+
   static Future<Map<String, dynamic>?> getUser() async {
     final token = await getToken();
 
@@ -185,6 +200,7 @@ class SessionService {
     final departamento = await getDepartamento();
     final oficina = await getOficina();
     final numeroEmpleado = await getNumeroEmpleado();
+    final picture = await getPicture();
 
     return {
       'login': login ?? '',
@@ -198,6 +214,7 @@ class SessionService {
       'departamento': departamento ?? '',
       'oficina': oficina ?? '',
       'numero_empleado': numeroEmpleado ?? '',
+      'picture': picture ?? '',
     };
   }
 

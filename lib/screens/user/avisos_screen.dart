@@ -7,6 +7,7 @@ import 'mistickets_screen.dart';
 import 'perfil_screen.dart';
 import 'creartickets_screen.dart';
 import '../../services/session_service.dart';
+import '../../widgets/loading_screen.dart';
 class AvisosScreen extends StatefulWidget {
   const AvisosScreen({super.key});
   @override
@@ -351,23 +352,23 @@ class _AvisosScreenState extends State<AvisosScreen> {
     final url = _urlArchivo(aviso);
     if (url.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Este aviso no tiene un archivo válido.')));
+      home.showUserMessage(context, 'Este aviso no tiene un archivo válido.', isError: true);
       return;
     }
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La dirección del archivo no es válida.')));
+      home.showUserMessage(context, 'La dirección del archivo no es válida.', isError: true);
       return;
     }
     try {
       final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!abierto && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir el archivo.')));
+        home.showUserMessage(context, 'No se pudo abrir el archivo.', isError: true);
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir el archivo.')));
+      home.showUserMessage(context, 'No se pudo abrir el archivo.', isError: true);
     }
   }
   IconData _iconoArchivo(String ruta) {
@@ -704,7 +705,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
               child: Icon(icono, color: color, size: 24),
             ),
             const SizedBox(width: 12),
@@ -769,12 +770,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
               iconTheme: const IconThemeData(color: Colors.white),
               title: const home.AppLogo(fontSize: 20),
               actions: [
-                IconButton(
-                  onPressed: _mostrarNotificaciones,
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 4),
-                const home.UserAvatar(radius: 16),
+                home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
                 const SizedBox(width: 16),
               ],
             ),
@@ -832,15 +828,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: BoxDecoration(color: const Color(0xFF0D1427), borderRadius: BorderRadius.circular(8)),
-              child: IconButton(
-                onPressed: _mostrarNotificaciones,
-                icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 20),
-              ),
-            ),
-            const SizedBox(width: 16),
-            const home.UserAvatar(radius: 18),
+            home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
           ],
         ),
       ],
@@ -872,7 +860,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
                 decoration: BoxDecoration(
                   color: seleccionado ? background : const Color(0xFF0B1021),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: seleccionado ? color.withOpacity(0.5) : Colors.white12),
+                  border: Border.all(color: seleccionado ? color.withValues(alpha: 0.5) : Colors.white12),
                 ),
                 child: Text(
                   label,
@@ -940,9 +928,9 @@ class _AvisosScreenState extends State<AvisosScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.10),
+        color: Colors.red.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -976,9 +964,9 @@ class _AvisosScreenState extends State<AvisosScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFF0B1021),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withOpacity(0.12)),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.12)),
         ),
-        child: const Center(child: CircularProgressIndicator()),
+        child: const LoadingScreen(mensaje: 'Cargando avisos...'),
       );
     }
     return Container(
@@ -987,7 +975,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0B1021),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.12)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.12)),
       ),
       child: Column(
         children: [
@@ -998,7 +986,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _avisosPagina.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              separatorBuilder: (_, _) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 return _buildAvisoCard(_avisosPagina[index], screenWidth);
               },
@@ -1048,7 +1036,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF060A17),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: fijado ? color.withOpacity(0.4) : Colors.white.withOpacity(0.06)),
+        border: Border.all(color: fijado ? color.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1184,7 +1172,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
       decoration: BoxDecoration(
         color: _fondoPrioridad(prioridad),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         prioridad,
@@ -1325,7 +1313,7 @@ class AppNavigationDrawer extends StatelessWidget {
       if (Navigator.canPop(context)) Navigator.pop(context);
       return;
     }
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => screen));
+    navigateWithLoading(context, screen);
   }
 
   @override

@@ -1,10 +1,150 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../services/ticket_service.dart';
-import 'mistickets_screen.dart';
-import 'creartickets_screen.dart';
+import '../../widgets/loading_screen.dart';
 import 'avisos_screen.dart';
+import 'creartickets_screen.dart';
+import 'mistickets_screen.dart';
+import 'perfil_screen.dart';
+
+IconData userNotificationIcon(Map<String, dynamic> item) {
+  final type = (item['tipo'] ?? item['type'] ?? item['titulo'] ?? item['title'] ?? '')
+      .toString()
+      .toLowerCase();
+  if (type.contains('aviso') || type.contains('warning') || type.contains('advertencia')) {
+    return Icons.warning_amber_rounded;
+  }
+  if (type.contains('error') || type.contains('cancel')) return Icons.error_outline;
+  if (type.contains('success') || type.contains('solucion')) return Icons.check_circle_outline;
+  if (type.contains('coment')) return Icons.comment_outlined;
+  if (type.contains('ticket')) return Icons.confirmation_number_outlined;
+  return Icons.notifications_none_rounded;
+}
+
+Color userNotificationColor(Map<String, dynamic> item) {
+  final type = (item['tipo'] ?? item['type'] ?? item['titulo'] ?? item['title'] ?? '')
+      .toString()
+      .toLowerCase();
+  if (type.contains('aviso') || type.contains('warning') || type.contains('advertencia')) return Colors.amber;
+  if (type.contains('error') || type.contains('cancel')) return Colors.redAccent;
+  if (type.contains('success') || type.contains('solucion')) return Colors.green;
+  return Colors.blueAccent;
+}
+
+Future<void> showUserMessage(BuildContext context, String message, {bool isError = false}) {
+  return showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF0D1427),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      icon: Icon(
+        isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+        color: isError ? Colors.redAccent : Colors.greenAccent,
+        size: 42,
+      ),
+      title: Text(isError ? 'Ocurrió un problema' : '¡Listo!', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      content: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Aceptar'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> showUserNotifications(BuildContext context) {
+  return showDialog(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.75),
+    builder: (_) => Dialog(
+      backgroundColor: const Color(0xFF0D1427),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.blue.withOpacity(0.18)),
+      ),
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: TicketService.obtenerNotificaciones(),
+        builder: (context, snapshot) {
+          final items = snapshot.data ?? [];
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 650),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 12, 16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.notifications_none_rounded, color: Color(0xFF60A5FA), size: 27),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Notificaciones',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: Colors.white10, height: 1),
+                Expanded(
+                  child: snapshot.connectionState == ConnectionState.waiting
+                      ? const LoadingScreen(mensaje: 'Cargando tu información...')
+                      : items.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Cuando recibas una notificación aparecerá aquí.',
+                                style: TextStyle(color: Colors.white54, fontSize: 11),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: items.length,
+                              separatorBuilder: (_, _) => const SizedBox(height: 8),
+                              itemBuilder: (_, index) {
+                                final item = items[index];
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF182442),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(
+                                      userNotificationIcon(item),
+                                      color: userNotificationColor(item),
+                                    ),
+                                    title: Text(
+                                      item['titulo']?.toString() ?? item['title']?.toString() ?? 'Notificación',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                    subtitle: Text(
+                                      item['mensaje']?.toString() ?? item['message']?.toString() ?? '',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,15 +217,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final respuesta = await TicketService.obtenerTickets();
 
       if (respuesta.isEmpty) {
-        throw Exception(
-          'El servidor devolvió una respuesta vacía.',
-        );
+        throw Exception('El servidor devolvió una respuesta vacía.');
       }
 
       if (respuesta['success'] != true) {
-        final mensaje = _textoSeguro(
-          respuesta['message'],
-        );
+        final mensaje = _textoSeguro(respuesta['message']);
 
         throw Exception(
           mensaje.isNotEmpty
@@ -102,72 +238,49 @@ class _HomeScreenState extends State<HomeScreen> {
         resumen = Map<String, dynamic>.from(resumenRaw);
       }
 
-      final recientes = _convertirListaMap(
-        respuesta['tickets_recientes'],
-      );
+      final recientes = _convertirListaMap(respuesta['tickets_recientes']);
 
       Map<String, dynamic>? ultimo;
 
       final ultimoRaw = respuesta['ultimo_ticket'];
 
       if (ultimoRaw is Map) {
-        ultimo = Map<String, dynamic>.from(
-          ultimoRaw,
-        );
+        ultimo = Map<String, dynamic>.from(ultimoRaw);
       }
 
-      final actividadesRecibidas =
-          _obtenerListaRespuesta(
-        respuesta,
-        [
-          'actividad',
-          'actividades',
-          'actividad_reciente',
-          'actividades_recientes',
-        ],
-      );
+      final actividadesRecibidas = _obtenerListaRespuesta(respuesta, [
+        'actividad',
+        'actividades',
+        'actividad_reciente',
+        'actividades_recientes',
+      ]);
 
-      final avisosRecibidos =
-          _obtenerListaRespuesta(
-        respuesta,
-        [
-          'avisos',
-          'avisos_importantes',
-          'avisos_recientes',
-        ],
-      );
+      final avisosRecibidos = _obtenerListaRespuesta(respuesta, [
+        'avisos',
+        'avisos_importantes',
+        'avisos_recientes',
+      ]);
 
-      final notificacionesRecibidas =
-          _obtenerListaRespuesta(
-        respuesta,
-        [
-          'notificaciones',
-          'notifications',
-          'notificaciones_recientes',
-        ],
-      );
+      final notificacionesRecibidas = _obtenerListaRespuesta(respuesta, [
+        'notificaciones',
+        'notifications',
+        'notificaciones_recientes',
+      ]);
 
-      final noLeidas = _enteroSeguro(
-        respuesta['notificaciones_no_leidas'],
-      );
+      final noLeidas = _enteroSeguro(respuesta['notificaciones_no_leidas']);
 
       if (!mounted) return;
 
       setState(() {
-        ticketsTotal =
-            _enteroSeguro(resumen['total']);
+        ticketsTotal = _enteroSeguro(resumen['total']);
 
-        ticketsAbiertos =
-            _enteroSeguro(resumen['abiertos']);
+        ticketsAbiertos = _enteroSeguro(resumen['abiertos']);
 
-        ticketsEnProceso =
-            _enteroSeguro(resumen['en_proceso']);
+        ticketsEnProceso = _enteroSeguro(resumen['en_proceso']);
 
-        ticketsSolucionados =
-            _enteroSeguro(resumen['solucionados']);
+        ticketsSolucionados = _enteroSeguro(resumen['solucionados']);
 
-        ticketsCancelados =
-            _enteroSeguro(resumen['cancelados']);
+        ticketsCancelados = _enteroSeguro(resumen['cancelados']);
 
         ticketsRecientes = recientes;
         ultimoTicket = ultimo;
@@ -180,13 +293,9 @@ class _HomeScreenState extends State<HomeScreen> {
         errorTickets = null;
       });
     } catch (e, stackTrace) {
-      debugPrint(
-        'Error cargando dashboard: $e',
-      );
+      debugPrint('Error cargando dashboard: $e');
 
-      debugPrint(
-        stackTrace.toString(),
-      );
+      debugPrint(stackTrace.toString());
 
       if (!mounted) return;
 
@@ -225,11 +334,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return [];
   }
 
-  List<Map<String, dynamic>> _convertirListaMap(
-    dynamic valor,
-  ) {
-    final resultado =
-        <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _convertirListaMap(dynamic valor) {
+    final resultado = <Map<String, dynamic>>[];
 
     if (valor is! List) {
       return resultado;
@@ -237,9 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     for (final item in valor) {
       if (item is Map) {
-        resultado.add(
-          Map<String, dynamic>.from(item),
-        );
+        resultado.add(Map<String, dynamic>.from(item));
       }
     }
 
@@ -250,9 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final texto = error.toString();
 
     if (texto.startsWith('Exception: ')) {
-      return texto.substring(
-        'Exception: '.length,
-      );
+      return texto.substring('Exception: '.length);
     }
 
     return texto;
@@ -272,10 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (valor is String) {
-      return int.tryParse(
-            valor.trim(),
-          ) ??
-          0;
+      return int.tryParse(valor.trim()) ?? 0;
     }
 
     return 0;
@@ -321,23 +420,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return '';
   }
 
-  String _datoUsuario(
-    String campo, {
-    String defecto = 'No disponible',
-  }) {
+  String _datoUsuario(String campo, {String defecto = 'No disponible'}) {
     final datos = usuario;
 
     if (datos == null) {
       return defecto;
     }
 
-    final texto = _textoSeguro(
-      datos[campo],
-    );
+    final texto = _textoSeguro(datos[campo]);
 
-    return texto.isNotEmpty
-        ? texto
-        : defecto;
+    return texto.isNotEmpty ? texto : defecto;
   }
 
   String _datoAlternativo(
@@ -351,9 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     for (final campo in campos) {
-      final texto = _textoSeguro(
-        datos[campo],
-      );
+      final texto = _textoSeguro(datos[campo]);
 
       if (texto.isNotEmpty) {
         return texto;
@@ -364,26 +454,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String get nombreUsuario {
-    final nombre = _datoUsuario(
-      'name',
-      defecto: '',
-    );
+    final nombre = _datoUsuario('name', defecto: '');
 
     if (nombre.isNotEmpty) {
       return nombre;
     }
 
-    return _datoUsuario(
-      'login',
-      defecto: 'Usuario',
-    );
+    return _datoUsuario('login', defecto: 'Usuario');
   }
 
   String get loginUsuario {
-    return _datoUsuario(
-      'login',
-      defecto: 'Usuario',
-    );
+    return _datoUsuario('login', defecto: 'Usuario');
   }
 
   String get emailUsuario {
@@ -395,11 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String get empresaUsuario {
-    return _datoAlternativo([
-      'empresa',
-      'empresa_nombre',
-      'nombre_empresa',
-    ]);
+    return _datoAlternativo(['empresa', 'empresa_nombre', 'nombre_empresa']);
   }
 
   String get departamentoUsuario {
@@ -411,146 +488,81 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String get oficinaUsuario {
-    return _datoAlternativo([
-      'oficina',
-      'oficina_nombre',
-      'nombre_oficina',
-    ]);
+    return _datoAlternativo(['oficina', 'oficina_nombre', 'nombre_oficina']);
   }
 
   String get empleadoUsuario {
-    return _datoAlternativo([
-      'numero_empleado',
-      'numeroEmpleado',
-      'empleado',
-    ]);
+    return _datoAlternativo(['numero_empleado', 'numeroEmpleado', 'empleado']);
   }
 
-  void _abrirCrearTicket(
-    BuildContext context,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const CrearticketsScreen(),
-      ),
-    );
+  void _abrirCrearTicket(BuildContext context) {
+    navigateWithLoading(context, const CrearticketsScreen(), mensaje: 'Preparando crear ticket...');
   }
 
-  void _abrirMisTickets(
-    BuildContext context,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const MisticketsScreen(),
-      ),
-    );
+  void _abrirMisTickets(BuildContext context) {
+    navigateWithLoading(context, const MisticketsScreen(), mensaje: 'Cargando tus tickets...');
   }
 
-  void _abrirAvisos(
-    BuildContext context,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const AvisosScreen(),
-      ),
-    );
+  void _abrirAvisos(BuildContext context) {
+    navigateWithLoading(context, const AvisosScreen(), mensaje: 'Cargando avisos...');
   }
 
   void _abrirNotificaciones() {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(
-        0.75,
-      ),
+      barrierColor: Colors.black.withOpacity(0.75),
       builder: (context) {
         return Dialog(
-          backgroundColor:
-              const Color(0xFF0D1427),
-          insetPadding:
-              const EdgeInsets.symmetric(
+          backgroundColor: const Color(0xFF0D1427),
+          insetPadding: const EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 40,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(16),
-            side: BorderSide(
-              color:
-                  Colors.blue.withOpacity(0.18),
-            ),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.blue.withOpacity(0.18)),
           ),
           child: ConstrainedBox(
-            constraints:
-                const BoxConstraints(
-              maxWidth: 560,
-              maxHeight: 650,
-            ),
+            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 650),
             child: Column(
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(
-                    20,
-                    18,
-                    12,
-                    16,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 12, 16),
                   child: Row(
                     children: [
                       Container(
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF2563EB,
-                          ).withOpacity(0.15),
-                          borderRadius:
-                              BorderRadius.circular(
-                            10,
-                          ),
+                          color: const Color(0xFF2563EB).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
-                          Icons
-                              .notifications_none_rounded,
-                          color:
-                              Color(0xFF60A5FA),
+                          Icons.notifications_none_rounded,
+                          color: Color(0xFF60A5FA),
                           size: 23,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'Notificaciones',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(
-                              height: 3,
-                            ),
+                            const SizedBox(height: 3),
                             Text(
-                              notificaciones
-                                      .isEmpty
+                              notificaciones.isEmpty
                                   ? 'No tienes notificaciones'
                                   : '$notificacionesNoLeidas sin leer',
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Colors.white54,
+                              style: const TextStyle(
+                                color: Colors.white54,
                                 fontSize: 11,
                               ),
                             ),
@@ -559,9 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       IconButton(
                         onPressed: () {
-                          Navigator.pop(
-                            context,
-                          );
+                          Navigator.pop(context);
                         },
                         icon: const Icon(
                           Icons.close_rounded,
@@ -571,27 +581,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const Divider(
-                  color: Colors.white10,
-                  height: 1,
-                ),
+                const Divider(color: Colors.white10, height: 1),
                 Expanded(
                   child: notificaciones.isEmpty
                       ? _buildNotificacionesVacias()
                       : ListView.separated(
-                          padding:
-                              const EdgeInsets.all(
-                            16,
-                          ),
-                          itemCount:
-                              notificaciones.length,
-                          separatorBuilder:
-                              (_, __) =>
-                                  const SizedBox(
-                            height: 8,
-                          ),
-                          itemBuilder:
-                              (context, index) {
+                          padding: const EdgeInsets.all(16),
+                          itemCount: notificaciones.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
                             return _buildNotificacionItem(
                               notificaciones[index],
                             );
@@ -617,14 +616,11 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(
-                  0.04,
-                ),
+                color: Colors.white.withOpacity(0.04),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons
-                    .notifications_off_outlined,
+                Icons.notifications_off_outlined,
                 color: Colors.white38,
                 size: 34,
               ),
@@ -642,10 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text(
               'Cuando recibas una notificación aparecerá aquí.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 11,
-              ),
+              style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ],
         ),
@@ -653,76 +646,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNotificacionItem(
-    Map<String, dynamic> notificacion,
-  ) {
-    final titulo = _obtenerTituloNotificacion(
-      notificacion,
-    );
+  Widget _buildNotificacionItem(Map<String, dynamic> notificacion) {
+    final titulo = _obtenerTituloNotificacion(notificacion);
 
-    final mensaje =
-        _obtenerMensajeNotificacion(
-      notificacion,
-    );
+    final mensaje = _obtenerMensajeNotificacion(notificacion);
 
-    final fecha =
-        _obtenerFechaNotificacion(
-      notificacion,
-    );
+    final fecha = _obtenerFechaNotificacion(notificacion);
 
-    final tipo =
-        _textoSeguro(
-      notificacion['tipo'],
-    ).toLowerCase();
+    final tipo = _textoSeguro(notificacion['tipo']).toLowerCase();
 
-    final leida =
-        _esNotificacionLeida(
-      notificacion,
-    );
+    final leida = _esNotificacionLeida(notificacion);
 
-    final color =
-        _colorNotificacion(tipo);
+    final color = _colorNotificacion(tipo);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: leida
-            ? const Color(0xFF141C33)
-            : const Color(0xFF182442),
-        borderRadius:
-            BorderRadius.circular(10),
+        color: leida ? const Color(0xFF141C33) : const Color(0xFF182442),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: leida
-              ? Colors.white.withOpacity(
-                  0.04,
-                )
+              ? Colors.white.withOpacity(0.04)
               : color.withOpacity(0.35),
         ),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 38,
             height: 38,
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
-              borderRadius:
-                  BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(
-              _iconoNotificacion(tipo),
-              color: color,
-              size: 20,
-            ),
+            child: Icon(_iconoNotificacion(tipo), color: color, size: 20),
           ),
           const SizedBox(width: 11),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -730,14 +694,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Text(
                         titulo,
                         maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
-                          fontWeight: leida
-                              ? FontWeight.w600
-                              : FontWeight.bold,
+                          fontWeight: leida ? FontWeight.w600 : FontWeight.bold,
                         ),
                       ),
                     ),
@@ -745,15 +706,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         width: 7,
                         height: 7,
-                        margin:
-                            const EdgeInsets.only(
-                          left: 6,
-                          top: 3,
-                        ),
-                        decoration:
-                            const BoxDecoration(
-                          color:
-                              Color(0xFF3B82F6),
+                        margin: const EdgeInsets.only(left: 6, top: 3),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3B82F6),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -764,21 +719,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     mensaje,
                     maxLines: 3,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
                 const SizedBox(height: 6),
                 Text(
                   fecha,
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 9,
-                  ),
+                  style: const TextStyle(color: Colors.white38, fontSize: 9),
                 ),
               ],
             ),
@@ -788,9 +736,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _obtenerTituloNotificacion(
-    Map<String, dynamic> notificacion,
-  ) {
+  String _obtenerTituloNotificacion(Map<String, dynamic> notificacion) {
     final posibles = [
       notificacion['titulo'],
       notificacion['title'],
@@ -808,8 +754,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    final folio =
-        _textoSeguro(notificacion['folio']);
+    final folio = _textoSeguro(notificacion['folio']);
 
     if (folio.isNotEmpty) {
       return 'Notificación del ticket $folio';
@@ -818,9 +763,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Notificación';
   }
 
-  String _obtenerMensajeNotificacion(
-    Map<String, dynamic> notificacion,
-  ) {
+  String _obtenerMensajeNotificacion(Map<String, dynamic> notificacion) {
     final posibles = [
       notificacion['mensaje'],
       notificacion['message'],
@@ -843,9 +786,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return '';
   }
 
-  String _obtenerFechaNotificacion(
-    Map<String, dynamic> notificacion,
-  ) {
+  String _obtenerFechaNotificacion(Map<String, dynamic> notificacion) {
     final posibles = [
       notificacion['fecha'],
       notificacion['created_at'],
@@ -858,24 +799,20 @@ class _HomeScreenState extends State<HomeScreen> {
       final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
-        return _formatearFechaActividad(
-          texto,
-        );
+        return _formatearFechaActividad(texto);
       }
     }
 
     return 'Fecha no disponible';
   }
 
-  bool _esNotificacionLeida(
-    Map<String, dynamic> notificacion,
-  ) {
+  bool _esNotificacionLeida(Map<String, dynamic> notificacion) {
     final valor =
         notificacion['leida'] ??
-            notificacion['leido'] ??
-            notificacion['read'] ??
-            notificacion['vista'] ??
-            notificacion['is_read'];
+        notificacion['leido'] ??
+        notificacion['read'] ??
+        notificacion['vista'] ??
+        notificacion['is_read'];
 
     if (valor is bool) {
       return valor;
@@ -886,8 +823,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (valor is String) {
-      final texto =
-          valor.toLowerCase().trim();
+      final texto = valor.toLowerCase().trim();
 
       return texto == '1' ||
           texto == 'true' ||
@@ -907,35 +843,29 @@ class _HomeScreenState extends State<HomeScreen> {
       return Colors.amber;
     }
 
-    if (tipo.contains('error') ||
-        tipo.contains('cancel')) {
+    if (tipo.contains('error') || tipo.contains('cancel')) {
       return Colors.redAccent;
     }
 
-    if (tipo.contains('success') ||
-        tipo.contains('solucion')) {
+    if (tipo.contains('success') || tipo.contains('solucion')) {
       return Colors.green;
     }
 
     return Colors.blueAccent;
   }
 
-  IconData _iconoNotificacion(
-    String tipo,
-  ) {
+  IconData _iconoNotificacion(String tipo) {
     if (tipo.contains('aviso') ||
         tipo.contains('warning') ||
         tipo.contains('advertencia')) {
       return Icons.warning_amber_rounded;
     }
 
-    if (tipo.contains('error') ||
-        tipo.contains('cancel')) {
+    if (tipo.contains('error') || tipo.contains('cancel')) {
       return Icons.error_outline;
     }
 
-    if (tipo.contains('success') ||
-        tipo.contains('solucion')) {
+    if (tipo.contains('success') || tipo.contains('solucion')) {
       return Icons.check_circle_outline;
     }
 
@@ -954,85 +884,105 @@ class _HomeScreenState extends State<HomeScreen> {
     _abrirNotificaciones();
   }
 
+  Widget _buildUserMenu({double radius = 17}) {
+    return PopupMenuButton<String>(
+      tooltip: 'Abrir menú de usuario',
+      offset: const Offset(0, 46),
+      padding: EdgeInsets.zero,
+      color: const Color(0xFF0F172A),
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.white12),
+      ),
+      onSelected: (value) async {
+        if (value == 'perfil') {
+          await navigateWithLoading(
+            context,
+            const MiPerfilScreen(),
+            mensaje: 'Cargando tu perfil...',
+          );
+        } else if (value == 'logout') {
+          await SessionService.clearSession();
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'perfil',
+          child: Row(
+            children: [
+              Icon(Icons.person_outline_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Mi perfil', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      ],
+      child: UserAvatar(radius: radius),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth =
-        MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     final isDesktop = screenWidth >= 1024;
 
+    if (cargandoUsuario || cargandoTickets) {
+      return const LoadingScreen(mensaje: 'Cargando tu información...');
+    }
+
     return Scaffold(
-      backgroundColor:
-          const Color(0xFF060A17),
+      backgroundColor: const Color(0xFF060A17),
       appBar: isDesktop
           ? null
           : AppBar(
-              backgroundColor:
-                  const Color(0xFF0B1021),
+              backgroundColor: const Color(0xFF0B1021),
               elevation: 0,
-              iconTheme:
-                  const IconThemeData(
-                color: Colors.white,
-              ),
-              title: const AppLogo(
-                fontSize: 20,
-              ),
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: const AppLogo(fontSize: 20),
               actions: [
-                _buildNotificationButton(
-                  compact: true,
-                ),
-                const Padding(
-                  padding:
-                      EdgeInsets.only(right: 16),
-                  child: UserAvatar(
-                    radius: 16,
-                  ),
+                _buildNotificationButton(compact: true),
+                Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: _buildUserMenu(radius: 16),
                 ),
               ],
             ),
-      drawer: isDesktop
-          ? null
-          : const AppNavigationDrawer(),
+      drawer: isDesktop ? null : const AppNavigationDrawer(),
       body: Row(
         children: [
           if (isDesktop)
-            const SizedBox(
-              width: 260,
-              child: AppNavigationDrawer(),
-            ),
+            const SizedBox(width: 260, child: AppNavigationDrawer()),
           Expanded(
             child: Column(
               children: [
-                if (isDesktop)
-                  _buildDesktopHeader(),
+                if (isDesktop) _buildDesktopHeader(),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _cargarTickets,
-                    child:
-                        SingleChildScrollView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-                      padding:
-                          const EdgeInsets.all(16),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildHeader(
-                            context,
-                            isDesktop,
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          if (errorTickets !=
-                              null)
-                            _buildErrorTickets(),
-                          _buildLayout(
-                            context,
-                            isDesktop,
-                          ),
+                          _buildHeader(context, isDesktop),
+                          const SizedBox(height: 20),
+                          if (errorTickets != null) _buildErrorTickets(),
+                          _buildLayout(context, isDesktop),
                         ],
                       ),
                     ),
@@ -1050,41 +1000,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: double.infinity,
       height: 64,
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 24,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(
         color: Color(0xFF0B1021),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white10,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
       ),
       child: Row(
         children: [
-          const AppLogo(
-            fontSize: 23,
-          ),
+          const AppLogo(fontSize: 23),
           const Spacer(),
           _buildNotificationButton(),
           const SizedBox(width: 8),
-          const UserAvatar(
-            radius: 17,
-          ),
+          _buildUserMenu(),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
               nombreUsuario,
               maxLines: 1,
-              overflow:
-                  TextOverflow.ellipsis,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -1093,15 +1030,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNotificationButton({
-    bool compact = false,
-  }) {
+  Widget _buildNotificationButton({bool compact = false}) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
         IconButton(
-          onPressed:
-              _abrirNotificacionDesdeHeader,
+          onPressed: _abrirNotificacionDesdeHeader,
           icon: Icon(
             Icons.notifications_none_rounded,
             color: Colors.white,
@@ -1114,31 +1048,19 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 4,
             top: 4,
             child: Container(
-              constraints:
-                  const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 4,
-              ),
-              decoration:
-                  const BoxDecoration(
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: const BoxDecoration(
                 color: Colors.redAccent,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
-                notificacionesNoLeidas >
-                        99
-                    ? '99+'
-                    : '$notificacionesNoLeidas',
+                notificacionesNoLeidas > 99 ? '99+' : '$notificacionesNoLeidas',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 8,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -1150,62 +1072,40 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildErrorTickets() {
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color:
-            Colors.red.withOpacity(0.10),
-        borderRadius:
-            BorderRadius.circular(10),
-        border: Border.all(
-          color:
-              Colors.red.withOpacity(0.35),
-        ),
+        color: Colors.red.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red.withOpacity(0.35)),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.redAccent,
-          ),
+          const Icon(Icons.error_outline, color: Colors.redAccent),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'No se pudieron cargar los datos',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  errorTickets ??
-                      'Error desconocido',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
+                  errorTickets ?? 'Error desconocido',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 const SizedBox(height: 8),
                 TextButton.icon(
-                  onPressed:
-                      _cargarTickets,
-                  icon: const Icon(
-                    Icons.refresh,
-                    size: 16,
-                  ),
-                  label: const Text(
-                    'Reintentar',
-                  ),
+                  onPressed: _cargarTickets,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reintentar'),
                 ),
               ],
             ),
@@ -1215,82 +1115,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    bool isDesktop,
-  ) {
+  Widget _buildHeader(BuildContext context, bool isDesktop) {
     return LayoutBuilder(
-      builder: (
-        context,
-        constraints,
-      ) {
-        final compact =
-            constraints.maxWidth < 500;
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 500;
 
         if (compact) {
           return Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                cargandoUsuario
-                    ? 'Cargando...'
-                    : 'Bienvenido, $nombreUsuario',
+                cargandoUsuario ? 'Cargando...' : 'Bienvenido, $nombreUsuario',
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 3),
               const Text(
                 'Inicio / Dashboard',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child:
-                    ElevatedButton.icon(
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(
-                      0xFF2563EB,
-                    ),
-                    foregroundColor:
-                        Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        8,
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   onPressed: () {
-                    _abrirCrearTicket(
-                      context,
-                    );
+                    _abrirCrearTicket(context);
                   },
-                  icon: const Icon(
-                    Icons.add,
-                  ),
+                  icon: const Icon(Icons.add),
                   label: const Text(
                     'Nuevo ticket',
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1299,15 +1167,12 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     cargandoUsuario
@@ -1315,57 +1180,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         : 'Bienvenido, $nombreUsuario',
                     style: const TextStyle(
                       fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(
-                    height: 3,
-                  ),
+                  const SizedBox(height: 3),
                   const Text(
                     'Inicio / Dashboard',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              style:
-                  ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(0xFF2563EB),
-                foregroundColor:
-                    Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               onPressed: () {
-                _abrirCrearTicket(
-                  context,
-                );
+                _abrirCrearTicket(context);
               },
-              icon: const Icon(
-                Icons.add,
-              ),
+              icon: const Icon(Icons.add),
               label: const Text(
                 'Nuevo ticket',
-                style: TextStyle(
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -1374,25 +1220,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLayout(
-    BuildContext context,
-    bool isDesktop,
-  ) {
+  Widget _buildLayout(BuildContext context, bool isDesktop) {
     return Column(
       children: [
         if (isDesktop)
           Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildUserInfo(),
-              ),
+              Expanded(child: _buildUserInfo()),
               const SizedBox(width: 16),
-              Expanded(
-                child:
-                    _buildTicketSummary(),
-              ),
+              Expanded(child: _buildTicketSummary()),
             ],
           )
         else
@@ -1406,16 +1243,13 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 16),
         if (isDesktop)
           Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   children: [
                     _buildLastTicket(),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
                     _buildActivity(),
                   ],
                 ),
@@ -1424,12 +1258,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Column(
                   children: [
-                    _buildRecentTickets(
-                      true,
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    _buildRecentTickets(true),
+                    const SizedBox(height: 16),
                     _buildNotices(),
                   ],
                 ),
@@ -1462,36 +1292,26 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0D1427),
-        borderRadius:
-            BorderRadius.circular(12),
-        border: Border.all(
-          color:
-              Colors.blue.withOpacity(0.15),
-        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withOpacity(0.15)),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.white,
                   ),
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
           const SizedBox(height: 12),
@@ -1506,27 +1326,16 @@ class _HomeScreenState extends State<HomeScreen> {
       title: 'Mi información',
       child: Center(
         child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(
-            maxWidth: 460,
-          ),
+          constraints: const BoxConstraints(maxWidth: 460),
           child: Column(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(
-                      0xFF2563EB,
-                    ),
-                    width: 2,
-                  ),
+                  border: Border.all(color: const Color(0xFF2563EB), width: 2),
                 ),
-                child: const UserAvatar(
-                  radius: 42,
-                ),
+                child: const UserAvatar(radius: 42),
               ),
               const SizedBox(height: 14),
               Text(
@@ -1535,8 +1344,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1546,28 +1354,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                   color: Colors.blueAccent,
                   fontSize: 11,
-                  fontWeight:
-                      FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 18),
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color:
-                      const Color(0xFF141C33),
-                  borderRadius:
-                      BorderRadius.circular(10),
+                  color: const Color(0xFF141C33),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
                   children: [
-                    _infoRow(
-                      Icons.person_outline,
-                      'Nombre:',
-                      nombreUsuario,
-                    ),
+                    _infoRow(Icons.person_outline, 'Nombre:', nombreUsuario),
                     _infoRow(
                       Icons.account_circle_outlined,
                       'Usuario:',
@@ -1583,11 +1383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Departamento:',
                       departamentoUsuario,
                     ),
-                    _infoRow(
-                      Icons.email_outlined,
-                      'Correo:',
-                      emailUsuario,
-                    ),
+                    _infoRow(Icons.email_outlined, 'Correo:', emailUsuario),
                     _infoRow(
                       Icons.location_city_outlined,
                       'Oficina:',
@@ -1598,11 +1394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Empleado:',
                       empleadoUsuario,
                     ),
-                    _infoRow(
-                      Icons.work_outline,
-                      'Rol:',
-                      rolUsuario,
-                    ),
+                    _infoRow(Icons.work_outline, 'Rol:', rolUsuario),
                   ],
                 ),
               ),
@@ -1613,28 +1405,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _infoRow(
-    IconData icon,
-    String label,
-    String value,
-  ) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 24,
-            child: Icon(
-              icon,
-              size: 16,
-              color: Colors.grey,
-            ),
-          ),
+          SizedBox(width: 24, child: Icon(icon, size: 16, color: Colors.grey)),
           const SizedBox(width: 8),
           SizedBox(
             width: 105,
@@ -1643,8 +1420,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 11,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -1655,8 +1431,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 11,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -1672,8 +1447,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Center(
           child: Padding(
             padding: EdgeInsets.all(20),
-            child:
-                CircularProgressIndicator(),
+            child: CircularProgressIndicator(),
           ),
         ),
       );
@@ -1692,49 +1466,23 @@ class _HomeScreenState extends State<HomeScreen> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          _metricBadge(
-            ticketsAbiertos,
-            'Abiertos',
-            Colors.yellow,
-          ),
-          _metricBadge(
-            ticketsEnProceso,
-            'En proceso',
-            Colors.blue,
-          ),
-          _metricBadge(
-            ticketsSolucionados,
-            'Solucionados',
-            Colors.green,
-          ),
-          _metricBadge(
-            ticketsCancelados,
-            'Cancelados',
-            Colors.red,
-          ),
+          _metricBadge(ticketsAbiertos, 'Abiertos', Colors.yellow),
+          _metricBadge(ticketsEnProceso, 'En proceso', Colors.blue),
+          _metricBadge(ticketsSolucionados, 'Solucionados', Colors.green),
+          _metricBadge(ticketsCancelados, 'Cancelados', Colors.red),
         ],
       ),
     );
   }
 
-  Widget _metricBadge(
-    int count,
-    String label,
-    Color color,
-  ) {
+  Widget _metricBadge(int count, String label, Color color) {
     return Container(
       width: 72,
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        border: Border.all(
-          color: color,
-        ),
-        borderRadius:
-            BorderRadius.circular(8),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         children: [
@@ -1742,18 +1490,14 @@ class _HomeScreenState extends State<HomeScreen> {
             '$count',
             style: TextStyle(
               fontSize: 18,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.white70,
-            ),
+            style: const TextStyle(fontSize: 10, color: Colors.white70),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1768,8 +1512,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Center(
           child: Padding(
             padding: EdgeInsets.all(20),
-            child:
-                CircularProgressIndicator(),
+            child: CircularProgressIndicator(),
           ),
         ),
       );
@@ -1783,10 +1526,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.all(20),
             child: Text(
               'No tienes tickets registrados.',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ),
         ),
@@ -1795,62 +1535,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final ticket = ultimoTicket!;
 
-    final folio =
-        _textoSeguro(ticket['folio']);
+    final folio = _textoSeguro(ticket['folio']);
 
-    final tipo =
-        _textoSeguro(ticket['tipo_falla']);
+    final tipo = _textoSeguro(ticket['tipo_falla']);
 
-    final estado =
-        _textoSeguro(ticket['estado']);
+    final estado = _textoSeguro(ticket['estado']);
 
-    final prioridad =
-        _textoSeguro(ticket['prioridad']);
+    final prioridad = _textoSeguro(ticket['prioridad']);
 
-    final departamento =
-        _textoSeguro(ticket['departamento']);
+    final departamento = _textoSeguro(ticket['departamento']);
 
-    final oficina =
-        _textoSeguro(ticket['oficina']);
+    final oficina = _textoSeguro(ticket['oficina']);
 
-    final asignadoA =
-        _obtenerUsuarioTicket(
+    final asignadoA = _obtenerUsuarioTicket(
       ticket['asignado_a'],
       ticket['asignado_a_usuario'],
     );
 
-    final tomadoPor =
-        _obtenerUsuarioTicket(
+    final tomadoPor = _obtenerUsuarioTicket(
       ticket['tomado_por'],
       ticket['tomado_por_usuario'],
     );
 
-    final fechaReporte =
-        _formatearFecha(
-      ticket['created_at'],
-    );
+    final fechaReporte = _formatearFecha(ticket['created_at']);
 
-    final fechaAsignacion =
-        _formatearFecha(
-      ticket['fecha_asignacion'],
-    );
+    final fechaAsignacion = _formatearFecha(ticket['fecha_asignacion']);
 
-    final solucion =
-        ticket['solucion'];
+    final solucion = ticket['solucion'];
 
-    final problemaSolucionado =
-        solucion is Map
-            ? solucion[
-                'problema_solucionado']
-            : null;
+    final problemaSolucionado = solucion is Map
+        ? solucion['problema_solucionado']
+        : null;
 
     final seSoluciono =
         problemaSolucionado == true ||
         problemaSolucionado == 1 ||
-        problemaSolucionado
-                ?.toString()
-                .toLowerCase() ==
-            'true';
+        problemaSolucionado?.toString().toLowerCase() == 'true';
 
     return _buildCard(
       title: 'Último ticket',
@@ -1858,100 +1578,60 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           _abrirMisTickets(context);
         },
-        child: const Text(
-          'Ver detalles',
-        ),
+        child: const Text('Ver detalles'),
       ),
       child: Container(
         width: double.infinity,
-        padding:
-            const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFF141C33),
-          borderRadius:
-              BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              folio.isNotEmpty
-                  ? folio
-                  : 'Sin folio',
+              folio.isNotEmpty ? folio : 'Sin folio',
               style: const TextStyle(
                 color: Colors.blue,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 14),
-            _ticketDetailRow(
-              'Tipo de falla:',
-              tipo.isNotEmpty
-                  ? tipo
-                  : 'N/A',
-            ),
-            _ticketDetailRow(
-              'Fecha reporte:',
-              fechaReporte,
-            ),
+            _ticketDetailRow('Tipo de falla:', tipo.isNotEmpty ? tipo : 'N/A'),
+            _ticketDetailRow('Fecha reporte:', fechaReporte),
             _ticketDetailRow(
               'Departamento:',
-              departamento.isNotEmpty
-                  ? departamento
-                  : 'N/A',
+              departamento.isNotEmpty ? departamento : 'N/A',
             ),
             _ticketDetailRow(
               'Asignado a:',
-              asignadoA.isNotEmpty
-                  ? asignadoA
-                  : 'N/A',
+              asignadoA.isNotEmpty ? asignadoA : 'N/A',
             ),
             _ticketDetailRow(
               'Sucursal / Oficina:',
-              oficina.isNotEmpty
-                  ? oficina
-                  : 'N/A',
+              oficina.isNotEmpty ? oficina : 'N/A',
             ),
             _ticketDetailRow(
               'Tomado por:',
-              tomadoPor.isNotEmpty
-                  ? tomadoPor
-                  : 'N/A',
+              tomadoPor.isNotEmpty ? tomadoPor : 'N/A',
             ),
             _ticketDetailRow(
               'Estado:',
-              estado.isNotEmpty
-                  ? estado
-                  : 'N/A',
-              valueColor:
-                  _colorEstado(estado),
+              estado.isNotEmpty ? estado : 'N/A',
+              valueColor: _colorEstado(estado),
             ),
-            _ticketDetailRow(
-              'Asignación:',
-              fechaAsignacion,
-            ),
+            _ticketDetailRow('Asignación:', fechaAsignacion),
             _ticketDetailRow(
               'Prioridad:',
-              prioridad.isNotEmpty
-                  ? prioridad
-                  : 'N/A',
-              valueColor:
-                  _colorPrioridad(
-                prioridad,
-              ),
+              prioridad.isNotEmpty ? prioridad : 'N/A',
+              valueColor: _colorPrioridad(prioridad),
             ),
             _ticketDetailRow(
               '¿Se solucionó?',
-              seSoluciono
-                  ? 'Sí'
-                  : 'No',
-              valueColor:
-                  seSoluciono
-                      ? Colors.green
-                      : Colors.red,
+              seSoluciono ? 'Sí' : 'No',
+              valueColor: seSoluciono ? Colors.green : Colors.red,
             ),
           ],
         ),
@@ -1959,24 +1639,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _obtenerUsuarioTicket(
-    dynamic login,
-    dynamic usuarioRelacionado,
-  ) {
+  String _obtenerUsuarioTicket(dynamic login, dynamic usuarioRelacionado) {
     if (usuarioRelacionado is Map) {
-      final nombre =
-          _textoSeguro(
-        usuarioRelacionado['name'],
-      );
+      final nombre = _textoSeguro(usuarioRelacionado['name']);
 
       if (nombre.isNotEmpty) {
         return nombre;
       }
 
-      final loginRelacionado =
-          _textoSeguro(
-        usuarioRelacionado['login'],
-      );
+      final loginRelacionado = _textoSeguro(usuarioRelacionado['login']);
 
       if (loginRelacionado.isNotEmpty) {
         return loginRelacionado;
@@ -1986,83 +1657,58 @@ class _HomeScreenState extends State<HomeScreen> {
     return _textoSeguro(login);
   }
 
-  String _formatearFecha(
-    dynamic fecha,
-  ) {
+  String _formatearFecha(dynamic fecha) {
     if (fecha == null) {
       return 'N/A';
     }
 
-    final texto =
-        _textoSeguro(fecha);
+    final texto = _textoSeguro(fecha);
 
     if (texto.isEmpty) {
       return 'N/A';
     }
 
-    final fechaParsed =
-        DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto);
 
     if (fechaParsed == null) {
       return texto;
     }
 
-    final dia = fechaParsed.day
-        .toString()
-        .padLeft(2, '0');
+    final dia = fechaParsed.day.toString().padLeft(2, '0');
 
-    final mes =
-        _nombreMes(
-      fechaParsed.month,
-    );
+    final mes = _nombreMes(fechaParsed.month);
 
-    final anio =
-        fechaParsed.year.toString();
+    final anio = fechaParsed.year.toString();
 
     return '$dia $mes $anio';
   }
 
-  String _formatearFechaActividad(
-    dynamic fecha,
-  ) {
+  String _formatearFechaActividad(dynamic fecha) {
     if (fecha == null) {
       return 'Fecha no disponible';
     }
 
-    final texto =
-        _textoSeguro(fecha);
+    final texto = _textoSeguro(fecha);
 
     if (texto.isEmpty) {
       return 'Fecha no disponible';
     }
 
-    final fechaParsed =
-        DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto);
 
     if (fechaParsed == null) {
       return texto;
     }
 
-    final dia = fechaParsed.day
-        .toString()
-        .padLeft(2, '0');
+    final dia = fechaParsed.day.toString().padLeft(2, '0');
 
-    final mes =
-        _nombreMes(
-      fechaParsed.month,
-    );
+    final mes = _nombreMes(fechaParsed.month);
 
-    final anio =
-        fechaParsed.year.toString();
+    final anio = fechaParsed.year.toString();
 
-    final hora = fechaParsed.hour
-        .toString()
-        .padLeft(2, '0');
+    final hora = fechaParsed.hour.toString().padLeft(2, '0');
 
-    final minuto =
-        fechaParsed.minute
-            .toString()
-            .padLeft(2, '0');
+    final minuto = fechaParsed.minute.toString().padLeft(2, '0');
 
     return '$dia $mes $anio - $hora:$minuto';
   }
@@ -2091,19 +1737,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return '';
   }
 
-  Widget _ticketDetailRow(
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
+  Widget _ticketDetailRow(String label, String value, {Color? valueColor}) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 125,
@@ -2112,8 +1750,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 11,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -2121,12 +1758,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               value,
               style: TextStyle(
-                color:
-                    valueColor ??
-                        Colors.white,
+                color: valueColor ?? Colors.white,
                 fontSize: 11,
-                fontWeight:
-                    FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -2135,315 +1769,179 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecentTickets(
-    bool isDesktop,
-  ) {
+  Widget _buildRecentTickets(bool isDesktop) {
     return _buildCard(
       title: 'Mis tickets recientes',
       trailing: TextButton(
         onPressed: () {
           _abrirMisTickets(context);
         },
-        child: const Text(
-          'Ver todos',
-        ),
+        child: const Text('Ver todos'),
       ),
       child: ticketsRecientes.isEmpty
           ? const Center(
               child: Padding(
-                padding:
-                    EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Text(
                   'No tienes tickets recientes.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
             )
           : isDesktop
-              ? _buildTicketsDesktop()
-              : _buildTicketsMobile(),
+          ? _buildTicketsDesktop()
+          : _buildTicketsMobile(),
     );
   }
 
   Widget _buildTicketsDesktop() {
     return SingleChildScrollView(
-      scrollDirection:
-          Axis.horizontal,
+      scrollDirection: Axis.horizontal,
       child: DataTable(
         columnSpacing: 12,
-        headingRowColor:
-            MaterialStateProperty.all(
-          const Color(0xFF141C33),
-        ),
+        headingRowColor: MaterialStateProperty.all(const Color(0xFF141C33)),
         columns: const [
           DataColumn(
-            label: Text(
-              'Folio',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            label: Text('Folio', style: TextStyle(color: Colors.white)),
           ),
           DataColumn(
-            label: Text(
-              'Tipo',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            label: Text('Tipo', style: TextStyle(color: Colors.white)),
           ),
           DataColumn(
-            label: Text(
-              'Estado',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            label: Text('Estado', style: TextStyle(color: Colors.white)),
           ),
           DataColumn(
-            label: Text(
-              'Acción',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            label: Text('Acción', style: TextStyle(color: Colors.white)),
           ),
         ],
-        rows: ticketsRecientes.map(
-          (ticket) {
-            final folio =
-                _textoSeguro(
-              ticket['folio'],
-            );
+        rows: ticketsRecientes.map((ticket) {
+          final folio = _textoSeguro(ticket['folio']);
 
-            final tipo =
-                _textoSeguro(
-              ticket['tipo_falla'],
-            );
+          final tipo = _textoSeguro(ticket['tipo_falla']);
 
-            final estado =
-                _textoSeguro(
-              ticket['estado'],
-            );
+          final estado = _textoSeguro(ticket['estado']);
 
-            return DataRow(
-              cells: [
-                DataCell(
-                  Text(
-                    folio.isNotEmpty
-                        ? folio
-                        : 'Sin folio',
-                    style:
-                        const TextStyle(
-                      fontSize: 11,
-                      color:
-                          Colors.white,
-                    ),
-                  ),
+          return DataRow(
+            cells: [
+              DataCell(
+                Text(
+                  folio.isNotEmpty ? folio : 'Sin folio',
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
                 ),
-                DataCell(
-                  Text(
-                    tipo.isNotEmpty
-                        ? tipo
-                        : 'No disponible',
-                    style:
-                        const TextStyle(
-                      fontSize: 11,
-                      color:
-                          Colors.white,
-                    ),
-                  ),
+              ),
+              DataCell(
+                Text(
+                  tipo.isNotEmpty ? tipo : 'No disponible',
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
                 ),
-                DataCell(
-                  Text(
-                    estado.isNotEmpty
-                        ? estado
-                        : 'No disponible',
-                    style: TextStyle(
-                      color:
-                          _colorEstado(
-                        estado,
-                      ),
-                      fontSize: 11,
-                    ),
-                  ),
+              ),
+              DataCell(
+                Text(
+                  estado.isNotEmpty ? estado : 'No disponible',
+                  style: TextStyle(color: _colorEstado(estado), fontSize: 11),
                 ),
-                DataCell(
-                  IconButton(
-                    icon:
-                        const Icon(
-                      Icons
-                          .visibility_outlined,
-                      size: 18,
-                      color:
-                          Colors.blueAccent,
-                    ),
-                    onPressed: () {
-                      _abrirMisTickets(
-                        context,
-                      );
-                    },
-                    tooltip:
-                        'Ver ticket',
+              ),
+              DataCell(
+                IconButton(
+                  icon: const Icon(
+                    Icons.visibility_outlined,
+                    size: 18,
+                    color: Colors.blueAccent,
                   ),
+                  onPressed: () {
+                    _abrirMisTickets(context);
+                  },
+                  tooltip: 'Ver ticket',
                 ),
-              ],
-            );
-          },
-        ).toList(),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
 
   Widget _buildTicketsMobile() {
     return Column(
-      children:
-          ticketsRecientes.map(
-        (ticket) {
-          final folio =
-              _textoSeguro(
-            ticket['folio'],
-          );
+      children: ticketsRecientes.map((ticket) {
+        final folio = _textoSeguro(ticket['folio']);
 
-          final tipo =
-              _textoSeguro(
-            ticket['tipo_falla'],
-          );
+        final tipo = _textoSeguro(ticket['tipo_falla']);
 
-          final estado =
-              _textoSeguro(
-            ticket['estado'],
-          );
+        final estado = _textoSeguro(ticket['estado']);
 
-          final titulo =
-              _textoSeguro(
-            ticket['titulo'],
-          );
+        final titulo = _textoSeguro(ticket['titulo']);
 
-          return Container(
-            width: double.infinity,
-            margin:
-                const EdgeInsets.only(
-              bottom: 8,
-            ),
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 8,
-            ),
-            decoration:
-                BoxDecoration(
-              color:
-                  const Color(0xFF141C33),
-              borderRadius:
-                  BorderRadius.circular(
-                6,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
-                    children: [
-                      Text(
-                        folio.isNotEmpty
-                            ? folio
-                            : 'Sin folio',
-                        style:
-                            const TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
-                          fontSize: 12,
-                          color:
-                              Colors.white,
-                        ),
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141C33),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      folio.isNotEmpty ? folio : 'Sin folio',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.white,
                       ),
-                      if (titulo
-                          .isNotEmpty)
-                        Text(
-                          titulo,
-                          maxLines: 1,
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.white70,
-                            fontSize: 11,
-                          ),
-                        ),
-                      const SizedBox(
-                        height: 2,
-                      ),
+                    ),
+                    if (titulo.isNotEmpty)
                       Text(
-                        tipo.isNotEmpty
-                            ? tipo
-                            : 'No disponible',
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors.grey,
-                          fontSize: 11,
-                        ),
+                        titulo,
                         maxLines: 1,
-                        overflow:
-                            TextOverflow
-                                .ellipsis,
-                      ),
-                      Text(
-                        estado.isNotEmpty
-                            ? estado
-                            : 'No disponible',
-                        style: TextStyle(
-                          color:
-                              _colorEstado(
-                            estado,
-                          ),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
                           fontSize: 11,
-                          fontWeight:
-                              FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      tipo.isNotEmpty ? tipo : 'No disponible',
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      estado.isNotEmpty ? estado : 'No disponible',
+                      style: TextStyle(
+                        color: _colorEstado(estado),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon:
-                      const Icon(
-                    Icons
-                        .visibility_outlined,
-                    color:
-                        Colors.blueAccent,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    _abrirMisTickets(
-                      context,
-                    );
-                  },
-                  tooltip:
-                      'Ver ticket',
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.visibility_outlined,
+                  color: Colors.blueAccent,
+                  size: 20,
                 ),
-              ],
-            ),
-          );
-        },
-      ).toList(),
+                onPressed: () {
+                  _abrirMisTickets(context);
+                },
+                tooltip: 'Ver ticket',
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Color _colorEstado(
-    String estado,
-  ) {
-    switch (
-        estado.toLowerCase().trim()) {
+  Color _colorEstado(String estado) {
+    switch (estado.toLowerCase().trim()) {
       case 'abierto':
       case 'abiertos':
         return Colors.yellow;
@@ -2465,11 +1963,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Color _colorPrioridad(
-    String prioridad,
-  ) {
-    switch (
-        prioridad.toLowerCase().trim()) {
+  Color _colorPrioridad(String prioridad) {
+    switch (prioridad.toLowerCase().trim()) {
       case 'critica':
       case 'crítica':
         return Colors.red;
@@ -2491,75 +1986,47 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActivity() {
     return _buildCard(
       title: 'Actividad reciente',
-      trailing:
-          actividades.isNotEmpty
-              ? Text(
-                  '${actividades.length}',
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.blueAccent,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                )
-              : null,
+      trailing: actividades.isNotEmpty
+          ? Text(
+              '${actividades.length}',
+              style: const TextStyle(
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
       child: actividades.isEmpty
           ? const Center(
               child: Padding(
-                padding:
-                    EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Text(
                   'No hay actividad reciente.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
             )
           : Column(
-              children:
-                  List.generate(
-                actividades.length,
-                (index) {
-                  final actividad =
-                      actividades[index];
+              children: List.generate(actividades.length, (index) {
+                final actividad = actividades[index];
 
-                  final texto =
-                      _obtenerTextoActividad(
-                    actividad,
-                  );
+                final texto = _obtenerTextoActividad(actividad);
 
-                  final fecha =
-                      _obtenerFechaActividad(
-                    actividad,
-                  );
+                final fecha = _obtenerFechaActividad(actividad);
 
-                  final color =
-                      _colorActividad(
-                    actividad,
-                  );
+                final color = _colorActividad(actividad);
 
-                  return _activityItem(
-                    texto,
-                    fecha,
-                    color,
-                    isLast:
-                        index ==
-                            actividades
-                                    .length -
-                                1,
-                  );
-                },
-              ),
+                return _activityItem(
+                  texto,
+                  fecha,
+                  color,
+                  isLast: index == actividades.length - 1,
+                );
+              }),
             ),
     );
   }
 
-  String _obtenerTextoActividad(
-    Map<String, dynamic> actividad,
-  ) {
+  String _obtenerTextoActividad(Map<String, dynamic> actividad) {
     final posibles = [
       actividad['texto'],
       actividad['mensaje'],
@@ -2572,26 +2039,18 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     for (final valor in posibles) {
-      final texto =
-          _textoSeguro(valor);
+      final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
         return texto;
       }
     }
 
-    final folio =
-        _textoSeguro(
-      actividad['folio'],
-    );
+    final folio = _textoSeguro(actividad['folio']);
 
-    final accion =
-        _textoSeguro(
-      actividad['accion'],
-    );
+    final accion = _textoSeguro(actividad['accion']);
 
-    if (accion.isNotEmpty &&
-        folio.isNotEmpty) {
+    if (accion.isNotEmpty && folio.isNotEmpty) {
       return '$accion $folio';
     }
 
@@ -2606,9 +2065,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Actividad reciente';
   }
 
-  String _obtenerFechaActividad(
-    Map<String, dynamic> actividad,
-  ) {
+  String _obtenerFechaActividad(Map<String, dynamic> actividad) {
     final posibles = [
       actividad['fecha'],
       actividad['fecha_actividad'],
@@ -2619,42 +2076,26 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     for (final valor in posibles) {
-      final texto =
-          _textoSeguro(valor);
+      final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
-        return _formatearFechaActividad(
-          valor,
-        );
+        return _formatearFechaActividad(valor);
       }
     }
 
     return 'Fecha no disponible';
   }
 
-  Color _colorActividad(
-    Map<String, dynamic> actividad,
-  ) {
-    final tipo =
-        _textoSeguro(
-      actividad['tipo'],
-    ).toLowerCase();
+  Color _colorActividad(Map<String, dynamic> actividad) {
+    final tipo = _textoSeguro(actividad['tipo']).toLowerCase();
 
-    final accion =
-        _textoSeguro(
-      actividad['accion'],
-    ).toLowerCase();
+    final accion = _textoSeguro(actividad['accion']).toLowerCase();
 
-    final texto =
-        _obtenerTextoActividad(
-      actividad,
-    ).toLowerCase();
+    final texto = _obtenerTextoActividad(actividad).toLowerCase();
 
-    final contenido =
-        '$tipo $accion $texto';
+    final contenido = '$tipo $accion $texto';
 
-    if (contenido.contains('tom') ||
-        contenido.contains('asign')) {
+    if (contenido.contains('tom') || contenido.contains('asign')) {
       return Colors.green;
     }
 
@@ -2684,10 +2125,7 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isLast = false,
   }) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Stack(
         children: [
           if (!isLast)
@@ -2695,54 +2133,32 @@ class _HomeScreenState extends State<HomeScreen> {
               left: 3,
               top: 12,
               bottom: -6,
-              child: Container(
-                width: 1,
-                color: Colors.white10,
-              ),
+              child: Container(width: 1, color: Colors.white10),
             ),
           Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.only(
-                  top: 5,
-                ),
-                child: Icon(
-                  Icons.circle,
-                  size: 8,
-                  color: color,
-                ),
+                padding: const EdgeInsets.only(top: 5),
+                child: Icon(Icons.circle, size: 8, color: color),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       text,
-                      style:
-                          const TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color:
-                            Colors.white,
-                        fontWeight:
-                            FontWeight.w600,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(
-                      height: 2,
-                    ),
+                    const SizedBox(height: 2),
                     Text(
                       time,
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.grey,
-                        fontSize: 10,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
                     ),
                   ],
                 ),
@@ -2761,73 +2177,43 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           _abrirAvisos(context);
         },
-        child: const Text(
-          'Ver todos',
-        ),
+        child: const Text('Ver todos'),
       ),
       child: avisos.isEmpty
           ? const Center(
               child: Padding(
-                padding:
-                    EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Text(
                   'No hay avisos disponibles.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
             )
           : Column(
-              children: avisos
-                  .take(3)
-                  .map(
-                    (aviso) {
-                      final titulo =
-                          _obtenerTituloAviso(
-                        aviso,
-                      );
+              children: avisos.take(3).map((aviso) {
+                final titulo = _obtenerTituloAviso(aviso);
 
-                      final fecha =
-                          _obtenerFechaAviso(
-                        aviso,
-                      );
+                final fecha = _obtenerFechaAviso(aviso);
 
-                      final descripcion =
-                          _obtenerDescripcionAviso(
-                        aviso,
-                      );
+                final descripcion = _obtenerDescripcionAviso(aviso);
 
-                      final tipo =
-                          _textoSeguro(
-                        aviso['tipo'],
-                      ).toLowerCase();
+                final tipo = _textoSeguro(aviso['tipo']).toLowerCase();
 
-                      final color =
-                          _colorAviso(
-                        tipo,
-                      );
+                final color = _colorAviso(tipo);
 
-                      return _noticeItem(
-                        titulo,
-                        fecha,
-                        descripcion,
-                        _iconoAviso(
-                          tipo,
-                        ),
-                        color,
-                      );
-                    },
-                  )
-                  .toList(),
+                return _noticeItem(
+                  titulo,
+                  fecha,
+                  descripcion,
+                  _iconoAviso(tipo),
+                  color,
+                );
+              }).toList(),
             ),
     );
   }
 
-  String _obtenerTituloAviso(
-    Map<String, dynamic> aviso,
-  ) {
+  String _obtenerTituloAviso(Map<String, dynamic> aviso) {
     final posibles = [
       aviso['titulo'],
       aviso['title'],
@@ -2836,8 +2222,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     for (final valor in posibles) {
-      final texto =
-          _textoSeguro(valor);
+      final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
         return texto;
@@ -2847,9 +2232,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Aviso';
   }
 
-  String _obtenerDescripcionAviso(
-    Map<String, dynamic> aviso,
-  ) {
+  String _obtenerDescripcionAviso(Map<String, dynamic> aviso) {
     final posibles = [
       aviso['descripcion'],
       aviso['description'],
@@ -2859,8 +2242,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     for (final valor in posibles) {
-      final texto =
-          _textoSeguro(valor);
+      final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
         return texto;
@@ -2870,9 +2252,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return '';
   }
 
-  String _obtenerFechaAviso(
-    Map<String, dynamic> aviso,
-  ) {
+  String _obtenerFechaAviso(Map<String, dynamic> aviso) {
     final posibles = [
       aviso['fecha'],
       aviso['created_at'],
@@ -2881,25 +2261,17 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     for (final valor in posibles) {
-      final texto =
-          _textoSeguro(valor);
+      final texto = _textoSeguro(valor);
 
       if (texto.isNotEmpty) {
-        final parsed =
-            DateTime.tryParse(texto);
+        final parsed = DateTime.tryParse(texto);
 
         if (parsed != null) {
-          final dia = parsed.day
-              .toString()
-              .padLeft(2, '0');
+          final dia = parsed.day.toString().padLeft(2, '0');
 
-          final mes =
-              _nombreMes(
-            parsed.month,
-          );
+          final mes = _nombreMes(parsed.month);
 
-          final anio =
-              parsed.year.toString();
+          final anio = parsed.year.toString();
 
           return '$dia $mes $anio';
         }
@@ -2911,9 +2283,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Fecha no disponible';
   }
 
-  Color _colorAviso(
-    String tipo,
-  ) {
+  Color _colorAviso(String tipo) {
     switch (tipo) {
       case 'warning':
       case 'mantenimiento':
@@ -2933,9 +2303,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  IconData _iconoAviso(
-    String tipo,
-  ) {
+  IconData _iconoAviso(String tipo) {
     switch (tipo) {
       case 'warning':
       case 'mantenimiento':
@@ -2965,70 +2333,43 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Container(
       width: double.infinity,
-      margin:
-          const EdgeInsets.only(
-        bottom: 8,
-      ),
-      padding:
-          const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: const Color(0xFF141C33),
-        borderRadius:
-            BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style:
-                      const TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style:
-                      const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
-                if (description
-                    .isNotEmpty) ...[
-                  const SizedBox(
-                    height: 4,
-                  ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
                   Text(
                     description,
                     maxLines: 2,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.white60,
-                      fontSize: 10,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white60, fontSize: 10),
                   ),
                 ],
               ],
@@ -3054,22 +2395,138 @@ class _HomeScreenState extends State<HomeScreen> {
 class UserAvatar extends StatelessWidget {
   final double radius;
 
-  const UserAvatar({
+  const UserAvatar({super.key, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final picture = snapshot.data?['picture']?.toString();
+        final imageUrl = picture == null || picture.trim().isEmpty
+            ? ''
+            : ApiService.profileImageUrl(picture);
+        return CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFF2563EB),
+          child: ClipOval(
+            child: imageUrl.isEmpty
+                ? Image.asset(
+                    'assets/images/user.png',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Image.asset(
+                      'assets/images/user.png',
+                      width: radius * 2,
+                      height: radius * 2,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class UserHeaderActions extends StatelessWidget {
+  final VoidCallback onNotifications;
+  final int unreadCount;
+
+  const UserHeaderActions({
     super.key,
-    required this.radius,
+    required this.onNotifications,
+    this.unreadCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor:
-          const Color(0xFF2563EB),
-      child: Icon(
-        Icons.person,
-        color: Colors.white,
-        size: radius * 1.15,
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: onNotifications,
+              icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+              tooltip: 'Notificaciones',
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: 4,
+                top: 4,
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        PopupMenuButton<String>(
+          tooltip: 'Abrir menú de usuario',
+          offset: const Offset(0, 50),
+          padding: EdgeInsets.zero,
+          color: const Color(0xFF0F172A),
+          elevation: 14,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: Colors.blue.withOpacity(0.22)),
+          ),
+          onSelected: (value) async {
+            if (value == 'perfil') {
+              await navigateWithLoading(
+                context,
+                const MiPerfilScreen(),
+                mensaje: 'Cargando tu perfil...',
+              );
+            } else {
+              await SessionService.clearSession();
+              if (!context.mounted) return;
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'perfil',
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline_rounded, color: Color(0xFF93C5FD)),
+                  SizedBox(width: 10),
+                  Text('Mi perfil', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'logout',
+              child: Row(
+                children: [
+                  Icon(Icons.logout_rounded, color: Color(0xFFFCA5A5)),
+                  SizedBox(width: 10),
+                  Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ],
+          child: const Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: UserAvatar(radius: 16),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -3077,32 +2534,21 @@ class UserAvatar extends StatelessWidget {
 class AppLogo extends StatelessWidget {
   final double fontSize;
 
-  const AppLogo({
-    super.key,
-    this.fontSize = 26,
-  });
+  const AppLogo({super.key, this.fontSize = 26});
 
   @override
   Widget build(BuildContext context) {
     return RichText(
       text: TextSpan(
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight:
-              FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
         children: const [
           TextSpan(
             text: 'Ticket',
-            style: TextStyle(
-              color: Colors.white,
-            ),
+            style: TextStyle(color: Colors.white),
           ),
           TextSpan(
             text: 'Pro',
-            style: TextStyle(
-              color: Color(0xFF2563EB),
-            ),
+            style: TextStyle(color: Color(0xFF2563EB)),
           ),
         ],
       ),
@@ -3110,313 +2556,163 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-class AppNavigationDrawer
-    extends StatelessWidget {
-  const AppNavigationDrawer({
-    super.key,
-  });
+class AppNavigationDrawer extends StatelessWidget {
+  const AppNavigationDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-  child: Container(
-    color: const Color(0xFF0B1021),
-    padding: const EdgeInsets.symmetric(
-      vertical: 36,
-      horizontal: 16,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppLogo(
-          fontSize: 26,
-        ),
-
-        const SizedBox(height: 24),
-
-        // ============================================================
-        // USUARIO
-        // ============================================================
-
-        Row(
+      child: Container(
+        color: const Color(0xFF0B1021),
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF2563EB),
-                  width: 2,
+            const AppLogo(fontSize: 26),
+
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF2563EB),
+                      width: 2,
+                    ),
+                  ),
+                  child: const UserAvatar(radius: 20),
                 ),
-              ),
-              child: const UserAvatar(
-                radius: 20,
-              ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: FutureBuilder<Map<String, dynamic>?>(
+                    future: SessionService.getUser(),
+                    builder: (context, snapshot) {
+                      final user = snapshot.data;
+
+                      final nombre = _obtenerNombreDrawer(user);
+
+                      final rol = _obtenerCampoDrawer(user, 'role');
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+
+                          Text(
+                            rol,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(height: 20),
 
-            Expanded(
-              child: FutureBuilder<Map<String, dynamic>?>(
-                future: SessionService.getUser(),
-                builder: (
+            const Divider(color: Colors.white12, height: 1),
+
+            const SizedBox(height: 20),
+
+            _drawerItem(
+              icon: Icons.home_rounded,
+              title: 'Inicio',
+              isActive: true,
+              onTap: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
+            ),
+
+            _drawerItem(
+              icon: Icons.confirmation_number_outlined,
+              title: 'Mis tickets',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(context, const MisticketsScreen(), mensaje: 'Cargando tus tickets...');
+              },
+            ),
+
+            _drawerItem(
+              icon: Icons.build_outlined,
+              title: 'Crear ticket',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(context, const CrearticketsScreen(), mensaje: 'Preparando crear ticket...');
+              },
+            ),
+
+            _drawerItem(
+              icon: Icons.warning_amber_rounded,
+              title: 'Avisos',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(context, const AvisosScreen(), mensaje: 'Cargando avisos...');
+              },
+            ),
+
+            _drawerItem(
+              icon: Icons.person_outline_rounded,
+              title: 'Mi perfil',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(
                   context,
-                  snapshot,
-                ) {
-                  final user = snapshot.data;
+                  const MiPerfilScreen(),
+                  mensaje: 'Cargando tu perfil...',
+                );
+              },
+            ),
 
-                  final nombre = _obtenerNombreDrawer(
-                    user,
-                  );
+            const Spacer(),
 
-                  final rol = _obtenerCampoDrawer(
-                    user,
-                    'role',
-                  );
+            _drawerItem(
+              icon: Icons.logout_rounded,
+              title: 'Cerrar sesión',
+              color: Colors.white70,
+              onTap: () async {
+                await SessionService.clearSession();
 
-                  return Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nombre,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                if (!context.mounted) {
+                  return;
+                }
 
-                      Text(
-                        rol,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/',
+                  (route) => false,
+                );
+              },
             ),
           ],
         ),
-
-        const SizedBox(height: 20),
-
-        const Divider(
-          color: Colors.white12,
-          height: 1,
-        ),
-
-        const SizedBox(height: 20),
-
-        // ============================================================
-        // INICIO
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.home_rounded,
-          title: 'Inicio',
-          isActive: true,
-          onTap: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
-
-        // ============================================================
-        // MIS TICKETS
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.confirmation_number_outlined,
-          title: 'Mis tickets',
-          onTap: () {
-            // Cerrar Drawer
-            Navigator.pop(context);
-
-            // Transición suave
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration:
-                    const Duration(milliseconds: 300),
-                reverseTransitionDuration:
-                    const Duration(milliseconds: 250),
-
-                pageBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                ) {
-                  return const MisticketsScreen();
-                },
-
-                transitionsBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                  child,
-                ) {
-                  return FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeInOut,
-                    ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-
-        // ============================================================
-        // CREAR TICKET
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.build_outlined,
-          title: 'Crear ticket',
-          onTap: () {
-            // Cerrar Drawer
-            Navigator.pop(context);
-
-            // Transición suave
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration:
-                    const Duration(milliseconds: 300),
-                reverseTransitionDuration:
-                    const Duration(milliseconds: 250),
-
-                pageBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                ) {
-                  return const CrearticketsScreen();
-                },
-
-                transitionsBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                  child,
-                ) {
-                  return FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeInOut,
-                    ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-
-        // ============================================================
-        // AVISOS
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.warning_amber_rounded,
-          title: 'Avisos',
-          onTap: () {
-            // Cerrar Drawer
-            Navigator.pop(context);
-
-            // Transición suave
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration:
-                    const Duration(milliseconds: 300),
-                reverseTransitionDuration:
-                    const Duration(milliseconds: 250),
-
-                pageBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                ) {
-                  return const AvisosScreen();
-                },
-
-                transitionsBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                  child,
-                ) {
-                  return FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeInOut,
-                    ),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-        ),
-
-        // ============================================================
-        // MI PERFIL
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.person_outline_rounded,
-          title: 'Mi perfil',
-          onTap: () {
-            // Aquí puedes colocar tu pantalla de perfil
-          },
-        ),
-
-        const Spacer(),
-
-        // ============================================================
-        // CERRAR SESIÓN
-        // ============================================================
-
-        _drawerItem(
-          icon: Icons.logout_rounded,
-          title: 'Cerrar sesión',
-          color: Colors.white70,
-          onTap: () async {
-            await SessionService.clearSession();
-
-            if (!context.mounted) {
-              return;
-            }
-
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/',
-              (route) => false,
-            );
-          },
-        ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
 
-  String _obtenerCampoDrawer(
-    Map<String, dynamic>? user,
-    String campo,
-  ) {
+  String _obtenerCampoDrawer(Map<String, dynamic>? user, String campo) {
     if (user == null) {
       return '';
     }
@@ -3428,40 +2724,22 @@ class AppNavigationDrawer
     }
 
     if (valor is Map) {
-      final resultado =
-          valor['nombre'] ??
-              valor['name'] ??
-              valor['value'];
+      final resultado = valor['nombre'] ?? valor['name'] ?? valor['value'];
 
-      return resultado
-              ?.toString()
-              .trim() ??
-          '';
+      return resultado?.toString().trim() ?? '';
     }
 
-    return valor
-        .toString()
-        .trim();
+    return valor.toString().trim();
   }
 
-  String _obtenerNombreDrawer(
-    Map<String, dynamic>? user,
-  ) {
-    final nombre =
-        _obtenerCampoDrawer(
-      user,
-      'name',
-    );
+  String _obtenerNombreDrawer(Map<String, dynamic>? user) {
+    final nombre = _obtenerCampoDrawer(user, 'name');
 
     if (nombre.isNotEmpty) {
       return nombre;
     }
 
-    final login =
-        _obtenerCampoDrawer(
-      user,
-      'login',
-    );
+    final login = _obtenerCampoDrawer(user, 'login');
 
     if (login.isNotEmpty) {
       return login;
@@ -3477,45 +2755,25 @@ class AppNavigationDrawer
     Color? color,
     required VoidCallback onTap,
   }) {
-    final itemColor =
-        color ??
-            (isActive
-                ? Colors.white
-                : Colors.grey);
+    final itemColor = color ?? (isActive ? Colors.white : Colors.grey);
 
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Material(
-        color: isActive
-            ? const Color(0xFF2563EB)
-            : Colors.transparent,
-        borderRadius:
-            BorderRadius.circular(10),
-        clipBehavior:
-            Clip.antiAlias,
+        color: isActive ? const Color(0xFF2563EB) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
         child: ListTile(
           dense: true,
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              10,
-            ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-          leading: Icon(
-            icon,
-            color: itemColor,
-          ),
+          leading: Icon(icon, color: itemColor),
           title: Text(
             title,
             style: TextStyle(
               color: itemColor,
-              fontWeight: isActive
-                  ? FontWeight.bold
-                  : FontWeight.normal,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           onTap: onTap,

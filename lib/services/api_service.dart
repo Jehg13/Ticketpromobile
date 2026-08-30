@@ -51,7 +51,12 @@ class ApiService {
     // no hacemos ninguna modificación.
     if (cleanPath.startsWith('http://') ||
         cleanPath.startsWith('https://')) {
-      return cleanPath;
+      final uri = Uri.tryParse(cleanPath);
+      if (uri != null && uri.path.contains('/storage/')) {
+        cleanPath = uri.path.substring(uri.path.indexOf('/storage/') + 9);
+      } else {
+        return cleanPath;
+      }
     }
 
     // Elimina / iniciales.
@@ -90,9 +95,7 @@ class ApiService {
 
   static String profileImageUrl(String? path) {
     if (path == null || path.trim().isEmpty) {
-      return storageFileUrl(
-        'profile-photos/user.png',
-      );
+      return '';
     }
 
     return storageFileUrl(path);
@@ -104,9 +107,7 @@ class ApiService {
 
   static String imagenUrl(String? path) {
     if (path == null || path.trim().isEmpty) {
-      return storageFileUrl(
-        'profile-photos/user.png',
-      );
+      return '';
     }
 
     return storageFileUrl(path);
@@ -161,7 +162,7 @@ class ApiService {
           );
         }
 
-        final user = data['user'];
+        final user = data['user'] ?? data['usuario'];
 
         if (user is Map<String, dynamic>) {
           await _guardarUsuario(user);
@@ -174,7 +175,7 @@ class ApiService {
         'mfa_required': data['mfa_required'] == true,
         'message': data['message']?.toString() ?? '',
         'token': data['token'],
-        'user': data['user'],
+        'user': data['user'] ?? data['usuario'],
         'login': data['login'],
         'data': data,
       };
@@ -251,6 +252,12 @@ class ApiService {
       key: 'user_numero_empleado',
       value: user['numero_empleado']?.toString() ?? '',
     );
+    await storage.write(
+      key: 'user_picture',
+      value: (user['picture'] ?? user['foto'] ?? user['foto_perfil'])
+              ?.toString() ??
+          '',
+    );
   }
 
   // ============================================================
@@ -286,6 +293,7 @@ class ApiService {
         await storage.read(key: 'user_oficina');
     final numeroEmpleado =
         await storage.read(key: 'user_numero_empleado');
+    final picture = await storage.read(key: 'user_picture');
 
     if (login == null &&
         email == null &&
@@ -310,6 +318,7 @@ class ApiService {
       'departamento': departamento ?? '',
       'oficina': oficina ?? '',
       'numero_empleado': numeroEmpleado ?? '',
+      'picture': picture ?? '',
     };
   }
 

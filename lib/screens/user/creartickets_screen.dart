@@ -1,11 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
 import 'home_screen.dart';
 import 'mistickets_screen.dart';
 import 'avisos_screen.dart';
+import 'perfil_screen.dart';
 import '../../services/crear_ticket_service.dart';
 import '../../services/session_service.dart';
+import '../../widgets/loading_screen.dart';
 
 class CrearticketsScreen extends StatefulWidget {
   const CrearticketsScreen({super.key});
@@ -388,12 +391,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const MisticketsScreen(),
-      ),
-    );
+    navigateWithLoading(context, const MisticketsScreen(), mensaje: 'Cargando tus tickets...');
   }
 
   void _mostrarMensaje(
@@ -405,42 +403,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       return;
     }
 
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                esError
-                    ? Icons.error_outline_rounded
-                    : Icons.check_circle_outline_rounded,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  mensaje,
-                  style: const TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: esError
-              ? const Color(0xFFB91C1C)
-              : const Color(0xFF047857),
-          behavior: SnackBarBehavior.floating,
-          duration: duracion,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+    showUserMessage(context, mensaje, isError: esError);
   }
 
   void _irAInicio() {
@@ -448,12 +411,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
-      ),
-    );
+    navigateWithLoading(context, const HomeScreen(), mensaje: 'Cargando inicio...');
   }
 
   @override
@@ -474,13 +432,8 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
               title: const AppLogo(
                 fontSize: 20,
               ),
-              actions: const [
-                Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: UserAvatar(
-                    radius: 16,
-                  ),
-                ),
+              actions: [
+                UserHeaderActions(onNotifications: () => showUserNotifications(context)),
               ],
             ),
       drawer: isDesktop
@@ -564,47 +517,49 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                   color: Colors.white,
                   size: 20,
                 ),
-                onPressed: () {},
+                onPressed: _mostrarNotificaciones,
               ),
               const SizedBox(width: 16),
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  UserAvatar(
-                    radius: 18,
-                  ),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Juan Perez',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        'administracion',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.grey,
-                    size: 18,
-                  ),
-                ],
-              ),
+              UserHeaderActions(onNotifications: () => showUserNotifications(context)),
             ],
           ),
       ],
+    );
+  }
+
+  void _mostrarNotificaciones() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0B1021),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Notificaciones',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20),
+              Icon(Icons.notifications_none_rounded, color: Colors.grey, size: 40),
+              SizedBox(height: 10),
+              Text(
+                'No hay notificaciones disponibles.',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -615,7 +570,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         color: const Color(0xFF0B1021),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.12),
+          color: Colors.blue.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
@@ -729,7 +684,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         color: const Color(0xFF060A17),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
         ),
       ),
       child: Row(
@@ -807,7 +762,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         color: const Color(0xFF0B1021),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.12),
+          color: Colors.blue.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
@@ -1001,7 +956,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         _formLabel('Tipo de falla'),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: selectedFailureType,
+          initialValue: selectedFailureType,
           isExpanded: true,
           dropdownColor: const Color(0xFF0B1021),
           style: const TextStyle(
@@ -1075,7 +1030,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         _formLabel('Equipo'),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: valorSeleccionado,
+          initialValue: valorSeleccionado,
           isExpanded: true,
           dropdownColor: const Color(0xFF0B1021),
           style: const TextStyle(
@@ -1206,7 +1161,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         color: const Color(0xFF0B1021),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.12),
+          color: Colors.blue.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
@@ -1254,7 +1209,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
                 color: const Color(0xFF060A17),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -1552,7 +1507,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? color.withOpacity(0.15)
+              ? color.withValues(alpha: 0.15)
               : const Color(0xFF060A17),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
@@ -1673,7 +1628,12 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final picture = snapshot.data?['picture']?.toString() ?? '';
+        final imageUrl = ApiService.profileImageUrl(picture);
+        return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -1685,12 +1645,13 @@ class UserAvatar extends StatelessWidget {
       child: CircleAvatar(
         radius: radius,
         backgroundColor: const Color(0xFF1E3A8A),
-        child: Icon(
-          Icons.person,
-          color: Colors.white,
-          size: radius,
-        ),
+        backgroundImage: imageUrl.isEmpty
+            ? const AssetImage('assets/images/user.png')
+            : NetworkImage('$imageUrl?profile_refresh=${picture.hashCode}'),
+        child: null,
       ),
+    );
+      },
     );
   }
 }
@@ -1751,12 +1712,7 @@ class AppNavigationDrawer extends StatelessWidget {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => screen,
-      ),
-    );
+    navigateWithLoading(context, screen);
   }
 
   @override
@@ -1909,7 +1865,11 @@ class AppNavigationDrawer extends StatelessWidget {
             title: 'Mi perfil',
             isActive: activeRoute == 'Mi perfil',
             onTap: () {
-              // Aquí agregaremos MiPerfilScreen
+              _navegar(
+                context,
+                'Mi perfil',
+                const MiPerfilScreen(),
+              );
             },
           ),
 
