@@ -4,6 +4,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../services/api_service.dart';
 import '../services/session_service.dart';
 import 'user/home_screen.dart';
+import 'admin/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -1256,39 +1257,5 @@ class _LoginGridPainter extends CustomPainter {
     covariant CustomPainter oldDelegate,
   ) {
     return false;
-  }
-}
-
-class AdminScreen extends StatelessWidget {
-  const AdminScreen({super.key});
-
-  @override
-  Widget build(
-    BuildContext context,
-  ) {
-    return Scaffold(
-      backgroundColor:
-          const Color(0xFF070B18),
-      appBar: AppBar(
-        backgroundColor:
-            const Color(0xFF0D1630),
-        foregroundColor:
-            Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Tecnologías',
-        ),
-      ),
-      body: const Center(
-        child: Text(
-          'Área de Tecnologías',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -4,8 +4,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../services/session_service.dart';
-import 'welcome_screen.dart';
+import 'admin/home_screen.dart';
 import 'user/home_screen.dart';
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -127,75 +128,96 @@ class _SplashScreenState extends State<SplashScreen>
   // VERIFICAR SESIÓN
   // ==========================================================
 
-  Future<void> _verificarSesion() async {
-    try {
-      final bool tieneSesion = await SessionService.isLoggedIn();
+Future<void> _verificarSesion() async {
+  try {
+    final bool tieneSesion = await SessionService.isLoggedIn();
+
+    if (!mounted) return;
+
+    if (tieneSesion) {
+      final role = (await SessionService.getRole() ?? '')
+          .toLowerCase()
+          .replaceAll('á', 'a')
+          .replaceAll('é', 'e')
+          .replaceAll('í', 'i')
+          .replaceAll('ó', 'o')
+          .replaceAll('ú', 'u')
+          .trim();
+
+      final privAdmin = (await SessionService.getPrivAdmin() ?? '')
+          .trim()
+          .toUpperCase();
 
       if (!mounted) return;
 
-      if (tieneSesion) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (
-              context,
-              animation,
-              secondaryAnimation,
-            ) {
-              return const HomeScreen();
-            },
-            transitionsBuilder: (
-              context,
-              animation,
-              secondaryAnimation,
-              child,
-            ) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(
-              milliseconds: 500,
-            ),
-          ),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (
-              context,
-              animation,
-              secondaryAnimation,
-            ) {
-              return const WelcomeScreen();
-            },
-            transitionsBuilder: (
-              context,
-              animation,
-              secondaryAnimation,
-              child,
-            ) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(
-              milliseconds: 500,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
+      final destino =
+          privAdmin == 'Y' &&
+                  (role == 'gerente ti' || role == 'soporte tecnico')
+              ? const AdminScreen()
+              : const HomeScreen();
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const WelcomeScreen(),
+        PageRouteBuilder(
+          pageBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+          ) {
+            return destino;
+          },
+          transitionsBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+            child,
+          ) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(
+            milliseconds: 500,
+          ),
+        ),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+          ) {
+            return const WelcomeScreen();
+          },
+          transitionsBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+            child,
+          ) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(
+            milliseconds: 500,
+          ),
         ),
       );
     }
+  } catch (e) {
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const WelcomeScreen(),
+      ),
+    );
   }
+}
 
   @override
   void dispose() {
@@ -222,8 +244,8 @@ class _SplashScreenState extends State<SplashScreen>
             height: 168,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-              gradient: RadialGradient(colors: [const Color(0xFF426BFF).withOpacity(0.24), Colors.transparent]),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              gradient: RadialGradient(colors: [const Color(0xFF426BFF).withValues(alpha: 0.24), Colors.transparent]),
             ),
           ),
           Container(
@@ -232,8 +254,8 @@ class _SplashScreenState extends State<SplashScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(colors: [Color(0xFF1D3477), Color(0xFF0D1634)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
-              boxShadow: [BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.38), blurRadius: 38, spreadRadius: 4)],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              boxShadow: [BoxShadow(color: const Color(0xFF3B82F6).withValues(alpha: 0.38), blurRadius: 38, spreadRadius: 4)],
             ),
             child: Center(child: CustomPaint(size: const Size(78, 78), painter: _TicketLogoPainter())),
           ),
@@ -247,10 +269,10 @@ class _SplashScreenState extends State<SplashScreen>
       width: 244,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1531).withOpacity(0.76),
+        color: const Color(0xFF0B1531).withValues(alpha: 0.76),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 22, offset: const Offset(0, 10))],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 22, offset: const Offset(0, 10))],
       ),
       child: const Row(
         children: [
@@ -266,9 +288,9 @@ class _SplashScreenState extends State<SplashScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFF132554).withOpacity(0.74),
+        color: const Color(0xFF132554).withValues(alpha: 0.74),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF75A1FF).withOpacity(0.24)),
+        border: Border.all(color: const Color(0xFF75A1FF).withValues(alpha: 0.24)),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
@@ -293,10 +315,10 @@ class _SplashScreenState extends State<SplashScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF101D41).withOpacity(0.72),
+            color: const Color(0xFF101D41).withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.10)),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 7))],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 7))],
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: const Color(0xFF77A4FF), size: 14), const SizedBox(width: 6), Text(label, style: const TextStyle(color: Color(0xFFC9D6F3), fontSize: 9, fontWeight: FontWeight.w600))]),
         ),
@@ -653,7 +675,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF91AEFF).withOpacity(0.035)
+      ..color = const Color(0xFF91AEFF).withValues(alpha: 0.035)
       ..strokeWidth = 1;
     const spacing = 32.0;
     for (double x = 0; x < size.width; x += spacing) {

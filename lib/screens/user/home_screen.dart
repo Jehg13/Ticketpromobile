@@ -59,13 +59,13 @@ Future<void> showUserMessage(BuildContext context, String message, {bool isError
 Future<void> showUserNotifications(BuildContext context) {
   return showDialog(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.75),
+    barrierColor: Colors.black.withValues(alpha: 0.75),
     builder: (_) => Dialog(
       backgroundColor: const Color(0xFF0D1427),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.blue.withOpacity(0.18)),
+        side: BorderSide(color: Colors.blue.withValues(alpha: 0.18)),
       ),
       child: FutureBuilder<List<Map<String, dynamic>>>(
         future: TicketService.obtenerNotificaciones(),
@@ -116,7 +116,7 @@ Future<void> showUserNotifications(BuildContext context) {
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF182442),
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                                   ),
                                   child: ListTile(
                                     contentPadding: EdgeInsets.zero,
@@ -510,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _abrirNotificaciones() {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.75),
+      barrierColor: Colors.black.withValues(alpha: 0.75),
       builder: (context) {
         return Dialog(
           backgroundColor: const Color(0xFF0D1427),
@@ -520,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.blue.withOpacity(0.18)),
+            side: BorderSide(color: Colors.blue.withValues(alpha: 0.18)),
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560, maxHeight: 650),
@@ -534,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.15),
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -588,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: notificaciones.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             return _buildNotificacionItem(
@@ -616,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -667,8 +667,8 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: leida
-              ? Colors.white.withOpacity(0.04)
-              : color.withOpacity(0.35),
+              ? Colors.white.withValues(alpha: 0.04)
+              : color.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
@@ -678,7 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(9),
             ),
             child: Icon(_iconoNotificacion(tipo), color: color, size: 20),
@@ -1075,9 +1075,9 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.10),
+        color: Colors.red.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.withOpacity(0.35)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1293,7 +1293,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0D1427),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.15)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1480,7 +1480,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: 72,
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -1799,8 +1799,7 @@ class _HomeScreenState extends State<HomeScreen> {
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columnSpacing: 12,
-        headingRowColor: MaterialStateProperty.all(const Color(0xFF141C33)),
-        columns: const [
+          headingRowColor: WidgetStateProperty.all(const Color(0xFF141C33)),        columns: const [
           DataColumn(
             label: Text('Folio', style: TextStyle(color: Colors.white)),
           ),
@@ -2484,7 +2483,7 @@ class UserHeaderActions extends StatelessWidget {
           elevation: 14,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.blue.withOpacity(0.22)),
+            side: BorderSide(color: Colors.blue.withValues(alpha: 0.22)),
           ),
           onSelected: (value) async {
             if (value == 'perfil') {

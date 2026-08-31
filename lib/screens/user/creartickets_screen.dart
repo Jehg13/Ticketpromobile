@@ -2,13 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
-import 'home_screen.dart';
-import 'mistickets_screen.dart';
-import 'avisos_screen.dart';
-import 'perfil_screen.dart';
 import '../../services/crear_ticket_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
+import 'avisos_screen.dart';
+import 'home_screen.dart';
+import 'mistickets_screen.dart';
+import 'perfil_screen.dart';
 
 class CrearticketsScreen extends StatefulWidget {
   const CrearticketsScreen({super.key});
@@ -102,7 +102,7 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
     }
   }
 
- Future<void> _seleccionarEvidencias() async {
+Future<void> _seleccionarEvidencias() async {
   if (enviandoTicket) {
     return;
   }
@@ -117,7 +117,6 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
         'pdf',
         'mp4',
       ],
-      allowMultiple: true,
     );
 
     if (!mounted || archivos.isEmpty) {

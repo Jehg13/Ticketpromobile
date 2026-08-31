@@ -425,29 +425,6 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
     );
   }
 
-  void _mostrarNotificaciones() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0B1021),
-      builder: (_) => const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Notificaciones', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
-              Icon(Icons.notifications_none_rounded, color: Colors.grey, size: 40),
-              SizedBox(height: 10),
-              Text('No hay notificaciones disponibles.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _seleccionarFoto() async {
     try {
       final file = await FilePicker.pickFile(type: FileType.image);
