@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -46,6 +47,13 @@ class ApiService {
     }
 
     String cleanPath = path.trim();
+
+    if (cleanPath.startsWith('http://localhost') ||
+        cleanPath.startsWith('https://localhost')) {
+      cleanPath = cleanPath
+          .replaceFirst('http://localhost', 'http://127.0.0.1:8000')
+          .replaceFirst('https://localhost', 'http://127.0.0.1:8000');
+    }
 
     // Si Laravel ya devuelve una URL completa,
     // no hacemos ninguna modificación.
@@ -123,6 +131,37 @@ class ApiService {
     }
 
     return storageFileUrl(path);
+  }
+
+  static String resolveNotificationUrl(dynamic rawValue) {
+    if (rawValue == null) {
+      return '';
+    }
+
+    final value = rawValue.toString().trim();
+    if (value.isEmpty) {
+      return '';
+    }
+
+    if (value.startsWith('{') || value.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map) {
+          final selected = kIsWeb
+              ? (decoded['web'] ?? decoded['url'])
+              : (decoded['mobile'] ?? decoded['url'] ?? decoded['web']);
+
+          final url = selected?.toString().trim();
+          if (url != null && url.isNotEmpty) {
+            return url;
+          }
+        }
+      } catch (_) {
+        return value;
+      }
+    }
+
+    return value;
   }
 
   // ============================================================
@@ -252,12 +291,24 @@ class ApiService {
       key: 'user_numero_empleado',
       value: user['numero_empleado']?.toString() ?? '',
     );
-    await storage.write(
-      key: 'user_picture',
-      value: (user['picture'] ?? user['foto'] ?? user['foto_perfil'])
-              ?.toString() ??
-          '',
-    );
+    final picture =
+        (user['picture'] ?? user['foto'] ?? user['foto_perfil'])?.toString() ??
+        '';
+    final storedPicture = await storage.read(key: 'user_picture');
+    final normalizedPicture = picture.trim().toLowerCase();
+    final isDefaultPicture = normalizedPicture.isEmpty ||
+        normalizedPicture == 'user.png' ||
+        normalizedPicture.endsWith('/user.png') ||
+        normalizedPicture.contains('profile-photos/user.png');
+    final normalizedStored = storedPicture?.trim().toLowerCase() ?? '';
+    final hasStoredCustomPicture = normalizedStored.isNotEmpty &&
+        normalizedStored != 'user.png' &&
+        !normalizedStored.endsWith('/user.png') &&
+        !normalizedStored.contains('profile-photos/user.png');
+
+    if (!isDefaultPicture || !hasStoredCustomPicture) {
+      await storage.write(key: 'user_picture', value: picture);
+    }
   }
 
   // ============================================================

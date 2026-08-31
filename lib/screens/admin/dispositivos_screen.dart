@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../services/session_service.dart';
+import '../../services/admin/dispositivos_services.dart';
 import 'avisosadmin_screen.dart';
-import 'backup_screen.dart';
 import 'cambios_screen.dart';
 import 'home_screen.dart';
 import 'perfiladmin_screen.dart';
@@ -24,62 +24,24 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
   final Color primaryGradientEnd = const Color(0xFF4F46E5);
 
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _nombreEquipoController =
-      TextEditingController();
+  final TextEditingController _nombreEquipoController = TextEditingController();
   final TextEditingController _idEquipoController = TextEditingController();
 
   String? _selectedUsuarioVincular;
   String _selectedFiltroEstado = 'Todos los dispositivos';
 
-  final List<String> _usuariosList = [
-    'Fernando Reyes — freyes',
-    'Jesus Hinojosa — jhinojosa',
-  ];
+  List<Map<String, dynamic>> _dispositivos = [];
+  List<Map<String, dynamic>> _usuarios = [];
 
-  final List<Map<String, String>> dispositivos = [
-    {
-      'usuario': 'Fernando Reyes',
-      'login': 'freyes',
-      'equipo': 'IMPRESORA-ADM-1',
-      'idEquipo': 'HP-975S2',
-      'estado': 'Vinculado',
-    },
-    {
-      'usuario': 'Fernando Reyes',
-      'login': 'freyes',
-      'equipo': 'PHONE-ADM-3',
-      'idEquipo': 'CELLPHONE-C9756A',
-      'estado': 'Vinculado',
-    },
-    {
-      'usuario': 'Fernando Reyes',
-      'login': 'freyes',
-      'equipo': 'LAP-ADM-2',
-      'idEquipo': 'LENOVO-15970',
-      'estado': 'Vinculado',
-    },
-    {
-      'usuario': 'Jesus Hinojosa',
-      'login': 'jhinojosa',
-      'equipo': 'IMPRESORA-TI-1',
-      'idEquipo': 'PRINTER-DF784',
-      'estado': 'Vinculado',
-    },
-    {
-      'usuario': 'Jesus Hinojosa',
-      'login': 'jhinojosa',
-      'equipo': 'PHONE-TI-1',
-      'idEquipo': 'CELLPHONE-201547',
-      'estado': 'Vinculado',
-    },
-    {
-      'usuario': 'Jesus Hinojosa',
-      'login': 'jhinojosa',
-      'equipo': 'PC-TI-3',
-      'idEquipo': 'DESKTOP-15FER9',
-      'estado': 'Vinculado',
-    },
-  ];
+  bool _cargando = true;
+  bool _operando = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
 
   @override
   void dispose() {
@@ -89,33 +51,262 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final total = dispositivos.length;
-    final vinculados =
-        dispositivos.where((d) => d['estado'] == 'Vinculado').length;
-    final desvinculados =
-        dispositivos.where((d) => d['estado'] == 'Desvinculado').length;
+  Future<void> _cargarDatos() async {
+    if (!mounted) return;
+
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+
+    try {
+      final resultado = await DispositivosService.obtenerDatos(
+        pagina: 1,
+        porPagina: 10,
+      );
+
+      final usuarios = await DispositivosService.obtenerTodosLosUsuarios();
+
+      if (!mounted) return;
+
+      setState(() {
+        _dispositivos = List<Map<String, dynamic>>.from(
+          resultado['dispositivos'] ?? [],
+        );
+
+        _usuarios = usuarios;
+
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _cargando = false;
+        _error = _limpiarError(e);
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _extraerLista(dynamic valor) {
+    if (valor is List) {
+      return valor
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+
+    if (valor is Map) {
+      final posiblesClaves = [
+        'data',
+        'usuarios',
+        'users',
+        'resultados',
+        'results',
+        'items',
+      ];
+
+      for (final clave in posiblesClaves) {
+        final contenido = valor[clave];
+
+        if (contenido is List) {
+          return contenido
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      }
+    }
+
+    return [];
+  }
+
+  String _limpiarError(Object error) {
+    final mensaje = error.toString();
+
+    if (mensaje.startsWith('Exception: ')) {
+      return mensaje.substring(11);
+    }
+
+    return mensaje;
+  }
+
+  String _texto(dynamic valor) {
+    if (valor == null) return '';
+    return valor.toString().trim();
+  }
+
+  int? _toInt(dynamic valor) {
+    if (valor is int) return valor;
+    return int.tryParse(valor?.toString() ?? '');
+  }
+
+  String _usuarioNombre(Map<String, dynamic> usuario) {
+    final nombre = _texto(
+      usuario['name'] ??
+          usuario['nombre'] ??
+          usuario['nombre_completo'] ??
+          usuario['nombreCompleto'] ??
+          usuario['full_name'] ??
+          usuario['fullname'] ??
+          usuario['usuario'] ??
+          usuario['login'] ??
+          usuario['username'],
+    );
+
+    return nombre;
+  }
+
+  String _usuarioLogin(Map<String, dynamic> usuario) {
+    return _texto(
+      usuario['login'] ??
+          usuario['username'] ??
+          usuario['usuario'] ??
+          usuario['user'] ??
+          usuario['email'],
+    );
+  }
+
+  String _usuarioId(Map<String, dynamic> usuario) {
+    return _texto(
+      usuario['id'] ??
+          usuario['user_id'] ??
+          usuario['usuario_id'] ??
+          usuario['id_usuario'],
+    );
+  }
+
+  String _usuarioCorreo(Map<String, dynamic> usuario) {
+    return _texto(
+      usuario['email'] ?? usuario['correo'] ?? usuario['correo_electronico'],
+    );
+  }
+
+  String _usuarioTextoCompleto(Map<String, dynamic> usuario) {
+    final nombre = _usuarioNombre(usuario);
+    final login = _usuarioLogin(usuario);
+
+    if (nombre.isEmpty && login.isEmpty) {
+      return 'Usuario sin datos';
+    }
+
+    if (nombre.isEmpty) {
+      return login;
+    }
+
+    if (login.isEmpty) {
+      return nombre;
+    }
+
+    return '$nombre — $login';
+  }
+
+  String _dispositivoUsuario(Map<String, dynamic> dispositivo) {
+    final usuario = dispositivo['usuario'];
+
+    if (usuario is Map) {
+      return _texto(
+        usuario['name'] ??
+            usuario['nombre'] ??
+            usuario['nombre_completo'] ??
+            usuario['login'] ??
+            usuario['username'],
+      );
+    }
+
+    return _texto(
+      dispositivo['nombre_usuario'] ??
+          dispositivo['usuario_nombre'] ??
+          dispositivo['usuarioName'] ??
+          dispositivo['name'] ??
+          dispositivo['login'],
+    );
+  }
+
+  String _dispositivoLogin(Map<String, dynamic> dispositivo) {
+    final usuario = dispositivo['usuario'];
+
+    if (usuario is Map) {
+      return _texto(
+        usuario['login'] ?? usuario['username'] ?? usuario['usuario'],
+      );
+    }
+
+    return _texto(
+      dispositivo['login'] ??
+          dispositivo['username'] ??
+          dispositivo['usuario_login'] ??
+          dispositivo['usuarioLogin'],
+    );
+  }
+
+  String _dispositivoEquipo(Map<String, dynamic> dispositivo) {
+    return _texto(
+      dispositivo['nombre_equipo'] ??
+          dispositivo['equipo'] ??
+          dispositivo['nombre'] ??
+          dispositivo['nombreEquipo'],
+    );
+  }
+
+  String _dispositivoIdEquipo(Map<String, dynamic> dispositivo) {
+    return _texto(
+      dispositivo['id_equipo'] ??
+          dispositivo['idEquipo'] ??
+          dispositivo['identificador'],
+    );
+  }
+
+  String _dispositivoEstado(Map<String, dynamic> dispositivo) {
+    final estado = _texto(dispositivo['estado']).toLowerCase();
+
+    if (estado == 'vinculado') {
+      return 'Vinculado';
+    }
+
+    return 'Desvinculado';
+  }
+
+  List<Map<String, dynamic>> get _listaFiltrada {
     final busqueda = _searchController.text.toLowerCase().trim();
 
-    final listaFiltrada = dispositivos.where((item) {
+    return _dispositivos.where((item) {
+      final usuario = _dispositivoUsuario(item).toLowerCase();
+      final login = _dispositivoLogin(item).toLowerCase();
+      final equipo = _dispositivoEquipo(item).toLowerCase();
+      final idEquipo = _dispositivoIdEquipo(item).toLowerCase();
+      final estado = _dispositivoEstado(item);
+
       final matchesSearch =
-          item['usuario']!.toLowerCase().contains(busqueda) ||
-          item['login']!.toLowerCase().contains(busqueda) ||
-          item['equipo']!.toLowerCase().contains(busqueda) ||
-          item['idEquipo']!.toLowerCase().contains(busqueda);
+          usuario.contains(busqueda) ||
+          login.contains(busqueda) ||
+          equipo.contains(busqueda) ||
+          idEquipo.contains(busqueda);
 
       if (_selectedFiltroEstado == 'Vinculados') {
-        return matchesSearch && item['estado'] == 'Vinculado';
+        return matchesSearch && estado == 'Vinculado';
       }
 
       if (_selectedFiltroEstado == 'Desvinculados') {
-        return matchesSearch && item['estado'] == 'Desvinculado';
+        return matchesSearch && estado == 'Desvinculado';
       }
 
       return matchesSearch;
     }).toList();
+  }
 
+  int get _total => _dispositivos.length;
+
+  int get _vinculados => _dispositivos
+      .where((item) => _dispositivoEstado(item) == 'Vinculado')
+      .length;
+
+  int get _desvinculados => _dispositivos
+      .where((item) => _dispositivoEstado(item) == 'Desvinculado')
+      .length;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgDark,
       appBar: AppBar(
@@ -148,10 +339,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.notifications_none, color: Colors.white),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -204,7 +392,63 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
         ],
       ),
       drawer: _buildAppDrawer(),
-      body: SingleChildScrollView(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_cargando) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.blueAccent),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'No se pudieron cargar los dispositivos',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _cargarDatos,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: Colors.blueAccent,
+      backgroundColor: cardDark,
+      onRefresh: _cargarDatos,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,10 +458,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             _buildFormVincular(),
             const SizedBox(height: 20),
             _buildTablaDispositivosMobile(
-              listaFiltrada,
-              total,
-              vinculados,
-              desvinculados,
+              _listaFiltrada,
+              _total,
+              _vinculados,
+              _desvinculados,
             ),
           ],
         ),
@@ -232,9 +476,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF0D1630),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF0D1630)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -268,19 +510,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     color: Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Color(0xFF4F46E5),
-                        child: Text(
-                          'JH',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
+                      const AdminAvatar(radius: 16),
                       SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,9 +547,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const AdminScreen()),
               );
             },
           ),
@@ -328,9 +558,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const TicketsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const TicketsScreen()),
               );
             },
           ),
@@ -341,9 +569,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const CambiosScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const CambiosScreen()),
               );
             },
           ),
@@ -354,9 +580,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const UserScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const UserScreen()),
               );
             },
           ),
@@ -375,22 +599,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AvisosadminScreen(),
-                ),
-              );
-            },
-          ),
-          _drawerItem(
-            Icons.backup_outlined,
-            'Backups',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BackupScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const AvisosadminScreen()),
               );
             },
           ),
@@ -401,15 +610,11 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const PerfiladminScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const PerfiladminScreen()),
               );
             },
           ),
-          const Divider(
-            color: Colors.white10,
-          ),
+          const Divider(color: Colors.white10),
           _drawerItem(
             Icons.logout_rounded,
             'Cerrar sesión',
@@ -431,34 +636,23 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     final color = isExit
         ? Colors.redAccent
         : selected
-            ? Colors.white
-            : const Color(0xFF94A3B8);
+        ? Colors.white
+        : const Color(0xFF94A3B8);
 
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF4F46E5)
-            : Colors.transparent,
+        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
+        leading: Icon(icon, color: color, size: 20),
         title: Text(
           title,
           style: TextStyle(
             color: color,
             fontSize: 14,
-            fontWeight: selected
-                ? FontWeight.bold
-                : FontWeight.normal,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         onTap: onTap,
@@ -471,11 +665,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
 
     if (!mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/',
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   Widget _buildSectionHeader() {
@@ -487,11 +677,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             color: Colors.blue.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(
-            Icons.devices,
-            color: Colors.blueAccent,
-            size: 22,
-          ),
+          child: const Icon(Icons.devices, color: Colors.blueAccent, size: 22),
         ),
         const SizedBox(width: 12),
         const Expanded(
@@ -511,10 +697,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               Text(
                 'Administra y vincula los equipos',
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
@@ -530,9 +713,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,11 +726,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.link,
-                  color: Colors.blue,
-                  size: 18,
-                ),
+                child: const Icon(Icons.link, color: Colors.blue, size: 18),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -568,10 +745,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     Text(
                       'Asigna un equipo a un usuario',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ],
                 ),
@@ -580,27 +754,8 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           ),
           const SizedBox(height: 16),
           _buildLabel('Usuario'),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedUsuarioVincular,
-            dropdownColor: cardDark,
-            isExpanded: true,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
-            decoration: _inputDecoration(
-              Icons.person_outline,
-              'Selecciona un usuario',
-            ),
-            items: _usuariosList.map((usuario) {
-              return DropdownMenuItem<String>(
-                value: usuario,
-                child: Text(
-                  usuario,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
+          _buildUsuarioSelector(
+            value: _selectedUsuarioVincular,
             onChanged: (value) {
               setState(() {
                 _selectedUsuarioVincular = value;
@@ -611,10 +766,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           _buildLabel('Nombre del equipo'),
           TextField(
             controller: _nombreEquipoController,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
             decoration: _inputDecoration(
               Icons.desktop_windows,
               'Ej. PC-OFICINA-01',
@@ -624,10 +776,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           _buildLabel('ID del equipo'),
           TextField(
             controller: _idEquipoController,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
             decoration: _inputDecoration(
               Icons.fingerprint,
               'Ej. DESKTOP-A8F32K',
@@ -636,10 +785,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           const SizedBox(height: 4),
           const Text(
             'Este identificador debe ser único.',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 10),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -648,38 +794,41 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    primaryGradientStart,
-                    primaryGradientEnd,
-                  ],
+                  colors: [primaryGradientStart, primaryGradientEnd],
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ElevatedButton(
-                onPressed: _vincularDispositivo,
+                onPressed: _operando ? null : _vincularDispositivo,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.link,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Vincular dispositivo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                child: _operando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.link, size: 18, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Vincular dispositivo',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -688,8 +837,286 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
+  Widget _buildUsuarioSelector({
+    required String? value,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final usuarioActual = _usuarios.where(
+      (usuario) => _usuarioLogin(usuario) == value,
+    );
+
+    final textoActual = usuarioActual.isNotEmpty
+        ? _usuarioTextoCompleto(usuarioActual.first)
+        : null;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () async {
+        final seleccionado = await _mostrarSelectorUsuario(
+          usuarioInicial: value,
+        );
+
+        if (seleccionado != null) {
+          onChanged(seleccionado);
+        }
+      },
+      child: InputDecorator(
+        decoration: _inputDecoration(
+          Icons.person_outline,
+          'Selecciona un usuario',
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                textoActual ?? 'Selecciona un usuario',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: textoActual == null ? Colors.grey : Colors.white,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _mostrarSelectorUsuario({String? usuarioInicial}) async {
+    final searchController = TextEditingController();
+    String busqueda = '';
+
+    final resultado = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final usuariosFiltrados = _usuarios.where((usuario) {
+              final nombre = _usuarioNombre(usuario).toLowerCase();
+              final login = _usuarioLogin(usuario).toLowerCase();
+              final correo = _usuarioCorreo(usuario).toLowerCase();
+              final id = _usuarioId(usuario).toLowerCase();
+
+              return nombre.contains(busqueda) ||
+                  login.contains(busqueda) ||
+                  correo.contains(busqueda) ||
+                  id.contains(busqueda);
+            }).toList();
+
+            return AlertDialog(
+              backgroundColor: cardDark,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 24,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              title: Row(
+                children: [
+                  const Icon(
+                    Icons.people_alt_outlined,
+                    color: Colors.blueAccent,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Seleccionar usuario',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${usuariosFiltrados.length}/${_usuarios.length}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 430,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      autofocus: true,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      onChanged: (texto) {
+                        setModalState(() {
+                          busqueda = texto.toLowerCase().trim();
+                        });
+                      },
+                      decoration: _inputDecoration(
+                        Icons.search,
+                        'Buscar por nombre, usuario o correo',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: usuariosFiltrados.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.person_off_outlined,
+                                    color: Colors.grey,
+                                    size: 38,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No se encontraron usuarios',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: usuariosFiltrados.length,
+                              separatorBuilder: (_, _) => const Divider(
+                                color: Colors.white10,
+                                height: 1,
+                              ),
+                              itemBuilder: (context, index) {
+                                final usuario = usuariosFiltrados[index];
+
+                                final login = _usuarioLogin(usuario);
+                                final nombre = _usuarioNombre(usuario);
+                                final correo = _usuarioCorreo(usuario);
+                                final id = _usuarioId(usuario);
+
+                                final seleccionado =
+                                    login.isNotEmpty && login == usuarioInicial;
+
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: login.isEmpty
+                                      ? null
+                                      : () {
+                                          Navigator.pop(dialogContext, login);
+                                        },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 38,
+                                          height: 38,
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.person,
+                                            color: Colors.blueAccent,
+                                            size: 19,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                nombre.isEmpty ? login : nombre,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              if (login.isNotEmpty)
+                                                Text(
+                                                  '@$login',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.blueAccent,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              if (correo.isNotEmpty)
+                                                Text(
+                                                  correo,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              if (id.isNotEmpty)
+                                                Text(
+                                                  'ID: $id',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 9,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        if (seleccionado)
+                                          const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.greenAccent,
+                                            size: 20,
+                                          )
+                                        else
+                                          const Icon(
+                                            Icons.chevron_right,
+                                            color: Colors.grey,
+                                            size: 20,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    searchController.dispose();
+
+    return resultado;
+  }
+
   Widget _buildTablaDispositivosMobile(
-    List<Map<String, String>> lista,
+    List<Map<String, dynamic>> lista,
     int total,
     int vinculados,
     int desvinculados,
@@ -700,9 +1127,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -719,10 +1144,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           const Text(
             'Equipos registrados en TicketPro',
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 11),
           ),
           const SizedBox(height: 12),
           SingleChildScrollView(
@@ -735,10 +1157,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   Colors.blue,
                 ),
                 const SizedBox(width: 6),
-                _buildCounterDotChip(
-                  Colors.green,
-                  '$vinculados vinculados',
-                ),
+                _buildCounterDotChip(Colors.green, '$vinculados vinculados'),
                 const SizedBox(width: 6),
                 _buildCounterDotChip(
                   Colors.orange,
@@ -750,44 +1169,27 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           const SizedBox(height: 14),
           TextField(
             controller: _searchController,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
             onChanged: (_) {
               setState(() {});
             },
-            decoration: _inputDecoration(
-              Icons.search,
-              'Buscar equipo o ID...',
-            ),
+            decoration: _inputDecoration(Icons.search, 'Buscar equipo o ID...'),
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             initialValue: _selectedFiltroEstado,
             dropdownColor: cardDark,
             isExpanded: true,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
-            decoration: _inputDecoration(
-              Icons.filter_alt,
-              '',
-            ),
-            items: [
-              'Todos los dispositivos',
-              'Vinculados',
-              'Desvinculados',
-            ].map((estado) {
-              return DropdownMenuItem<String>(
-                value: estado,
-                child: Text(
-                  estado,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: _inputDecoration(Icons.filter_alt, ''),
+            items: ['Todos los dispositivos', 'Vinculados', 'Desvinculados']
+                .map((estado) {
+                  return DropdownMenuItem<String>(
+                    value: estado,
+                    child: Text(estado, overflow: TextOverflow.ellipsis),
+                  );
+                })
+                .toList(),
             onChanged: (value) {
               if (value == null) return;
 
@@ -807,8 +1209,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final item = lista[index];
-                final estadoVinculado =
-                    item['estado'] == 'Vinculado';
+
+                final usuario = _dispositivoUsuario(item);
+                final login = _dispositivoLogin(item);
+                final equipo = _dispositivoEquipo(item);
+                final idEquipo = _dispositivoIdEquipo(item);
+                final estado = _dispositivoEstado(item);
+
+                final estadoVinculado = estado == 'Vinculado';
 
                 return Container(
                   width: double.infinity,
@@ -834,7 +1242,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              item['usuario']!,
+                              usuario.isEmpty ? 'Sin usuario' : usuario,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -856,7 +1264,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              item['estado']!,
+                              estado,
                               style: TextStyle(
                                 color: estadoVinculado
                                     ? Colors.greenAccent
@@ -871,7 +1279,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                       Padding(
                         padding: const EdgeInsets.only(left: 22),
                         child: Text(
-                          '@${item['login']!}',
+                          login.isEmpty ? '' : '@$login',
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.grey,
@@ -879,10 +1287,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                           ),
                         ),
                       ),
-                      const Divider(
-                        color: Colors.white10,
-                        height: 16,
-                      ),
+                      const Divider(color: Colors.white10, height: 16),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -894,7 +1299,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              item['equipo']!,
+                              equipo,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white70,
@@ -915,7 +1320,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                item['idEquipo']!,
+                                idEquipo,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.grey,
@@ -932,7 +1337,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           InkWell(
-                            onTap: () => _showEditarModal(item),
+                            onTap: _operando
+                                ? null
+                                : () => _showEditarModal(item),
                             child: const Padding(
                               padding: EdgeInsets.all(4),
                               child: Icon(
@@ -944,20 +1351,25 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                           ),
                           const SizedBox(width: 12),
                           InkWell(
-                            onTap: () =>
-                                _showDesvincularModal(item),
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
+                            onTap: _operando
+                                ? null
+                                : () => _showCambiarEstadoModal(item),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
                               child: Icon(
-                                Icons.link_off,
-                                color: Colors.orange,
+                                estadoVinculado ? Icons.link_off : Icons.link,
+                                color: estadoVinculado
+                                    ? Colors.orange
+                                    : Colors.green,
                                 size: 18,
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           InkWell(
-                            onTap: () => _showEliminarModal(item),
+                            onTap: _operando
+                                ? null
+                                : () => _showEliminarModal(item),
                             child: const Padding(
                               padding: EdgeInsets.all(4),
                               child: Icon(
@@ -985,11 +1397,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       padding: const EdgeInsets.symmetric(vertical: 35),
       child: const Column(
         children: [
-          Icon(
-            Icons.devices_other,
-            color: Colors.grey,
-            size: 40,
-          ),
+          Icon(Icons.devices_other, color: Colors.grey, size: 40),
           SizedBox(height: 10),
           Text(
             'No se encontraron dispositivos',
@@ -1002,41 +1410,206 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           SizedBox(height: 4),
           Text(
             'Intenta cambiar los filtros de búsqueda.',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 11),
           ),
         ],
       ),
     );
   }
 
-  void _showEditarModal(Map<String, String> item) {
-    final editEquipo = TextEditingController(
-      text: item['equipo'],
-    );
-    final editId = TextEditingController(
-      text: item['idEquipo'],
-    );
-
-    String? usuarioSeleccionado;
-
-    for (final usuario in _usuariosList) {
-      final partes = usuario.split('—');
-
-      if (partes.length > 1 &&
-          partes[0].trim() == item['usuario'] &&
-          partes[1].trim() == item['login']) {
-        usuarioSeleccionado = usuario;
-        break;
-      }
+  Future<void> _vincularDispositivo() async {
+    if (_selectedUsuarioVincular == null) {
+      _mostrarMensaje('Debes seleccionar un usuario.');
+      return;
     }
 
-    usuarioSeleccionado ??=
-        _usuariosList.isNotEmpty ? _usuariosList.first : null;
+    final nombreEquipo = _nombreEquipoController.text.trim();
+    final idEquipo = _idEquipoController.text.trim();
 
-    String estado = item['estado']!;
+    if (nombreEquipo.isEmpty) {
+      _mostrarMensaje('Debes ingresar el nombre del equipo.');
+      return;
+    }
+
+    if (idEquipo.isEmpty) {
+      _mostrarMensaje('Debes ingresar el ID del equipo.');
+      return;
+    }
+
+    setState(() {
+      _operando = true;
+    });
+
+    try {
+      await DispositivosService.crearDispositivo(
+        login: _selectedUsuarioVincular!,
+        nombreEquipo: nombreEquipo,
+        idEquipo: idEquipo,
+      );
+
+      if (!mounted) return;
+
+      _nombreEquipoController.clear();
+      _idEquipoController.clear();
+
+      setState(() {
+        _selectedUsuarioVincular = null;
+      });
+
+      _mostrarMensaje('Dispositivo vinculado correctamente.');
+
+      await _cargarDatos();
+    } catch (e) {
+      if (!mounted) return;
+
+      _mostrarMensaje(_limpiarError(e));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _operando = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _actualizarDispositivo({
+    required int id,
+    required String login,
+    required String nombreEquipo,
+    required String idEquipo,
+    required String estado,
+  }) async {
+    setState(() {
+      _operando = true;
+    });
+
+    try {
+      await DispositivosService.actualizarDispositivo(
+        id: id,
+        login: login,
+        nombreEquipo: nombreEquipo,
+        idEquipo: idEquipo,
+        estado: estado.toLowerCase(),
+      );
+
+      if (!mounted) return;
+
+      _mostrarMensaje('Dispositivo actualizado correctamente.');
+
+      await _cargarDatos();
+    } catch (e) {
+      if (!mounted) return;
+
+      _mostrarMensaje(_limpiarError(e));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _operando = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _cambiarEstado(Map<String, dynamic> item) async {
+    final id = _toInt(item['id']);
+
+    if (id == null) {
+      _mostrarMensaje('No se pudo identificar el dispositivo.');
+      return;
+    }
+
+    setState(() {
+      _operando = true;
+    });
+
+    try {
+      final actualizado = await DispositivosService.cambiarEstado(id);
+
+      debugPrint('DISPOSITIVO ID: $id');
+      debugPrint('RESPUESTA CAMBIAR ESTADO: $actualizado');
+
+      if (!mounted) return;
+
+      final estadoActual = actualizado['estado']
+          ?.toString()
+          .trim()
+          .toLowerCase();
+
+      debugPrint('ESTADO DEVUELTO POR API: $estadoActual');
+
+      setState(() {
+        final index = _dispositivos.indexWhere(
+          (elemento) => _toInt(elemento['id']) == id,
+        );
+
+        if (index >= 0) {
+          _dispositivos[index] = {..._dispositivos[index], ...actualizado};
+        }
+      });
+
+      _mostrarMensaje('Estado del dispositivo actualizado correctamente.');
+
+      await _cargarDatos();
+    } catch (e) {
+      if (!mounted) return;
+
+      _mostrarMensaje(_limpiarError(e));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _operando = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _eliminarDispositivo(Map<String, dynamic> item) async {
+    final id = _toInt(item['id']);
+
+    if (id == null) {
+      _mostrarMensaje('No se pudo identificar el dispositivo.');
+      return;
+    }
+
+    setState(() {
+      _operando = true;
+    });
+
+    try {
+      await DispositivosService.eliminarDispositivo(id);
+
+      if (!mounted) return;
+
+      _mostrarMensaje('Dispositivo eliminado correctamente.');
+
+      await _cargarDatos();
+    } catch (e) {
+      if (!mounted) return;
+
+      _mostrarMensaje(_limpiarError(e));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _operando = false;
+        });
+      }
+    }
+  }
+
+  void _showEditarModal(Map<String, dynamic> item) {
+    final editEquipo = TextEditingController(text: _dispositivoEquipo(item));
+
+    final editId = TextEditingController(text: _dispositivoIdEquipo(item));
+
+    String? usuarioSeleccionado = _dispositivoLogin(item);
+
+    if (!_usuarios.any(
+      (usuario) => _usuarioLogin(usuario) == usuarioSeleccionado,
+    )) {
+      usuarioSeleccionado = null;
+    }
+
+    String estado = _dispositivoEstado(item);
 
     showDialog(
       context: context,
@@ -1060,21 +1633,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                       color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.blue,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.edit, color: Colors.blue, size: 18),
                   ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'Editar dispositivo',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ],
@@ -1085,31 +1651,8 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildLabel('Usuario'),
-                    DropdownButtonFormField<String>(
-                      initialValue: usuarioSeleccionado,
-                      dropdownColor: cardDark,
-                      isExpanded: true,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
-                      decoration: _inputDecoration(
-                        Icons.person_outline,
-                        'Selecciona un usuario',
-                      ),
-                      items: _usuariosList.map((usuario) {
-                        return DropdownMenuItem<String>(
-                          value: usuario,
-                          child: Text(
-                            usuario,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    _buildUsuarioSelector(
+                      value: usuarioSeleccionado,
                       onChanged: (value) {
                         setModalState(() {
                           usuarioSeleccionado = value;
@@ -1120,10 +1663,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     _buildLabel('Nombre del equipo'),
                     TextField(
                       controller: editEquipo,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: _inputDecoration(
                         Icons.desktop_windows,
                         'Nombre del equipo',
@@ -1133,10 +1673,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     _buildLabel('ID del equipo'),
                     TextField(
                       controller: editId,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: _inputDecoration(
                         Icons.fingerprint,
                         'ID del equipo',
@@ -1148,18 +1685,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                       initialValue: estado,
                       dropdownColor: cardDark,
                       isExpanded: true,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: _inputDecoration(
                         Icons.check_circle_outline,
                         'Selecciona el estado',
                       ),
-                      items: [
-                        'Vinculado',
-                        'Desvinculado',
-                      ].map((estadoItem) {
+                      items: ['Vinculado', 'Desvinculado'].map((estadoItem) {
                         return DropdownMenuItem<String>(
                           value: estadoItem,
                           child: Text(
@@ -1191,9 +1722,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   },
                   child: const Text(
                     'Cancelar',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ),
                 ElevatedButton(
@@ -1201,51 +1730,41 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     backgroundColor: primaryGradientStart,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: () {
-                    if (usuarioSeleccionado == null ||
-                        editEquipo.text.trim().isEmpty ||
-                        editId.text.trim().isEmpty) {
+                  onPressed: () async {
+                    if (usuarioSeleccionado == null) {
+                      _mostrarMensaje('Debes seleccionar un usuario.');
                       return;
                     }
 
-                    final userParts =
-                        usuarioSeleccionado!.split('—');
+                    if (editEquipo.text.trim().isEmpty) {
+                      _mostrarMensaje('Debes ingresar el nombre del equipo.');
+                      return;
+                    }
 
-                    if (userParts.length < 2) return;
+                    if (editId.text.trim().isEmpty) {
+                      _mostrarMensaje('Debes ingresar el ID del equipo.');
+                      return;
+                    }
 
-                    final nuevoId = editId.text.trim();
+                    final id = _toInt(item['id']);
 
-                    final idDuplicado = dispositivos.any(
-                      (dispositivo) =>
-                          dispositivo != item &&
-                          dispositivo['idEquipo']!
-                                  .toLowerCase() ==
-                              nuevoId.toLowerCase(),
+                    if (id == null) {
+                      _mostrarMensaje('No se pudo identificar el dispositivo.');
+                      return;
+                    }
+
+                    Navigator.pop(dialogContext);
+
+                    await _actualizarDispositivo(
+                      id: id,
+                      login: usuarioSeleccionado!,
+                      nombreEquipo: editEquipo.text.trim(),
+                      idEquipo: editId.text.trim(),
+                      estado: estado,
                     );
-
-                    if (idDuplicado) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'El ID del equipo ya está registrado.',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    setState(() {
-                      item['usuario'] = userParts[0].trim();
-                      item['login'] = userParts[1].trim();
-                      item['equipo'] = editEquipo.text.trim();
-                      item['idEquipo'] = nuevoId;
-                      item['estado'] = estado;
-                    });
 
                     editEquipo.dispose();
                     editId.dispose();
-
-                    Navigator.pop(dialogContext);
                   },
                   child: const Text('Guardar'),
                 ),
@@ -1257,7 +1776,11 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
-  void _showDesvincularModal(Map<String, String> item) {
+  void _showCambiarEstadoModal(Map<String, dynamic> item) {
+    final estado = _dispositivoEstado(item);
+
+    final esVinculado = estado == 'Vinculado';
+
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -1266,12 +1789,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          title: const Text(
-            'Desvincular dispositivo',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
+          title: Text(
+            esVinculado ? 'Desvincular dispositivo' : 'Vincular dispositivo',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1280,20 +1800,23 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
+                  color: (esVinculado ? Colors.orange : Colors.green)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'El dispositivo quedará marcado como desvinculado del usuario.',
+                child: Text(
+                  esVinculado
+                      ? 'El dispositivo quedará marcado como desvinculado del usuario.'
+                      : 'El dispositivo volverá a quedar marcado como vinculado al usuario.',
                   style: TextStyle(
-                    color: Colors.orange,
+                    color: esVinculado ? Colors.orange : Colors.greenAccent,
                     fontSize: 12,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                item['equipo']!,
+                _dispositivoEquipo(item),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
@@ -1307,24 +1830,19 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: Colors.grey,
-                ),
+                style: TextStyle(color: Colors.grey),
               ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                backgroundColor: esVinculado ? Colors.orange : Colors.green,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                setState(() {
-                  item['estado'] = 'Desvinculado';
-                });
-
+              onPressed: () async {
                 Navigator.pop(dialogContext);
+                await _cambiarEstado(item);
               },
-              child: const Text('Desvincular'),
+              child: Text(esVinculado ? 'Desvincular' : 'Vincular'),
             ),
           ],
         );
@@ -1332,7 +1850,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
-  void _showEliminarModal(Map<String, String> item) {
+  void _showEliminarModal(Map<String, dynamic> item) {
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -1343,10 +1861,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           ),
           title: const Text(
             'Eliminar dispositivo',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 16),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1360,15 +1875,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                 ),
                 child: const Text(
                   'Esta acción es permanente y no se puede deshacer.',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                item['equipo']!,
+                _dispositivoEquipo(item),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
@@ -1382,9 +1894,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: Colors.grey,
-                ),
+                style: TextStyle(color: Colors.grey),
               ),
             ),
             ElevatedButton(
@@ -1392,12 +1902,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                setState(() {
-                  dispositivos.remove(item);
-                });
-
+              onPressed: () async {
                 Navigator.pop(dialogContext);
+                await _eliminarDispositivo(item);
               },
               child: const Text('Eliminar'),
             ),
@@ -1407,49 +1914,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
-  void _vincularDispositivo() {
-    if (_selectedUsuarioVincular == null ||
-        _nombreEquipoController.text.trim().isEmpty ||
-        _idEquipoController.text.trim().isEmpty) {
-      return;
-    }
+  void _mostrarMensaje(String mensaje) {
+    if (!mounted) return;
 
-    final userParts = _selectedUsuarioVincular!.split('—');
-
-    if (userParts.length < 2) return;
-
-    final idEquipo = _idEquipoController.text.trim();
-
-    final existeId = dispositivos.any(
-      (dispositivo) =>
-          dispositivo['idEquipo']!.toLowerCase() ==
-          idEquipo.toLowerCase(),
-    );
-
-    if (existeId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'El ID del equipo ya está registrado.',
-          ),
-        ),
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(mensaje), behavior: SnackBarBehavior.floating),
       );
-      return;
-    }
-
-    setState(() {
-      dispositivos.add({
-        'usuario': userParts[0].trim(),
-        'login': userParts[1].trim(),
-        'equipo': _nombreEquipoController.text.trim(),
-        'idEquipo': idEquipo,
-        'estado': 'Vinculado',
-      });
-
-      _nombreEquipoController.clear();
-      _idEquipoController.clear();
-      _selectedUsuarioVincular = null;
-    });
   }
 
   Widget _buildLabel(String text) {
@@ -1466,27 +1938,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(
-    IconData icon,
-    String hint,
-  ) {
+  InputDecoration _inputDecoration(IconData icon, String hint) {
     return InputDecoration(
-      prefixIcon: Icon(
-        icon,
-        color: Colors.grey,
-        size: 18,
-      ),
+      prefixIcon: Icon(icon, color: Colors.grey, size: 18),
       hintText: hint,
-      hintStyle: const TextStyle(
-        color: Colors.grey,
-        fontSize: 12,
-      ),
+      hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
       filled: true,
       fillColor: inputBg,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 10,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
@@ -1497,24 +1956,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: Colors.blueAccent,
-          width: 1,
-        ),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 1),
       ),
     );
   }
 
-  Widget _buildCounterChip(
-    IconData icon,
-    String text,
-    Color color,
-  ) {
+  Widget _buildCounterChip(IconData icon, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(6),
@@ -1522,33 +1971,17 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 12,
-          ),
+          Icon(icon, color: color, size: 12),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
-          ),
+          Text(text, style: const TextStyle(color: Colors.grey, fontSize: 11)),
         ],
       ),
     );
   }
 
-  Widget _buildCounterDotChip(
-    Color color,
-    String text,
-  ) {
+  Widget _buildCounterDotChip(Color color, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(6),
@@ -1559,19 +1992,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
-          ),
+          Text(text, style: const TextStyle(color: Colors.grey, fontSize: 11)),
         ],
       ),
     );

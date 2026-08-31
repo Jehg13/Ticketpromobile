@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
@@ -60,89 +61,194 @@ Future<void> showUserNotifications(BuildContext context) {
   return showDialog(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.75),
-    builder: (_) => Dialog(
-      backgroundColor: const Color(0xFF0D1427),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.blue.withValues(alpha: 0.18)),
-      ),
-      child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: TicketService.obtenerNotificaciones(),
-        builder: (context, snapshot) {
-          final items = snapshot.data ?? [];
-          return ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 650),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 12, 16),
-                  child: Row(
+    builder: (_) {
+      return StatefulBuilder(
+        builder: (dialogContext, setState) {
+          Future<List<Map<String, dynamic>>> notificationsFuture =
+              TicketService.obtenerNotificaciones();
+
+          return Dialog(
+            backgroundColor: const Color(0xFF0D1427),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.blue.withValues(alpha: 0.18)),
+            ),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: notificationsFuture,
+              builder: (context, snapshot) {
+                final items = snapshot.data ?? [];
+                final unreadCount = items.where((item) {
+                  final leida = item['leida'];
+                  return leida != true && leida != 1 && leida != '1' && leida != 'true';
+                }).length;
+
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560, maxHeight: 650),
+                  child: Column(
                     children: [
-                      const Icon(Icons.notifications_none_rounded, color: Color(0xFF60A5FA), size: 27),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Notificaciones',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 12, 16),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.notifications_none_rounded, color: Color(0xFF60A5FA), size: 27),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Notificaciones',
+                                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            if (unreadCount > 0)
+                              TextButton.icon(
+                                onPressed: () async {
+                                  final ok = await TicketService.marcarTodasNotificacionesLeidas();
+                                  if (!dialogContext.mounted) return;
+                                  if (ok) {
+                                    setState(() {
+                                      notificationsFuture = TicketService.obtenerNotificaciones();
+                                    });
+                                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Notificaciones marcadas como leídas.'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('No se pudieron actualizar las notificaciones.'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF60A5FA),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                ),
+                                icon: const Icon(Icons.done_all_rounded, size: 18),
+                                label: const Text('Marcar leídas', style: TextStyle(fontSize: 11)),
+                              ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                            ),
+                          ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      const Divider(color: Colors.white10, height: 1),
+                      Expanded(
+                        child: snapshot.connectionState == ConnectionState.waiting
+                            ? const LoadingScreen(mensaje: 'Cargando tu información...')
+                            : items.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'Cuando recibas una notificación aparecerá aquí.',
+                                      style: TextStyle(color: Colors.white54, fontSize: 11),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: items.length,
+                                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                    itemBuilder: (_, index) {
+                                      final item = items[index];
+                                      final String urlDestino = ApiService.resolveNotificationUrl(item['url']);
+                                      final bool leida = item['leida'] == true ||
+                                          item['leida'] == 1 ||
+                                          item['leida'] == '1' ||
+                                          item['leida'] == 'true';
+                                      final int? itemId = int.tryParse(item['id']?.toString() ?? '');
+
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: leida ? const Color(0xFF182442) : const Color(0xFF1C2D4D),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: leida ? Colors.white.withValues(alpha: 0.06) : Colors.blue.withValues(alpha: 0.35),
+                                          ),
+                                        ),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: ListTile(
+                                            contentPadding: EdgeInsets.zero,
+                                            leading: Icon(
+                                              userNotificationIcon(item),
+                                              color: userNotificationColor(item),
+                                            ),
+                                            title: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    item['titulo']?.toString() ??
+                                                        item['title']?.toString() ??
+                                                        'Notificación',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (!leida)
+                                                  const Icon(
+                                                    Icons.circle,
+                                                    color: Color(0xFF60A5FA),
+                                                    size: 8,
+                                                  ),
+                                              ],
+                                            ),
+                                            subtitle: Text(
+                                              item['mensaje']?.toString() ?? item['message']?.toString() ?? '',
+                                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                            ),
+                                            onTap: () async {
+                                              if (itemId != null) {
+                                                await TicketService.marcarNotificacionComoLeida(itemId);
+                                                if (dialogContext.mounted) {
+                                                  setState(() {
+                                                    notificationsFuture = TicketService.obtenerNotificaciones();
+                                                  });
+                                                }
+                                              }
+
+                                              final parsedUrl = Uri.tryParse(urlDestino);
+                                              if (parsedUrl == null || !parsedUrl.hasScheme || !parsedUrl.hasAuthority) {
+                                                return;
+                                              }
+
+                                              if (dialogContext.mounted) {
+                                                Navigator.of(dialogContext).pop();
+                                              }
+
+                                              final opened = await launchUrl(parsedUrl, mode: LaunchMode.externalApplication);
+                                              if (!opened && context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('No se pudo abrir la notificación.'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                       ),
                     ],
                   ),
-                ),
-                const Divider(color: Colors.white10, height: 1),
-                Expanded(
-                  child: snapshot.connectionState == ConnectionState.waiting
-                      ? const LoadingScreen(mensaje: 'Cargando tu información...')
-                      : items.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'Cuando recibas una notificación aparecerá aquí.',
-                                style: TextStyle(color: Colors.white54, fontSize: 11),
-                              ),
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: items.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: 8),
-                              itemBuilder: (_, index) {
-                                final item = items[index];
-                                return Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF182442),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: Icon(
-                                      userNotificationIcon(item),
-                                      color: userNotificationColor(item),
-                                    ),
-                                    title: Text(
-                                      item['titulo']?.toString() ?? item['title']?.toString() ?? 'Notificación',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    subtitle: Text(
-                                      item['mensaje']?.toString() ?? item['message']?.toString() ?? '',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                ),
-              ],
+                );
+              },
             ),
           );
         },
-      ),
-    ),
+      );
+    },
   );
 }
 

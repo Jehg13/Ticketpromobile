@@ -246,6 +246,86 @@ class TicketService {
     return notificaciones;
   }
 
+  static Future<bool> marcarNotificacionComoLeida(
+    dynamic id,
+  ) async {
+    final token = await SessionService.getToken();
+
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+
+    final notificationId = int.tryParse(id?.toString() ?? '');
+
+    if (notificationId == null) {
+      return false;
+    }
+
+    final url =
+        '${ApiService.baseUrl}/mis-tickets-notificaciones/$notificationId/leida';
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        return decoded is Map && decoded['success'] == true;
+      }
+
+      debugPrint(
+        '⚠️ Error al marcar notificación como leída: ${response.statusCode} ${response.body}',
+      );
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Excepción al marcar notificación como leída: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> marcarTodasNotificacionesLeidas() async {
+    final token = await SessionService.getToken();
+
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+
+    final url =
+        '${ApiService.baseUrl}/mis-tickets-notificaciones-leer-todas';
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        return decoded is Map && decoded['success'] == true;
+      }
+
+      debugPrint(
+        '⚠️ Error al marcar todas las notificaciones como leídas: ${response.statusCode} ${response.body}',
+      );
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Excepción al marcar todas las notificaciones: $e');
+      return false;
+    }
+  }
+
   static Future<int>
       obtenerNotificacionesNoLeidas() async {
     debugPrint('');

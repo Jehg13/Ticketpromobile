@@ -281,7 +281,7 @@ class AvisosusuarioService {
       return null;
     }
 
-    return url;
+    return ApiService.storageFileUrl(url);
   }
 
   static String? obtenerArchivoNombre(

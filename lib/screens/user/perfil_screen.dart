@@ -39,14 +39,20 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   Future<void> _cargarPerfil() async {
     try {
       final response = await PerfilUsuarioService.obtenerPerfil();
-      final usuario = response['usuario'];
+      final usuario = response['usuario'] ?? response['user'];
+      final perfilData = response['data'];
+      final usuarioNormalizado =
+          usuario ??
+          (perfilData is Map
+              ? (perfilData['usuario'] ?? perfilData['user'])
+              : null);
 
       if (!mounted) return;
 
       setState(() {
         _perfil.clear();
-        if (usuario is Map) {
-          _perfil.addAll(Map<String, dynamic>.from(usuario));
+        if (usuarioNormalizado is Map) {
+          _perfil.addAll(Map<String, dynamic>.from(usuarioNormalizado));
         }
         _cargandoPerfil = false;
       });
@@ -81,6 +87,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
     final campoController = ValueNotifier<String>('nombre');
     final nuevoValorController = TextEditingController();
     final motivoController = TextEditingController();
+    var enviando = false;
 
     await showDialog<void>(
       context: context,
@@ -190,6 +197,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             ),
             FilledButton(
               onPressed: () async {
+                if (enviando) return;
                 final campo = campoController.value;
                 final nuevoValor = nuevoValorController.text.trim();
                 final motivo = motivoController.text.trim();
@@ -202,6 +210,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   return;
                 }
 
+                enviando = true;
                 Navigator.pop(dialogContext);
 
                 try {
@@ -230,6 +239,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
     final actualController = TextEditingController();
     final nuevaController = TextEditingController();
     final confirmarController = TextEditingController();
+    var actualizando = false;
 
     await showDialog<void>(
       context: context,
@@ -310,6 +320,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             ),
             FilledButton(
               onPressed: () async {
+                if (actualizando) return;
                 final actual = actualController.text;
                 final nueva = nuevaController.text;
                 final confirmar = confirmarController.text;
@@ -343,6 +354,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   return;
                 }
 
+                actualizando = true;
                 Navigator.pop(dialogContext);
 
                 try {
@@ -446,7 +458,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   Future<void> _subirFotoSeleccionada() async {
     if ((_fotoNuevaPath == null || _fotoNuevaPath!.isEmpty) &&
         (_fotoNuevaBytes == null || _fotoNuevaBytes!.isEmpty)) {
-      _mostrarMensaje('Selecciona una imagen antes de actualizar la foto.', isError: true);
+      _mostrarMensaje(
+        'Selecciona una imagen antes de actualizar la foto.',
+        isError: true,
+      );
       return;
     }
 
@@ -461,8 +476,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
 
       final usuarioRespuesta = response['usuario'] ?? response['user'];
       final respuestaData = response['data'];
-      final nuevaFoto = response['picture']?.toString() ??
-          (usuarioRespuesta is Map ? usuarioRespuesta['picture']?.toString() : null) ??
+      final nuevaFoto =
+          response['picture']?.toString() ??
+          (usuarioRespuesta is Map
+              ? usuarioRespuesta['picture']?.toString()
+              : null) ??
           (respuestaData is Map ? respuestaData['picture']?.toString() : null);
       if (nuevaFoto != null && nuevaFoto.isNotEmpty) {
         await SessionService.updatePicture(nuevaFoto);
@@ -541,10 +559,14 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
               iconTheme: const IconThemeData(color: Colors.white),
               title: const AppLogo(fontSize: 20),
               actions: [
-                home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
+                home.UserHeaderActions(
+                  onNotifications: () => home.showUserNotifications(context),
+                ),
               ],
             ),
-      drawer: isDesktop ? null : const TicketProNavigationDrawer(activeRoute: 'Mi perfil'),
+      drawer: isDesktop
+          ? null
+          : const TicketProNavigationDrawer(activeRoute: 'Mi perfil'),
       body: _cargandoPerfil
           ? const LoadingScreen(mensaje: 'Cargando tu perfil...')
           : Container(
@@ -560,7 +582,9 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   if (isDesktop)
                     const SizedBox(
                       width: 260,
-                      child: TicketProNavigationDrawer(activeRoute: 'Mi perfil'),
+                      child: TicketProNavigationDrawer(
+                        activeRoute: 'Mi perfil',
+                      ),
                     ),
                   Expanded(
                     child: SafeArea(
@@ -625,11 +649,16 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: const Text(
                     'Cuenta activa',
@@ -659,8 +688,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             ),
           ),
           if (isDesktop) ...[
-            home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
-          ]
+            home.UserHeaderActions(
+              onNotifications: () => home.showUserNotifications(context),
+            ),
+          ],
         ],
       ),
     );
@@ -778,7 +809,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.person_outline_rounded, color: Color(0xFF93C5FD), size: 20),
+              Icon(
+                Icons.person_outline_rounded,
+                color: Color(0xFF93C5FD),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Información personal y laboral',
@@ -799,33 +834,98 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final personal = [
-                _infoTile('Nombre completo', nombre, Icons.person_outline, double.infinity),
-                _infoTile('Correo electrónico', email, Icons.email_outlined, double.infinity),
-                _infoTile('Teléfono', telefono, Icons.phone_outlined, double.infinity),
-                _infoTile('Usuario de acceso', login, Icons.account_circle_outlined, double.infinity),
+                _infoTile(
+                  'Nombre completo',
+                  nombre,
+                  Icons.person_outline,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Correo electrónico',
+                  email,
+                  Icons.email_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Teléfono',
+                  telefono,
+                  Icons.phone_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Usuario de acceso',
+                  login,
+                  Icons.account_circle_outlined,
+                  double.infinity,
+                ),
               ];
               final laboral = [
-                _infoTile('Empresa', empresa, Icons.apartment_outlined, double.infinity),
-                _infoTile('Departamento', departamento, Icons.account_tree_outlined, double.infinity),
-                _infoTile('Oficina / Sucursal', oficina, Icons.desktop_windows_outlined, double.infinity),
-                _infoTile('Número de empleado', numeroEmpleado, Icons.badge_outlined, double.infinity),
-                _infoTile('Rol', rol, Icons.verified_user_outlined, double.infinity),
+                _infoTile(
+                  'Empresa',
+                  empresa,
+                  Icons.apartment_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Departamento',
+                  departamento,
+                  Icons.account_tree_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Oficina / Sucursal',
+                  oficina,
+                  Icons.desktop_windows_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Número de empleado',
+                  numeroEmpleado,
+                  Icons.badge_outlined,
+                  double.infinity,
+                ),
+                _infoTile(
+                  'Rol',
+                  rol,
+                  Icons.verified_user_outlined,
+                  double.infinity,
+                ),
               ];
               if (constraints.maxWidth <= 760) {
                 return Column(
                   children: [
-                    _buildInfoGroup('Datos personales', Icons.person_outline, personal),
+                    _buildInfoGroup(
+                      'Datos personales',
+                      Icons.person_outline,
+                      personal,
+                    ),
                     const SizedBox(height: 14),
-                    _buildInfoGroup('Datos laborales', Icons.work_outline, laboral),
+                    _buildInfoGroup(
+                      'Datos laborales',
+                      Icons.work_outline,
+                      laboral,
+                    ),
                   ],
                 );
               }
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _buildInfoGroup('Datos personales', Icons.person_outline, personal)),
+                  Expanded(
+                    child: _buildInfoGroup(
+                      'Datos personales',
+                      Icons.person_outline,
+                      personal,
+                    ),
+                  ),
                   const SizedBox(width: 14),
-                  Expanded(child: _buildInfoGroup('Datos laborales', Icons.work_outline, laboral)),
+                  Expanded(
+                    child: _buildInfoGroup(
+                      'Datos laborales',
+                      Icons.work_outline,
+                      laboral,
+                    ),
+                  ),
                 ],
               );
             },
@@ -850,7 +950,14 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             children: [
               Icon(icon, color: const Color(0xFF93C5FD), size: 17),
               const SizedBox(width: 7),
-              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -860,11 +967,20 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 ),
                 child: const Text(
                   'FIJO',
-                  style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.lock_outline_rounded, color: Colors.white38, size: 15),
+              const Icon(
+                Icons.lock_outline_rounded,
+                color: Colors.white38,
+                size: 15,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -1139,7 +1255,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 label: const Text('Actualizar contraseña'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   backgroundColor: secondaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -1152,7 +1271,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 label: const Text('Autenticación en dos pasos'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   backgroundColor: secondaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -1204,7 +1326,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.camera_alt_outlined, color: Color(0xFF93C5FD), size: 20),
+              Icon(
+                Icons.camera_alt_outlined,
+                color: Color(0xFF93C5FD),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Foto de perfil',
@@ -1251,9 +1377,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                     backgroundImage: _fotoNuevaBytes != null
                         ? MemoryImage(_fotoNuevaBytes!)
                         : imagenActual ??
-                            (tieneFotoPerfil
-                                ? NetworkImage('$fotoUrl?profile_refresh=${fotoUrl.hashCode}')
-                                : const AssetImage('assets/images/user.png')),
+                              (tieneFotoPerfil
+                                  ? NetworkImage(
+                                      '$fotoUrl?profile_refresh=${fotoUrl.hashCode}',
+                                    )
+                                  : const AssetImage('assets/images/user.png')),
                     child: !hayFotoNueva && !tieneFotoPerfil
                         ? Text(
                             nombreUsuario.isNotEmpty
@@ -1320,7 +1448,9 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 ),
                 elevation: 0,
               ),
-              onPressed: (_procesandoFoto || !hayFotoNueva) ? null : _subirFotoSeleccionada,
+              onPressed: (_procesandoFoto || !hayFotoNueva)
+                  ? null
+                  : _subirFotoSeleccionada,
               child: Text(
                 _procesandoFoto ? 'Subiendo foto...' : 'Actualizar foto',
                 style: const TextStyle(
@@ -1343,7 +1473,9 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: (_procesandoFoto || !tieneFotoPerfil) ? null : _eliminarFoto,
+              onPressed: (_procesandoFoto || !tieneFotoPerfil)
+                  ? null
+                  : _eliminarFoto,
               child: const Text(
                 'Eliminar foto',
                 style: TextStyle(
@@ -1390,7 +1522,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.info_outline_rounded, color: Color(0xFF93C5FD), size: 20),
+              Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFF93C5FD),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Información de la cuenta',

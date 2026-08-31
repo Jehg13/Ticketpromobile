@@ -1,8 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionService {
-  static const FlutterSecureStorage _storage =
-      FlutterSecureStorage();
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   static const String tokenKey = 'auth_token';
 
@@ -18,79 +17,65 @@ class SessionService {
   static const String departamentoKey = 'user_departamento';
   static const String oficinaKey = 'user_oficina';
 
-  static const String numeroEmpleadoKey =
-      'user_numero_empleado';
+  static const String numeroEmpleadoKey = 'user_numero_empleado';
   static const String pictureKey = 'user_picture';
 
   static Future<void> saveSession({
     required String token,
     required Map<String, dynamic> user,
   }) async {
-    await _storage.write(
-      key: tokenKey,
-      value: _toString(token),
-    );
+    await _storage.write(key: tokenKey, value: _toString(token));
 
-    await _storage.write(
-      key: loginKey,
-      value: _toString(user['login']),
-    );
+    await _storage.write(key: loginKey, value: _toString(user['login']));
 
-    await _storage.write(
-      key: emailKey,
-      value: _toString(user['email']),
-    );
+    await _storage.write(key: emailKey, value: _toString(user['email']));
 
-    await _storage.write(
-      key: nameKey,
-      value: _toString(user['name']),
-    );
+    await _storage.write(key: nameKey, value: _toString(user['name']));
 
-    await _storage.write(
-      key: roleKey,
-      value: _toString(user['role']),
-    );
+    await _storage.write(key: roleKey, value: _toString(user['role']));
 
     await _storage.write(
       key: privAdminKey,
       value: _toString(user['priv_admin']),
     );
 
-    await _storage.write(
-      key: activeKey,
-      value: _toString(user['active']),
-    );
+    await _storage.write(key: activeKey, value: _toString(user['active']));
 
-    await _storage.write(
-      key: mfaKey,
-      value: _toString(user['mfa']),
-    );
+    await _storage.write(key: mfaKey, value: _toString(user['mfa']));
 
-    await _storage.write(
-      key: empresaKey,
-      value: _toString(user['empresa']),
-    );
+    await _storage.write(key: empresaKey, value: _toString(user['empresa']));
 
     await _storage.write(
       key: departamentoKey,
       value: _toString(user['departamento']),
     );
 
-    await _storage.write(
-      key: oficinaKey,
-      value: _toString(user['oficina']),
-    );
+    await _storage.write(key: oficinaKey, value: _toString(user['oficina']));
 
     await _storage.write(
       key: numeroEmpleadoKey,
       value: _toString(user['numero_empleado']),
     );
-    await _storage.write(
-      key: pictureKey,
-      value: _toString(
-        user['picture'] ?? user['foto'] ?? user['foto_perfil'],
-      ),
+    final picture = _toString(
+      user['picture'] ?? user['foto'] ?? user['foto_perfil'],
     );
+    final storedPicture = await _storage.read(key: pictureKey);
+    final normalizedPicture = picture.toLowerCase();
+    final isDefaultPicture =
+        normalizedPicture.isEmpty ||
+        normalizedPicture == 'user.png' ||
+        normalizedPicture.endsWith('/user.png') ||
+        normalizedPicture.contains('profile-photos/user.png');
+    final normalizedStored = storedPicture?.trim().toLowerCase() ?? '';
+    final hasStoredCustomPicture =
+        normalizedStored.isNotEmpty &&
+        normalizedStored != 'user.png' &&
+        !normalizedStored.endsWith('/user.png') &&
+        !normalizedStored.contains('profile-photos/user.png');
+
+    if (!isDefaultPicture || !hasStoredCustomPicture) {
+      await _storage.write(key: pictureKey, value: picture);
+    }
   }
 
   static String _toString(dynamic value) {
@@ -102,75 +87,51 @@ class SessionService {
   }
 
   static Future<String?> getToken() async {
-    return await _storage.read(
-      key: tokenKey,
-    );
+    return await _storage.read(key: tokenKey);
   }
 
   static Future<String?> getLogin() async {
-    return await _storage.read(
-      key: loginKey,
-    );
+    return await _storage.read(key: loginKey);
   }
 
   static Future<String?> getEmail() async {
-    return await _storage.read(
-      key: emailKey,
-    );
+    return await _storage.read(key: emailKey);
   }
 
   static Future<String?> getName() async {
-    return await _storage.read(
-      key: nameKey,
-    );
+    return await _storage.read(key: nameKey);
   }
 
   static Future<String?> getRole() async {
-    return await _storage.read(
-      key: roleKey,
-    );
+    return await _storage.read(key: roleKey);
   }
 
   static Future<String?> getPrivAdmin() async {
-    return await _storage.read(
-      key: privAdminKey,
-    );
+    return await _storage.read(key: privAdminKey);
   }
 
   static Future<String?> getActive() async {
-    return await _storage.read(
-      key: activeKey,
-    );
+    return await _storage.read(key: activeKey);
   }
 
   static Future<String?> getMfa() async {
-    return await _storage.read(
-      key: mfaKey,
-    );
+    return await _storage.read(key: mfaKey);
   }
 
   static Future<String?> getEmpresa() async {
-    return await _storage.read(
-      key: empresaKey,
-    );
+    return await _storage.read(key: empresaKey);
   }
 
   static Future<String?> getDepartamento() async {
-    return await _storage.read(
-      key: departamentoKey,
-    );
+    return await _storage.read(key: departamentoKey);
   }
 
   static Future<String?> getOficina() async {
-    return await _storage.read(
-      key: oficinaKey,
-    );
+    return await _storage.read(key: oficinaKey);
   }
 
   static Future<String?> getNumeroEmpleado() async {
-    return await _storage.read(
-      key: numeroEmpleadoKey,
-    );
+    return await _storage.read(key: numeroEmpleadoKey);
   }
 
   static Future<String?> getPicture() async {

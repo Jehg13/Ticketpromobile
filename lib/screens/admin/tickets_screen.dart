@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'avisosadmin_screen.dart';
-import 'backup_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
 import 'perfiladmin_screen.dart';
 import 'users_screen.dart';
+
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
 
@@ -152,10 +152,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           IconButton(
             icon: Stack(
               children: [
-                const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                ),
+                const Icon(Icons.notifications_outlined, color: Colors.white),
                 Positioned(
                   right: 0,
                   top: 0,
@@ -171,10 +168,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     ),
                     child: const Text(
                       '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 9),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -184,17 +178,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             onPressed: () {},
           ),
           const SizedBox(width: 8),
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: primaryBlue,
-            child: Text(
-              'JH',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ),
+          const AdminAvatar(radius: 16),
           const SizedBox(width: 12),
         ],
       ),
@@ -215,10 +199,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             const SizedBox(height: 4),
             const Text(
               'Consulta y da seguimiento a todos los tickets que se han creado',
-              style: TextStyle(
-                color: textMuted,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: textMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -296,18 +277,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.search,
-                          color: textMuted,
-                          size: 18,
-                        ),
+                        Icon(Icons.search, color: textMuted, size: 18),
                         SizedBox(width: 8),
                         Expanded(
                           child: TextField(
-                            style: TextStyle(
-                              color: textWhite,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: textWhite, fontSize: 13),
                             decoration: InputDecoration(
                               hintText: 'Buscar...',
                               hintStyle: TextStyle(
@@ -342,10 +316,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       SizedBox(width: 6),
                       Text(
                         'Este mes',
-                        style: TextStyle(
-                          color: textWhite,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: textWhite, fontSize: 12),
                       ),
                       Icon(
                         Icons.keyboard_arrow_down,
@@ -379,30 +350,19 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 children: [
                   const Text(
                     'Mostrando 1 a 10 de 18 tickets',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildPageBtn(
-                        icon: Icons.chevron_left,
-                        disabled: true,
-                      ),
+                      _buildPageBtn(icon: Icons.chevron_left, disabled: true),
                       const SizedBox(width: 6),
-                      _buildPageBtn(
-                        text: '1',
-                        selected: true,
-                      ),
+                      _buildPageBtn(text: '1', selected: true),
                       const SizedBox(width: 6),
                       _buildPageBtn(text: '2'),
                       const SizedBox(width: 6),
-                      _buildPageBtn(
-                        icon: Icons.chevron_right,
-                      ),
+                      _buildPageBtn(icon: Icons.chevron_right),
                     ],
                   ),
                 ],
@@ -426,25 +386,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? primaryBlue : cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? primaryBlue : Colors.white10,
-          ),
+          border: Border.all(color: isSelected ? primaryBlue : Colors.white10),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected ? textWhite : textMuted,
             fontSize: 12,
-            fontWeight: isSelected
-                ? FontWeight.bold
-                : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
@@ -463,29 +416,19 @@ class _TicketsScreenState extends State<TicketsScreen> {
       decoration: BoxDecoration(
         color: selected
             ? primaryBlue
-            : (disabled
-                ? Colors.white.withValues(alpha: 0.02)
-                : cardBg),
+            : (disabled ? Colors.white.withValues(alpha: 0.02) : cardBg),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: selected ? primaryBlue : Colors.white10,
-        ),
+        border: Border.all(color: selected ? primaryBlue : Colors.white10),
       ),
       child: Center(
         child: icon != null
-            ? Icon(
-                icon,
-                color: disabled ? Colors.white24 : textWhite,
-                size: 18,
-              )
+            ? Icon(icon, color: disabled ? Colors.white24 : textWhite, size: 18)
             : Text(
                 text!,
                 style: TextStyle(
                   color: selected ? textWhite : textMuted,
                   fontSize: 12,
-                  fontWeight: selected
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
       ),
@@ -520,10 +463,7 @@ class TicketItem {
 class TicketCard extends StatelessWidget {
   final TicketItem ticket;
 
-  const TicketCard({
-    super.key,
-    required this.ticket,
-  });
+  const TicketCard({super.key, required this.ticket});
 
   @override
   Widget build(BuildContext context) {
@@ -533,9 +473,7 @@ class TicketCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,39 +508,22 @@ class TicketCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Divider(
-            color: Colors.white10,
-            height: 1,
-          ),
+          const Divider(color: Colors.white10, height: 1),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(
-                Icons.memory,
-                size: 14,
-                color: Color(0xFF94A3B8),
-              ),
+              const Icon(Icons.memory, size: 14, color: Color(0xFF94A3B8)),
               const SizedBox(width: 4),
               Text(
                 ticket.type,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
               ),
               const Spacer(),
-              const Icon(
-                Icons.access_time,
-                size: 14,
-                color: Color(0xFF94A3B8),
-              ),
+              const Icon(Icons.access_time, size: 14, color: Color(0xFF94A3B8)),
               const SizedBox(width: 4),
               Text(
                 '${ticket.date} • ${ticket.time}',
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
               ),
             ],
           ),
@@ -617,10 +538,7 @@ class TicketCard extends StatelessWidget {
                     backgroundColor: Color(0xFF3B82F6),
                     child: Text(
                       'US',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 8),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -695,25 +613,16 @@ class TicketCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: text.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: text.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: text,
-            size: 11,
-          ),
+          Icon(icon, color: text, size: 11),
           const SizedBox(width: 3),
           Text(
             priority,
@@ -744,10 +653,7 @@ class TicketCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
@@ -788,9 +694,7 @@ class KPIStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,11 +702,7 @@ class KPIStatCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 15,
-              ),
+              Icon(icon, color: iconColor, size: 15),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -826,10 +726,7 @@ class KPIStatCard extends StatelessWidget {
           ),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 9,
-            ),
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
           ),
         ],
       ),
@@ -840,10 +737,7 @@ class KPIStatCard extends StatelessWidget {
 class CustomSidebar extends StatelessWidget {
   final String activeMenu;
 
-  const CustomSidebar({
-    super.key,
-    this.activeMenu = 'Inicio',
-  });
+  const CustomSidebar({super.key, this.activeMenu = 'Inicio'});
 
   @override
   Widget build(BuildContext context) {
@@ -853,9 +747,7 @@ class CustomSidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF0D1630),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF0D1630)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -896,10 +788,7 @@ class CustomSidebar extends StatelessWidget {
                         backgroundColor: Color(0xFF4F46E5),
                         child: Text(
                           'JH',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -938,9 +827,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const AdminScreen()),
               );
             },
           ),
@@ -962,9 +849,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const CambiosScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const CambiosScreen()),
               );
             },
           ),
@@ -977,9 +862,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const UserScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const UserScreen()),
               );
             },
           ),
@@ -1015,21 +898,6 @@ class CustomSidebar extends StatelessWidget {
           ),
           _drawerItem(
             context,
-            Icons.backup_outlined,
-            'Backups',
-            selected: activeMenu == 'Backups',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BackupScreen(),
-                ),
-              );
-            },
-          ),
-          _drawerItem(
-            context,
             Icons.person_outline,
             'Mi perfil',
             selected: activeMenu == 'Mi perfil',
@@ -1043,9 +911,7 @@ class CustomSidebar extends StatelessWidget {
               );
             },
           ),
-          const Divider(
-            color: Colors.white10,
-          ),
+          const Divider(color: Colors.white10),
           _drawerItem(
             context,
             Icons.logout,
@@ -1069,14 +935,9 @@ class CustomSidebar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF4F46E5)
-            : Colors.transparent,
+        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -1084,9 +945,7 @@ class CustomSidebar extends StatelessWidget {
           icon,
           color: isExit
               ? Colors.redAccent
-              : (selected
-                  ? Colors.white
-                  : const Color(0xFF94A3B8)),
+              : (selected ? Colors.white : const Color(0xFF94A3B8)),
           size: 20,
         ),
         title: Text(
@@ -1094,12 +953,9 @@ class CustomSidebar extends StatelessWidget {
           style: TextStyle(
             color: isExit
                 ? Colors.redAccent
-                : (selected
-                    ? Colors.white
-                    : const Color(0xFF94A3B8)),
+                : (selected ? Colors.white : const Color(0xFF94A3B8)),
             fontSize: 14,
-            fontWeight:
-                selected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         onTap: onTap,

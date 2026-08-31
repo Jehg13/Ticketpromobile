@@ -306,11 +306,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
     if (archivo.isNotEmpty) {
       return archivo;
     }
-    final url = _textoSeguro(aviso['archivo_url']);
-    if (url.isNotEmpty) {
-      return url;
-    }
-    return '';
+    return AvisosusuarioService.obtenerArchivoUrl(aviso) ?? '';
   }
   String _nombreArchivo(String ruta) {
     final uri = Uri.tryParse(ruta);
