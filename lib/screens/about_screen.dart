@@ -250,7 +250,7 @@ class AboutScreen extends StatelessWidget {
                                 '© 2026 Cymez',
                                 style: TextStyle(
                                   color:
-                                      Colors.white.withOpacity(0.32),
+                                      Colors.white.withValues(alpha: 0.32),
                                   fontSize: 10,
                                   fontWeight:
                                       FontWeight.w400,
@@ -290,12 +290,12 @@ class AboutScreen extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.white.withOpacity(0.16),
+              color: Colors.white.withValues(alpha: 0.16),
             ),
             boxShadow: [
               BoxShadow(
                 color:
-                    const Color(0xFF1677FF).withOpacity(0.28),
+                    const Color(0xFF1677FF).withValues(alpha: 0.28),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -337,7 +337,7 @@ class AboutScreen extends StatelessWidget {
               Text(
                 'Soporte y ayuda',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.48),
+                  color: Colors.white.withValues(alpha: 0.48),
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.4,
@@ -353,11 +353,11 @@ class AboutScreen extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: const Color(0xFF102653)
-                .withOpacity(0.62),
+                .withValues(alpha: 0.62),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color:
-                  const Color(0xFF75A1FF).withOpacity(0.16),
+                  const Color(0xFF75A1FF).withValues(alpha:0.16),
             ),
           ),
           child: const Row(
@@ -396,8 +396,8 @@ class AboutScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF11285A).withOpacity(0.82),
-            const Color(0xFF0B1733).withOpacity(0.78),
+            const Color(0xFF11285A).withValues(alpha: 0.82),
+            const Color(0xFF0B1733).withValues(alpha: 0.78),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -405,11 +405,11 @@ class AboutScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color:
-              const Color(0xFF4A94FF).withOpacity(0.18),
+              const Color(0xFF4A94FF).withValues(alpha:0.18),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.20),
+            color: Colors.black.withValues(alpha: 0.20),
             blurRadius: 26,
             offset: const Offset(0, 14),
           ),
@@ -423,11 +423,11 @@ class AboutScreen extends StatelessWidget {
             height: smallPhone ? 50 : 56,
             decoration: BoxDecoration(
               color:
-                  const Color(0xFF1677FF).withOpacity(0.14),
+                  const Color(0xFF1677FF).withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color:
-                    const Color(0xFF4A94FF).withOpacity(0.12),
+                    const Color(0xFF4A94FF).withValues(alpha:0.12),
               ),
             ),
             child: Icon(
@@ -481,7 +481,7 @@ class AboutScreen extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             color:
-                const Color(0xFF1677FF).withOpacity(0.11),
+                const Color(0xFF1677FF).withValues(alpha: 0.11),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -535,19 +535,19 @@ class AboutScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0D1B3E).withOpacity(0.76),
-            const Color(0xFF09152F).withOpacity(0.82),
+            const Color(0xFF0D1B3E).withValues(alpha: 0.76),
+            const Color(0xFF09152F).withValues(alpha: 0.82),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: accentColor.withOpacity(0.18),
+          color: accentColor.withValues(alpha: 0.18),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.13),
+            color: Colors.black.withValues(alpha: 0.13),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -563,12 +563,12 @@ class AboutScreen extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.11),
+                  color: accentColor.withValues(alpha: 0.11),
                   borderRadius:
                       BorderRadius.circular(14),
                   border: Border.all(
                     color:
-                        accentColor.withOpacity(0.10),
+                        accentColor.withValues(alpha: 0.10),
                   ),
                 ),
                 child: Icon(
@@ -604,7 +604,7 @@ class AboutScreen extends StatelessWidget {
                     Text(
                       information,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.86),
+                        color: Colors.white.withValues(alpha: 0.86),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -622,11 +622,11 @@ class AboutScreen extends StatelessWidget {
               onPressed: onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    accentColor.withOpacity(0.12),
+                    accentColor.withValues(alpha: 0.12),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 side: BorderSide(
-                  color: accentColor.withOpacity(0.32),
+                  color: accentColor.withValues(alpha: 0.32),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius:
@@ -669,8 +669,8 @@ class AboutScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0D1B3E).withOpacity(0.70),
-            const Color(0xFF09152F).withOpacity(0.70),
+            const Color(0xFF0D1B3E).withValues(alpha: 0.70),
+            const Color(0xFF09152F).withValues(alpha: 0.70),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -678,15 +678,15 @@ class AboutScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color:
-              const Color(0xFF3D8BFF).withOpacity(0.13),
+              const Color(0xFF3D8BFF).withValues(alpha: 0.13),
         ),
       ),
       child: Theme(
         data: ThemeData(
           splashColor:
-              const Color(0xFF3D8BFF).withOpacity(0.05),
+              const Color(0xFF3D8BFF).withValues(alpha: 0.05),
           highlightColor:
-              const Color(0xFF3D8BFF).withOpacity(0.04),
+              const Color(0xFF3D8BFF).withValues(alpha: 0.04),
           dividerColor: Colors.transparent,
           expansionTileTheme:
               const ExpansionTileThemeData(
@@ -698,7 +698,7 @@ class AboutScreen extends StatelessWidget {
         child: ExpansionTile(
           iconColor: const Color(0xFF69A4FF),
           collapsedIconColor:
-              Colors.white.withOpacity(0.35),
+              Colors.white.withValues(alpha: 0.35),
           tilePadding:
               const EdgeInsets.symmetric(horizontal: 15),
           childrenPadding: EdgeInsets.zero,
@@ -723,11 +723,11 @@ class AboutScreen extends StatelessWidget {
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
                 color:
-                    const Color(0xFF1677FF).withOpacity(0.06),
+                    const Color(0xFF1677FF).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: const Color(0xFF3D8BFF)
-                      .withOpacity(0.08),
+                      .withValues(alpha: 0.08),
                 ),
               ),
               child: Text(
@@ -756,18 +756,18 @@ class AboutScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF11285A).withOpacity(0.78),
-            const Color(0xFF0B1733).withOpacity(0.88),
+            const Color(0xFF11285A).withValues(alpha: 0.78),
+            const Color(0xFF0B1733).withValues(alpha: 0.88),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color:
-              const Color(0xFF3D8BFF).withOpacity(0.16),
+              const Color(0xFF3D8BFF).withValues(alpha: 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 9),
           ),
@@ -780,7 +780,7 @@ class AboutScreen extends StatelessWidget {
             height: smallPhone ? 44 : 48,
             decoration: BoxDecoration(
               color:
-                  const Color(0xFF1677FF).withOpacity(0.12),
+                  const Color(0xFF1677FF).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -821,11 +821,11 @@ class AboutScreen extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color:
-                  const Color(0xFF57D697).withOpacity(0.08),
+                  const Color(0xFF57D697).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color:
-                    const Color(0xFF57D697).withOpacity(0.18),
+                    const Color(0xFF57D697).withValues(alpha: 0.18),
               ),
             ),
             child: const Row(
@@ -866,7 +866,7 @@ class _AboutGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF91B7FF).withOpacity(0.035)
+      ..color = const Color(0xFF91B7FF).withValues(alpha: 0.035)
       ..strokeWidth = 1;
 
     const double spacing = 34;

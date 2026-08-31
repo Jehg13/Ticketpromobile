@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'login_screen.dart';
+
 import 'about_screen.dart';
+import 'login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -232,7 +233,7 @@ class WelcomeScreen extends StatelessWidget {
                                     shadows: [
                                       Shadow(
                                         color: const Color(0xFF4A94FF)
-                                            .withOpacity(0.18),
+                                            .withValues(alpha: .18),
                                         blurRadius: 20,
                                       ),
                                     ],
@@ -250,7 +251,7 @@ class WelcomeScreen extends StatelessWidget {
                                     shadows: [
                                       Shadow(
                                         color: const Color(0xFF1677FF)
-                                            .withOpacity(0.40),
+                                            .withValues(alpha: 0.40),
                                         blurRadius: 28,
                                       ),
                                     ],
@@ -270,7 +271,7 @@ class WelcomeScreen extends StatelessWidget {
                                     'que conecta equipos, departamentos y '
                                     'ubicaciones para resolver lo que importa.',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.68),
+                                      color: Colors.white.withValues(alpha: 0.68),
                                       fontSize: descriptionSize,
                                       height: 1.45,
                                       fontWeight: FontWeight.w400,
@@ -321,7 +322,7 @@ class WelcomeScreen extends StatelessWidget {
                                   child: Text(
                                     '© 2026 Cymez',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.32),
+                                      color: Colors.white.withValues(alpha: 0.32),
                                       fontSize: 10,
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -361,17 +362,17 @@ class WelcomeScreen extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1677FF).withOpacity(0.45),
+                color: const Color(0xFF1677FF).withValues(alpha: 0.45),
                 blurRadius: 22,
                 spreadRadius: 1,
                 offset: const Offset(0, 7),
               ),
               BoxShadow(
-                color: const Color(0xFF1677FF).withOpacity(0.18),
+                color: const Color(0xFF1677FF).withValues(alpha: 0.18),
                 blurRadius: 40,
               ),
             ],
@@ -414,14 +415,14 @@ class WelcomeScreen extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1D42).withOpacity(0.58),
+        color: const Color(0xFF0B1D42).withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: const Color(0xFF5CA5FF).withOpacity(0.16),
+          color: const Color(0xFF5CA5FF).withValues(alpha: 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1677FF).withOpacity(0.08),
+            color: const Color(0xFF1677FF).withValues(alpha: 0.08),
             blurRadius: 20,
           ),
         ],
@@ -437,7 +438,7 @@ class WelcomeScreen extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF3D8BFF).withOpacity(0.8),
+                  color: const Color(0xFF3D8BFF).withValues(alpha: 0.8),
                   blurRadius: 9,
                 ),
               ],
@@ -470,25 +471,25 @@ class WelcomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF14346E).withOpacity(0.86),
-            const Color(0xFF091832).withOpacity(0.84),
+            const Color(0xFF14346E).withValues(alpha: 0.86),
+            const Color(0xFF091832).withValues(alpha: 0.84),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFF5AA4FF).withOpacity(0.20),
+          color: const Color(0xFF5AA4FF).withValues(alpha: 0.20),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1677FF).withOpacity(0.12),
+            color: const Color(0xFF1677FF).withValues(alpha: 0.12),
             blurRadius: 28,
             spreadRadius: 1,
             offset: const Offset(0, 10),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.22),
+            color: Colors.black.withValues(alpha: 0.22),
             blurRadius: 20,
             offset: const Offset(0, 12),
           ),
@@ -502,13 +503,13 @@ class WelcomeScreen extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF1677FF).withOpacity(0.28),
-                  const Color(0xFF3D8BFF).withOpacity(0.08),
+                  const Color(0xFF1677FF).withValues(alpha: 0.28),
+                  const Color(0xFF3D8BFF).withValues(alpha: 0.08),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFF5AA4FF).withOpacity(0.12),
+                color: const Color(0xFF5AA4FF).withValues(alpha: 0.12),
               ),
             ),
             child: const Icon(
@@ -550,7 +551,7 @@ class WelcomeScreen extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF57D697).withOpacity(0.8),
+                  color: const Color(0xFF57D697).withValues(alpha: 0.8),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -646,7 +647,7 @@ class WelcomeScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF1677FF),
           foregroundColor: Colors.white,
           elevation: 10,
-          shadowColor: const Color(0xFF1677FF).withOpacity(0.40),
+          shadowColor: const Color(0xFF1677FF).withValues(alpha: 0.40),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -688,9 +689,9 @@ class WelcomeScreen extends StatelessWidget {
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
-          backgroundColor: const Color(0xFF10234A).withOpacity(0.45),
+          backgroundColor: const Color(0xFF10234A).withValues(alpha: 0.45),
           side: BorderSide(
-            color: const Color(0xFF75B2FF).withOpacity(0.16),
+            color: const Color(0xFF75B2FF).withValues(alpha: 0.16),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
@@ -729,19 +730,19 @@ class WelcomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0C1C3B).withOpacity(0.94),
-            const Color(0xFF122C5A).withOpacity(0.72),
+            const Color(0xFF0C1C3B).withValues(alpha: 0.94),
+            const Color(0xFF122C5A).withValues(alpha: 0.72),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(
-          color: const Color(0xFF4D9BFF).withOpacity(0.18),
+          color: const Color(0xFF4D9BFF).withValues(alpha: 0.18),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1677FF).withOpacity(0.08),
+            color: const Color(0xFF1677FF).withValues(alpha: 0.08),
             blurRadius: 24,
           ),
         ],
@@ -754,8 +755,8 @@ class WelcomeScreen extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF1677FF).withOpacity(0.18),
-                  const Color(0xFF3D8BFF).withOpacity(0.06),
+                  const Color(0xFF1677FF).withValues(alpha: 0.18),
+                  const Color(0xFF3D8BFF).withValues(alpha: 0.06),
                 ],
               ),
               borderRadius: BorderRadius.circular(13),
@@ -807,7 +808,7 @@ class _WelcomeBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = const Color(0xFF8EBBFF).withOpacity(0.035)
+      ..color = const Color(0xFF8EBBFF).withValues(alpha: 0.035)
       ..strokeWidth = 1;
 
     const gridSpacing = 34.0;
@@ -829,7 +830,7 @@ class _WelcomeBackgroundPainter extends CustomPainter {
     }
 
     final diagonalPaint = Paint()
-      ..color = const Color(0xFF5B9EFF).withOpacity(0.025)
+      ..color = const Color(0xFF5B9EFF).withValues(alpha: 0.025)
       ..strokeWidth = 1.2;
 
     const diagonalSpacing = 90.0;
@@ -847,8 +848,8 @@ class _WelcomeBackgroundPainter extends CustomPainter {
     final centerGlowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF287DFF).withOpacity(0.12),
-          const Color(0xFF287DFF).withOpacity(0.035),
+          const Color(0xFF287DFF).withValues(alpha: 0.12),
+          const Color(0xFF287DFF).withValues(alpha: 0.035),
           Colors.transparent,
         ],
       ).createShader(
@@ -870,7 +871,7 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [
           Colors.transparent,
-          const Color(0xFF3B8EFF).withOpacity(0.035),
+          const Color(0xFF3B8EFF).withValues(alpha: 0.035),
           Colors.transparent,
         ],
       ).createShader(
@@ -907,7 +908,7 @@ class _WelcomeBackgroundPainter extends CustomPainter {
 
     for (final dot in dots) {
       dotPaint
-        ..color = const Color(0xFF5EA7FF).withOpacity(0.12)
+        ..color = const Color(0xFF5EA7FF).withValues(alpha: 0.12)
         ..maskFilter = const MaskFilter.blur(
           BlurStyle.normal,
           5,
@@ -916,7 +917,7 @@ class _WelcomeBackgroundPainter extends CustomPainter {
       canvas.drawCircle(dot, 3.5, dotPaint);
 
       dotPaint
-        ..color = const Color(0xFF75B4FF).withOpacity(0.28)
+        ..color = const Color(0xFF75B4FF).withValues(alpha: 0.28)
         ..maskFilter = null;
 
       canvas.drawCircle(dot, 1.2, dotPaint);
@@ -925,8 +926,8 @@ class _WelcomeBackgroundPainter extends CustomPainter {
     final bottomGlow = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF1677FF).withOpacity(0.16),
-          const Color(0xFF1677FF).withOpacity(0.04),
+          const Color(0xFF1677FF).withValues(alpha:0.16),
+          const Color(0xFF1677FF).withValues(alpha: 0.04),
           Colors.transparent,
         ],
       ).createShader(
@@ -984,17 +985,17 @@ class _FeatureCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF102858).withOpacity(0.72),
-              const Color(0xFF0A1734).withOpacity(0.78),
+              const Color(0xFF102858).withValues(alpha: 0.72),
+              const Color(0xFF0A1734).withValues(alpha: 0.78),
             ],
           ),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: const Color(0xFF4C9AFF).withOpacity(0.15),
+            color: const Color(0xFF4C9AFF).withValues(alpha: 0.15),
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1677FF).withOpacity(0.06),
+              color: const Color(0xFF1677FF).withValues(alpha: 0.06),
               blurRadius: 18,
             ),
           ],
@@ -1007,8 +1008,8 @@ class _FeatureCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF1677FF).withOpacity(0.18),
-                    const Color(0xFF3D8BFF).withOpacity(0.06),
+                    const Color(0xFF1677FF).withValues(alpha: 0.18),
+                    const Color(0xFF3D8BFF).withValues(alpha: 0.06),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -1045,7 +1046,7 @@ class _FeatureCard extends StatelessWidget {
             ),
             Icon(
               LucideIcons.chevron_right,
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.25),
               size: 17,
             ),
           ],
@@ -1064,17 +1065,17 @@ class _FeatureCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF102858).withOpacity(0.72),
-            const Color(0xFF0A1734).withOpacity(0.78),
+            const Color(0xFF102858).withValues(alpha: 0.72),
+            const Color(0xFF0A1734).withValues(alpha: 0.78),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF3D8BFF).withOpacity(0.15),
+          color: const Color(0xFF3D8BFF).withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1677FF).withOpacity(0.06),
+            color: const Color(0xFF1677FF).withValues(alpha: 0.06),
             blurRadius: 20,
           ),
         ],
@@ -1088,8 +1089,8 @@ class _FeatureCard extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF1677FF).withOpacity(0.18),
-                  const Color(0xFF3D8BFF).withOpacity(0.06),
+                  const Color(0xFF1677FF).withValues(alpha: 0.18),
+                  const Color(0xFF3D8BFF).withValues(alpha: 0.06),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),

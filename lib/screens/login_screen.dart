@@ -3,8 +3,8 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../services/api_service.dart';
 import '../services/session_service.dart';
-import 'user/home_screen.dart';
 import 'admin/home_screen.dart';
+import 'user/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,144 +31,145 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> iniciarSesion() async {
-    if (iniciandoSesion) return;
+Future<void> iniciarSesion() async {
+  if (iniciandoSesion) return;
 
-    final String usuario = usuarioController.text.trim();
-    final String password = passwordController.text;
+  final String usuario = usuarioController.text.trim();
+  final String password = passwordController.text;
 
-    if (usuario.isEmpty) {
+  if (usuario.isEmpty) {
+    mostrarMensaje(
+      'Ingresa tu usuario o correo electrónico.',
+    );
+    return;
+  }
+
+  if (password.isEmpty) {
+    mostrarMensaje(
+      'Ingresa tu contraseña.',
+    );
+    return;
+  }
+
+  FocusScope.of(context).unfocus();
+
+  setState(() {
+    iniciandoSesion = true;
+  });
+
+  try {
+    final resultado = await ApiService.login(
+      usuario: usuario,
+      password: password,
+      remember: recordarUsuario,
+    );
+
+    if (!mounted) return;
+
+    final bool success = resultado['success'] == true;
+
+    final bool mfaRequired =
+        resultado['mfa_required'] == true;
+
+    if (!success) {
       mostrarMensaje(
-        'Ingresa tu usuario o correo electrónico.',
+        resultado['message']?.toString() ??
+            'No fue posible iniciar sesión.',
       );
       return;
     }
 
-    if (password.isEmpty) {
+    if (mfaRequired) {
       mostrarMensaje(
-        'Ingresa tu contraseña.',
+        'Se requiere verificación de autenticación.',
       );
       return;
     }
 
-    FocusScope.of(context).unfocus();
+    final String? token =
+        resultado['token']?.toString();
 
-    setState(() {
-      iniciandoSesion = true;
-    });
-
-    try {
-      final resultado = await ApiService.login(
-        usuario: usuario,
-        password: password,
-        remember: recordarUsuario,
-      );
-
-      if (!mounted) return;
-
-      final bool success =
-          resultado['success'] == true;
-
-      final bool mfaRequired =
-          resultado['mfa_required'] == true;
-
-      if (!success) {
-        mostrarMensaje(
-          resultado['message']?.toString() ??
-              'No fue posible iniciar sesión.',
-        );
-        return;
-      }
-
-      if (mfaRequired) {
-        mostrarMensaje(
-          'Se requiere verificación de autenticación.',
-        );
-        return;
-      }
-
-      final String? token =
-          resultado['token']?.toString();
-
-      if (token == null || token.isEmpty) {
-        mostrarMensaje(
-          'El servidor no devolvió un token de acceso.',
-        );
-        return;
-      }
-
-      final dynamic usuarioDatos =
-          resultado['user'];
-
-      if (usuarioDatos is! Map<String, dynamic>) {
-        mostrarMensaje(
-          'No se recibieron los datos del usuario.',
-        );
-        return;
-      }
-
-      await SessionService.saveSession(
-        token: token,
-        user: usuarioDatos,
-      );
-
-      final String role =
-          usuarioDatos['role']
-                  ?.toString()
-                  .trim() ??
-              '';
-
-      final String privAdmin =
-          usuarioDatos['priv_admin']
-                  ?.toString()
-                  .trim()
-                  .toUpperCase() ??
-              'N';
-
-      final String rolNormalizado = role
-          .toLowerCase()
-          .replaceAll('á', 'a')
-          .replaceAll('é', 'e')
-          .replaceAll('í', 'i')
-          .replaceAll('ó', 'o')
-          .replaceAll('ú', 'u');
-
-      final bool rolPermitido =
-          rolNormalizado == 'gerente ti' ||
-          rolNormalizado == 'soporte tecnico';
-
-      final bool accesoAdministrativo =
-          rolPermitido && privAdmin == 'Y';
-
-      if (accesoAdministrativo) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AdminScreen(),
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-
+    if (token == null || token.isEmpty) {
       mostrarMensaje(
-        'No se pudo conectar con el servidor.',
+        'El servidor no devolvió un token de acceso.',
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          iniciandoSesion = false;
-        });
-      }
+      return;
+    }
+
+    final dynamic usuarioDatos =
+        resultado['user'];
+
+    if (usuarioDatos is! Map<String, dynamic>) {
+      mostrarMensaje(
+        'No se recibieron los datos del usuario.',
+      );
+      return;
+    }
+
+    await SessionService.saveSession(
+      token: token,
+      user: usuarioDatos,
+    );
+
+    if (!mounted) return;
+
+    final String role =
+        usuarioDatos['role']
+                ?.toString()
+                .trim() ??
+            '';
+
+    final String privAdmin =
+        usuarioDatos['priv_admin']
+                ?.toString()
+                .trim()
+                .toUpperCase() ??
+            'N';
+
+    final String rolNormalizado = role
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+
+    final bool rolPermitido =
+        rolNormalizado == 'gerente ti' ||
+        rolNormalizado == 'soporte tecnico';
+
+    final bool accesoAdministrativo =
+        rolPermitido && privAdmin == 'Y';
+
+    if (accesoAdministrativo) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminScreen(),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
+      );
+    }
+  } catch (e) {
+    if (!mounted) return;
+
+    mostrarMensaje(
+      'No se pudo conectar con el servidor.',
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        iniciandoSesion = false;
+      });
     }
   }
+}
 
   void mostrarMensaje(String mensaje) {
     if (!mounted) return;
@@ -425,7 +426,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ? 12.5
                                             : 14,
                                     color: Colors.white
-                                        .withOpacity(0.55),
+                                        .withValues(alpha: 0.55),
                                     height: 1.4,
                                     letterSpacing:
                                         0.1,
@@ -525,19 +526,19 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius:
                 BorderRadius.circular(17),
             border: Border.all(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: .18),
             ),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF1677FF)
-                    .withOpacity(0.34),
+                    .withValues(alpha: 0.34),
                 blurRadius: 24,
                 spreadRadius: 1,
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
                 color: const Color(0xFF1677FF)
-                    .withOpacity(0.10),
+                    .withValues(alpha: 0.10),
                 blurRadius: 45,
                 spreadRadius: 5,
               ),
@@ -577,7 +578,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Plataforma de soporte interno',
           style: TextStyle(
             fontSize: smallPhone ? 11 : 12,
-            color: Colors.white.withOpacity(0.35),
+            color: Colors.white.withValues(alpha: 0.35),
             letterSpacing: 0.6,
             fontWeight: FontWeight.w500,
           ),
@@ -594,17 +595,17 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       decoration: BoxDecoration(
         color: const Color(0xFF102653)
-            .withOpacity(0.58),
+            .withValues(alpha: 0.58),
         borderRadius:
             BorderRadius.circular(30),
         border: Border.all(
           color: const Color(0xFF75A1FF)
-              .withOpacity(0.18),
+              .withValues(alpha: 0.18),
         ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1677FF)
-                .withOpacity(0.08),
+                .withValues(alpha: 0.08),
             blurRadius: 18,
           ),
         ],
@@ -645,9 +646,9 @@ class _LoginScreenState extends State<LoginScreen> {
         gradient: LinearGradient(
           colors: [
             const Color(0xFF142E62)
-                .withOpacity(0.72),
+                .withValues(alpha: 0.72),
             const Color(0xFF09152F)
-                .withOpacity(0.86),
+                .withValues(alpha: 0.86),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -656,18 +657,18 @@ class _LoginScreenState extends State<LoginScreen> {
             BorderRadius.circular(23),
         border: Border.all(
           color: const Color(0xFF75A1FF)
-              .withOpacity(0.16),
+              .withValues(alpha: 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             blurRadius: 35,
             spreadRadius: -5,
             offset: const Offset(0, 18),
           ),
           BoxShadow(
             color: const Color(0xFF1677FF)
-                .withOpacity(0.07),
+                .withValues(alpha: 0.07),
             blurRadius: 35,
             spreadRadius: -10,
           ),
@@ -756,7 +757,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         filled: true,
         fillColor:
-            Colors.white.withOpacity(0.045),
+            Colors.white.withValues(alpha: 0.045),
         prefixIcon: Icon(
           icon,
           color: const Color(0xFF4A94FF),
@@ -767,7 +768,7 @@ class _LoginScreenState extends State<LoginScreen> {
               BorderRadius.circular(14),
           borderSide: BorderSide(
             color:
-                Colors.white.withOpacity(0.09),
+                Colors.white.withValues(alpha: 0.09),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -783,7 +784,7 @@ class _LoginScreenState extends State<LoginScreen> {
               BorderRadius.circular(14),
           borderSide: BorderSide(
             color:
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha: 0.05),
           ),
         ),
         contentPadding:
@@ -814,7 +815,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         filled: true,
         fillColor:
-            Colors.white.withOpacity(0.045),
+            Colors.white.withValues(alpha: 0.045),
         prefixIcon: const Icon(
           LucideIcons.lock,
           color: Color(0xFF4A94FF),
@@ -842,7 +843,7 @@ class _LoginScreenState extends State<LoginScreen> {
               BorderRadius.circular(14),
           borderSide: BorderSide(
             color:
-                Colors.white.withOpacity(0.09),
+                Colors.white.withValues(alpha: 0.09),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -858,7 +859,7 @@ class _LoginScreenState extends State<LoginScreen> {
               BorderRadius.circular(14),
           borderSide: BorderSide(
             color:
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha: 0.05),
           ),
         ),
         contentPadding:
@@ -908,9 +909,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     checkColor: Colors.white,
                     side: BorderSide(
                       color:
-                          Colors.white.withOpacity(
-                        0.32,
-                      ),
+                          Colors.white.withValues(
+                            alpha: 0.32,
+                          ),
                       width: 1.4,
                     ),
                     shape:
@@ -979,7 +980,7 @@ class _LoginScreenState extends State<LoginScreen> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  Colors.white.withOpacity(0.14),
+                  Colors.white.withValues(alpha: 0.14),
                 ],
               ),
             ),
@@ -1021,7 +1022,7 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.14),
+                  Colors.white.withValues(alpha: 0.14),
                   Colors.transparent,
                 ],
               ),
@@ -1044,7 +1045,7 @@ class _LoginScreenState extends State<LoginScreen> {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1677FF)
-                .withOpacity(0.28),
+                .withValues(alpha: 0.28),
             blurRadius: 24,
             spreadRadius: -3,
             offset: const Offset(0, 10),
@@ -1061,7 +1062,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Color(0xFF1677FF),
           disabledBackgroundColor:
               const Color(0xFF1677FF)
-                  .withOpacity(0.55),
+                  .withValues(alpha: 0.55),
           foregroundColor: Colors.white,
           disabledForegroundColor:
               Colors.white70,
@@ -1122,9 +1123,9 @@ class _LoginScreenState extends State<LoginScreen> {
         gradient: LinearGradient(
           colors: [
             const Color(0xFF0C1D3F)
-                .withOpacity(0.90),
+                .withValues(alpha: 0.90),
             const Color(0xFF102653)
-                .withOpacity(0.58),
+                .withValues(alpha: 0.58),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1133,7 +1134,7 @@ class _LoginScreenState extends State<LoginScreen> {
             BorderRadius.circular(17),
         border: Border.all(
           color: const Color(0xFF4A94FF)
-              .withOpacity(0.13),
+              .withValues(alpha: 0.13),
         ),
       ),
       child: Row(
@@ -1143,12 +1144,12 @@ class _LoginScreenState extends State<LoginScreen> {
             height: smallPhone ? 40 : 43,
             decoration: BoxDecoration(
               color: const Color(0xFF1677FF)
-                  .withOpacity(0.10),
+                  .withValues(alpha: 0.10),
               borderRadius:
                   BorderRadius.circular(12),
               border: Border.all(
                 color: const Color(0xFF4A94FF)
-                    .withOpacity(0.08),
+                    .withValues(alpha: 0.08),
               ),
             ),
             child: Icon(
@@ -1222,7 +1223,7 @@ class _LoginGridPainter extends CustomPainter {
     final paint = Paint()
       ..color =
           const Color(0xFF91B7FF)
-              .withOpacity(0.028)
+              .withValues(alpha: 0.028)
       ..strokeWidth = 1;
 
     const double spacing = 36;
