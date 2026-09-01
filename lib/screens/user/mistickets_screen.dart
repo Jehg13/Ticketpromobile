@@ -154,15 +154,15 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       ticket['departamento_nombre'],
       fallback: 'No especificado',
     );
-    final String empresa = _string(
-      ticket['empresa'],
-      ticket['empresa_nombre'],
-      fallback: 'No especificada',
-    );
     final String oficina = _string(
       ticket['oficina'],
       ticket['oficina_nombre'],
       fallback: 'No especificada',
+    );
+    final String equipo = _string(
+      ticket['equipo'],
+      ticket['nombre_equipo'],
+      fallback: 'No especificado',
     );
     final dynamic uData =
         ticket['user'] ?? ticket['usuario'] ?? ticket['levantado_por'];
@@ -257,8 +257,8 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                           titulo,
                           tipoFalla,
                           departamento,
-                          empresa,
                           oficina,
+                          equipo,
                           fechaCreacion,
                           fechaTomado,
                           nombreUsuario,
@@ -330,7 +330,8 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                                       await MisTicketsUsuarioService.agregarComentario(
                                         ticketId: ticketId,
                                         mensaje: mensaje,
-                                        archivoPath: _archivoComentarioBytes == null
+                                        archivoPath:
+                                            _archivoComentarioBytes == null
                                             ? _archivoComentarioPath
                                             : null,
                                         archivoBytes: _archivoComentarioBytes,
@@ -446,8 +447,8 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     String titulo,
     String tipoFalla,
     String departamento,
-    String empresa,
     String oficina,
+    String equipo,
     String fechaCreacion,
     String fechaTomado,
     String nombreUsuario,
@@ -457,48 +458,150 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Resumen del ticket',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withValues(alpha: .16),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFF60A5FA),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Información del ticket',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Datos principales y ubicación del reporte',
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF060A17),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0A1226), Color(0xFF070C1B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white10),
+            border: Border.all(color: Colors.white12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Título',
-                style: TextStyle(color: Colors.grey, fontSize: 10),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                titulo,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111A35),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.subject_rounded,
+                      color: Color(0xFF60A5FA),
+                      size: 19,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Título del ticket',
+                            style: TextStyle(color: Colors.grey, fontSize: 10),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            titulo,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              _detailRow('Tipo de falla', tipoFalla),
-              _detailRow('Departamento', departamento),
-              _detailRow('Empresa', empresa),
-              _detailRow('Oficina', oficina),
-              _detailRow('Fecha en que fue levantado', fechaCreacion),
-              _detailRow(
-                'Fecha en que fue tomado',
-                fechaTomado == 'Sin fecha' ? 'Aún sin tomar' : fechaTomado,
+              const SizedBox(height: 14),
+              const Padding(
+                padding: EdgeInsets.only(left: 2),
+                child: Text(
+                  'Detalles',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: .4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _summaryInfoTile(
+                      Icons.warning_amber_rounded,
+                      'Tipo de falla',
+                      tipoFalla,
+                    ),
+                    _summaryInfoTile(
+                      Icons.business_outlined,
+                      'Departamento',
+                      departamento,
+                    ),
+                    _summaryInfoTile(
+                      Icons.location_on_outlined,
+                      'Oficina',
+                      oficina,
+                    ),
+                    _summaryInfoTile(
+                      Icons.devices_other_outlined,
+                      'Equipo',
+                      equipo,
+                    ),
+                    _summaryInfoTile(
+                      Icons.calendar_today_outlined,
+                      'Levantado',
+                      fechaCreacion,
+                    ),
+                    _summaryInfoTile(
+                      Icons.handshake_outlined,
+                      'Tomado',
+                      fechaTomado == 'Sin fecha'
+                          ? 'Aún sin tomar'
+                          : fechaTomado,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               const Divider(color: Colors.white10, height: 1),
@@ -545,6 +648,52 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _summaryInfoTile(IconData icon, String label, String value) {
+    return SizedBox(
+      width: 245,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF101A31),
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF334155).withValues(alpha: .45),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: const Color(0xFF93C5FD), size: 16),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(color: Colors.grey, fontSize: 9),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1237,30 +1386,6 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 175,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -2195,16 +2320,46 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     String correoTecnico,
   ) {
     return _solutionCard(
-      title: 'Información de la solución',
+      title: 'Información del ticket',
       icon: Icons.confirmation_number_outlined,
       iconColor: const Color(0xFF60A5FA),
-      child: Column(
-        children: [
-          _solutionDetailRow('Folio', folio),
-          _solutionDetailRow('Título', titulo),
-          _solutionDetailRow('Técnico', tomadoPor),
-          _solutionDetailRow('Correo', correoTecnico, last: true),
-        ],
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF111A35), Color(0xFF0D1427)],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0x403B82F6)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              folio,
+              style: const TextStyle(
+                color: Color(0xFF93C5FD),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              titulo,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 14),
+            _solutionDetailRow('Tomado por', tomadoPor),
+            _solutionDetailRow('Correo', correoTecnico, last: true),
+          ],
+        ),
       ),
     );
   }
@@ -2892,7 +3047,9 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
               iconTheme: const IconThemeData(color: Colors.white),
               title: const TicketProAppLogo(fontSize: 20),
               actions: [
-                home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
+                home.UserHeaderActions(
+                  onNotifications: () => home.showUserNotifications(context),
+                ),
               ],
             ),
       drawer: isDesktop
@@ -2948,7 +3105,9 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           ),
         ),
         if (isDesktop)
-          home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
+          home.UserHeaderActions(
+            onNotifications: () => home.showUserNotifications(context),
+          ),
       ],
     );
   }
@@ -3141,7 +3300,11 @@ class TicketProNavigationDrawer extends StatelessWidget {
                     return;
                   }
 
-                  navigateWithLoading(context, const home.HomeScreen(), mensaje: 'Cargando inicio...');
+                  navigateWithLoading(
+                    context,
+                    const home.HomeScreen(),
+                    mensaje: 'Cargando inicio...',
+                  );
                 },
               ),
 
@@ -3155,7 +3318,11 @@ class TicketProNavigationDrawer extends StatelessWidget {
                     return;
                   }
 
-                  navigateWithLoading(context, const MisticketsScreen(), mensaje: 'Cargando tus tickets...');
+                  navigateWithLoading(
+                    context,
+                    const MisticketsScreen(),
+                    mensaje: 'Cargando tus tickets...',
+                  );
                 },
               ),
 
@@ -3169,7 +3336,11 @@ class TicketProNavigationDrawer extends StatelessWidget {
                     return;
                   }
 
-                  navigateWithLoading(context, const CrearticketsScreen(), mensaje: 'Preparando crear ticket...');
+                  navigateWithLoading(
+                    context,
+                    const CrearticketsScreen(),
+                    mensaje: 'Preparando crear ticket...',
+                  );
                 },
               ),
 
@@ -3183,7 +3354,11 @@ class TicketProNavigationDrawer extends StatelessWidget {
                     return;
                   }
 
-                  navigateWithLoading(context, const AvisosScreen(), mensaje: 'Cargando avisos...');
+                  navigateWithLoading(
+                    context,
+                    const AvisosScreen(),
+                    mensaje: 'Cargando avisos...',
+                  );
                 },
               ),
 
@@ -3197,7 +3372,11 @@ class TicketProNavigationDrawer extends StatelessWidget {
                     return;
                   }
 
-                  navigateWithLoading(context, const MiPerfilScreen(), mensaje: 'Cargando tu perfil...');
+                  navigateWithLoading(
+                    context,
+                    const MiPerfilScreen(),
+                    mensaje: 'Cargando tu perfil...',
+                  );
                 },
               ),
 
