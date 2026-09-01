@@ -2403,7 +2403,6 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _solutionDetailRow('Firmante', nombreFirmante),
           _solutionDetailRow(
             'Fecha de firma',
             fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
