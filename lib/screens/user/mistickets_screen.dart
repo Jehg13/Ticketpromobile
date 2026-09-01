@@ -164,6 +164,17 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       ticket['nombre_equipo'],
       fallback: 'No especificado',
     );
+    final bool problemaSolucionado = _esProblemaSolucionado(
+      ticket['problema_solucionado'] ?? ticket['solucionado'],
+    );
+    final String nombreFirmante = _string(
+      ticket['nombre_firmante'],
+      null,
+      fallback: 'No especificado',
+    );
+    final String fechaFirma = _formatearFecha(
+      ticket['fecha_firma'],
+    );
     final dynamic uData =
         ticket['user'] ?? ticket['usuario'] ?? ticket['levantado_por'];
     final Map<String, dynamic>? usuario = uData is Map
@@ -277,6 +288,12 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                         ),
                         const SizedBox(height: 18),
                         _buildTechnicianSection(nombreTecnico, correoTecnico),
+                        const SizedBox(height: 18),
+                        _buildTicketClosureSummary(
+                          problemaSolucionado,
+                          nombreFirmante,
+                          fechaFirma,
+                        ),
                         const SizedBox(height: 18),
                         _buildEvidenceSection(
                           'Evidencia proporcionada',
@@ -455,6 +472,42 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     String correoUsuario,
     String fotoUsuario,
   ) {
+    final List<Widget> infoTiles = <Widget>[
+      _summaryInfoTile(
+        Icons.warning_amber_rounded,
+        'Tipo de falla',
+        tipoFalla,
+      ),
+      if (departamento.isNotEmpty && !departamento.toLowerCase().contains('no especificado'))
+        _summaryInfoTile(
+          Icons.business_outlined,
+          'Departamento',
+          departamento,
+        ),
+      if (oficina.isNotEmpty && !oficina.toLowerCase().contains('no especificada'))
+        _summaryInfoTile(
+          Icons.location_on_outlined,
+          'Oficina',
+          oficina,
+        ),
+      if (equipo.isNotEmpty && !equipo.toLowerCase().contains('no especificado'))
+        _summaryInfoTile(
+          Icons.devices_other_outlined,
+          'Equipo',
+          equipo,
+        ),
+      _summaryInfoTile(
+        Icons.calendar_today_outlined,
+        'Levantado',
+        fechaCreacion,
+      ),
+      _summaryInfoTile(
+        Icons.handshake_outlined,
+        'Tomado',
+        fechaTomado == 'Sin fecha' ? 'Aún sin tomar' : fechaTomado,
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -567,40 +620,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                   alignment: WrapAlignment.center,
                   spacing: 10,
                   runSpacing: 10,
-                  children: [
-                    _summaryInfoTile(
-                      Icons.warning_amber_rounded,
-                      'Tipo de falla',
-                      tipoFalla,
-                    ),
-                    _summaryInfoTile(
-                      Icons.business_outlined,
-                      'Departamento',
-                      departamento,
-                    ),
-                    _summaryInfoTile(
-                      Icons.location_on_outlined,
-                      'Oficina',
-                      oficina,
-                    ),
-                    _summaryInfoTile(
-                      Icons.devices_other_outlined,
-                      'Equipo',
-                      equipo,
-                    ),
-                    _summaryInfoTile(
-                      Icons.calendar_today_outlined,
-                      'Levantado',
-                      fechaCreacion,
-                    ),
-                    _summaryInfoTile(
-                      Icons.handshake_outlined,
-                      'Tomado',
-                      fechaTomado == 'Sin fecha'
-                          ? 'Aún sin tomar'
-                          : fechaTomado,
-                    ),
-                  ],
+                  children: infoTiles,
                 ),
               ),
               const SizedBox(height: 14),
@@ -1733,85 +1753,169 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       null,
       fallback: 'Pendiente',
     );
+    final String prioridad = _string(
+      ticket['prioridad'],
+      ticket['priority'],
+      fallback: 'Sin prioridad',
+    );
     final bool habilitadoSolucion = _puedeVerSolucion(ticket);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1427),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: .05)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF121B31), Color(0xFF0C1324)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: .06)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  _string(ticket['folio'], null, fallback: 'Sin folio'),
-                  maxLines: 1,
+          Container(
+            width: 4,
+            height: 130,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  _estadoStripeColor(estado),
+                  _estadoStripeColor(estado).withValues(alpha: 0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1D4ED8).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF93C5FD).withValues(alpha: .18)),
+                        ),
+                        child: Text(
+                          _string(ticket['folio'], null, fallback: 'Sin folio'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFDBEAFE),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _statusBadge(_textoEstado(estado), _tipoEstado(estado)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _string(ticket['titulo'], null, fallback: 'Sin título'),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _statusBadge(_textoEstado(estado), _tipoEstado(estado)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _string(ticket['titulo'], null, fallback: 'Sin título'),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            _string(ticket['descripcion'], null, fallback: 'Sin descripción'),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _formatearFecha(ticket['created_at']),
-                  maxLines: 1,
+                const SizedBox(height: 8),
+                Text(
+                  _string(ticket['descripcion'], null, fallback: 'Sin descripción'),
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.45),
                 ),
-              ),
-              _buildMobileActionIcon(
-                icon: Icons.visibility_outlined,
-                color: Colors.grey,
-                tooltip: 'Ver ticket',
-                onPressed: _cargandoDetalle ? null : () => _verDetalle(ticket),
-              ),
-              const SizedBox(width: 6),
-              _buildMobileActionIcon(
-                icon: Icons.handshake_outlined,
-                color: const Color(0xFF34D399),
-                tooltip: habilitadoSolucion
-                    ? 'Ver solución'
-                    : 'Disponible al solucionar o cancelar',
-                onPressed: (_cargandoDetalle || !habilitadoSolucion)
-                    ? null
-                    : () => _mostrarSolucion(ticket),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1324),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF93C5FD)),
+                          const SizedBox(width: 5),
+                          Text(
+                            _formatearFecha(ticket['created_at']),
+                            style: const TextStyle(color: Colors.white70, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _priorityBadge(prioridad),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B1324),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: .04)),
+                        ),
+                        child: Text(
+                          'Revisa y gestiona este ticket',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildMobileActionIcon(
+                      icon: Icons.visibility_outlined,
+                      color: Colors.grey,
+                      tooltip: 'Ver ticket',
+                      onPressed: _cargandoDetalle ? null : () => _verDetalle(ticket),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildMobileActionIcon(
+                      icon: Icons.handshake_outlined,
+                      color: const Color(0xFF34D399),
+                      tooltip: habilitadoSolucion
+                          ? 'Ver solución'
+                          : 'Disponible al solucionar o cancelar',
+                      onPressed: (_cargandoDetalle || !habilitadoSolucion)
+                          ? null
+                          : () => _mostrarSolucion(ticket),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1876,27 +1980,111 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
   Widget _buildPagination() {
     if (_ultimaPagina <= 1) return const SizedBox.shrink();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left, color: Colors.white70),
-          onPressed: _paginaActual > 1 && !_cargando
-              ? () => _cargarTickets(pagina: _paginaActual - 1)
-              : null,
+
+    final bool puedeAnterior = _paginaActual > 1 && !_cargando;
+    final bool puedeSiguiente = _paginaActual < _ultimaPagina && !_cargando;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 18, bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.16),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        Text(
-          '$_paginaActual / $_ultimaPagina',
-          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPaginationButton(
+              icon: Icons.chevron_left_rounded,
+              enabled: puedeAnterior,
+              onPressed: puedeAnterior
+                  ? () => _cargarTickets(pagina: _paginaActual - 1)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111B2F),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Página $_paginaActual / $_ultimaPagina',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            _buildPaginationButton(
+              icon: Icons.chevron_right_rounded,
+              enabled: puedeSiguiente,
+              onPressed: puedeSiguiente
+                  ? () => _cargarTickets(pagina: _paginaActual + 1)
+                  : null,
+            ),
+          ],
         ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right, color: Colors.white70),
-          onPressed: _paginaActual < _ultimaPagina && !_cargando
-              ? () => _cargarTickets(pagina: _paginaActual + 1)
-              : null,
-        ),
-      ],
+      ),
     );
+  }
+
+  Widget _buildPaginationButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: enabled ? const Color(0xFF1D4ED8).withValues(alpha: 0.15) : Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: enabled
+              ? const Color(0xFF93C5FD).withValues(alpha: 0.25)
+              : Colors.white10,
+        ),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          color: enabled ? const Color(0xFFDBEAFE) : Colors.white24,
+          size: 20,
+        ),
+        splashRadius: 18,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  Color _estadoStripeColor(String estado) {
+    final String valor = estado.toLowerCase();
+    if (valor.contains('pendiente') || valor.contains('pend')) {
+      return const Color(0xFFFBBF24);
+    }
+    if (valor.contains('proceso') || valor.contains('en proceso')) {
+      return const Color(0xFF60A5FA);
+    }
+    if (valor.contains('solucion') || valor.contains('cerrado')) {
+      return const Color(0xFF34D399);
+    }
+    if (valor.contains('cancel')) {
+      return const Color(0xFFF87171);
+    }
+    return const Color(0xFF93C5FD);
   }
 
   Widget _buildEmptyState() {
@@ -2053,18 +2241,40 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           ticket['solucion_at'] ??
           ticket['resolved_at'],
     );
-    final String nombreFirmante = _string(
+    final String problemaSolucionadoRaw = _string(
+      sMap?['problema_solucionado'],
+      ticket['problema_solucionado'],
+      fallback: '',
+    );
+    final bool problemaSolucionado = _esProblemaSolucionado(
+      problemaSolucionadoRaw.isNotEmpty
+          ? problemaSolucionadoRaw
+          : ticket['solucionado'],
+    );
+    final dynamic solucionadoPorUsuario =
+        sMap?['solucionado_por_usuario'] ??
+        ticket['solucionado_por_usuario'] ??
+        (ticket['solucion'] is Map
+            ? ticket['solucion']['solucionado_por_usuario']
+            : null);
+    final dynamic usuarioTicket =
+        ticket['user'] ??
+        ticket['usuario'] ??
+        ticket['levantado_por'] ??
+        ticket['asignado_a'] ??
+        ticket['tomado_por'];
+    final String nombreFirmante = _resolverNombreFirmante(
       sMap?['nombre_firmante'],
       ticket['nombre_firmante'],
-      fallback: 'No especificado',
+      solucionadoPorUsuario is Map ? solucionadoPorUsuario['name'] : null,
+      solucionadoPorUsuario is Map ? solucionadoPorUsuario['nombre'] : null,
+      usuarioTicket is Map ? usuarioTicket['name'] : null,
+      usuarioTicket is Map ? usuarioTicket['nombre'] : null,
+      ticket['login'],
+      ticket['usuario_login'],
     );
     final String fechaFirma = _formatearFecha(
       sMap?['fecha_firma'] ?? ticket['fecha_firma'],
-    );
-    final String conformidad = _string(
-      sMap?['conformidad'],
-      ticket['conformidad'] ?? ticket['usuario_conformidad'],
-      fallback: 'Sin información registrada.',
     );
     final String observacionesFirma = _string(
       sMap?['observaciones_firma'],
@@ -2081,18 +2291,6 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       ticket['estado'],
       null,
       fallback: 'Solucionado',
-    );
-    final bool problemaSolucionado =
-        estado.toLowerCase().trim() == 'solucionado';
-    final dynamic uData =
-        ticket['usuario'] ?? ticket['levantado_por'] ?? ticket['user'];
-    final Map<String, dynamic>? usuario = uData is Map
-        ? Map<String, dynamic>.from(uData)
-        : null;
-    final String nombreUsuario = _string(
-      usuario?['name'],
-      usuario?['nombre'],
-      fallback: 'Usuario',
     );
     if (!mounted) return;
     await showDialog<void>(
@@ -2157,7 +2355,11 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                           imagenFirma,
                         ),
                         const SizedBox(height: 20),
-                        _buildUserConformity(nombreUsuario, conformidad),
+                        _buildTicketClosureSummary(
+                          problemaSolucionado,
+                          nombreFirmante,
+                          fechaFirma,
+                        ),
                         const SizedBox(height: 20),
                         _buildSolvedBySection(solucionadoPor),
                       ],
@@ -2625,7 +2827,12 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     );
   }
 
-  Widget _buildUserConformity(String nombreUsuario, String conformidad) {
+  Widget _buildTicketClosureSummary(
+    bool problemaSolucionado,
+    String nombreFirmante,
+    String fechaFirma,
+  ) {
+    final String estadoRespuesta = problemaSolucionado ? 'Sí' : 'No';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2650,7 +2857,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Conformidad del usuario',
+                    'Cierre del ticket',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -2659,7 +2866,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                   ),
                   SizedBox(height: 3),
                   Text(
-                    'Información registrada al momento de cerrar el ticket.',
+                    'Información registrada al cerrar el caso.',
                     style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ],
@@ -2679,68 +2886,60 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Persona que levantó el ticket',
-                style: TextStyle(color: Colors.grey, fontSize: 10),
+              _buildClosureRow(
+                '¿Se solucionó?',
+                estadoRespuesta,
+                problemaSolucionado ? const Color(0xFF34D399) : const Color(0xFFF87171),
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0F1535),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person_outline_rounded,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      nombreUsuario,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const Divider(color: Colors.white10, height: 1),
-              const SizedBox(height: 18),
-              const Text(
-                'Conformidad',
-                style: TextStyle(color: Colors.grey, fontSize: 10),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0B1021),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Text(
-                  conformidad,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10,
-                    height: 1.4,
-                  ),
-                ),
+              const SizedBox(height: 12),
+              _buildClosureRow('Nombre del firmante', nombreFirmante),
+              const SizedBox(height: 12),
+              _buildClosureRow(
+                'Fecha de firma',
+                fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildClosureRow(String label, String value, [Color? valueColor]) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1021),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 10,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: valueColor ?? Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2954,6 +3153,74 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
         .toList();
   }
 
+  String _resolverNombreFirmante(
+    Object? primero,
+    Object? segundo, [
+    Object? tercero,
+    Object? cuarto,
+    Object? quinto,
+    Object? sexto,
+    Object? septimo,
+    Object? octavo,
+  ]) {
+    final List<Object?> valores = [
+      primero,
+      segundo,
+      tercero,
+      cuarto,
+      quinto,
+      sexto,
+      septimo,
+      octavo,
+    ];
+
+    for (final valor in valores) {
+      final String nombre = _normalizarNombreFirmante(
+        valor?.toString() ?? '',
+        '',
+      );
+      if (nombre.isNotEmpty && nombre != 'No especificado') {
+        return nombre;
+      }
+    }
+
+    return 'No especificado';
+  }
+
+  String _normalizarNombreFirmante(String valor, String fallback) {
+    final String limpio = valor.trim();
+    if (limpio.isEmpty) {
+      return fallback.isNotEmpty ? fallback : 'No especificado';
+    }
+
+    final String normalizado = limpio.toLowerCase();
+    final List<String> nombresNoValidos = [
+      'administracion',
+      'administración',
+      'administrador',
+      'departamento',
+      'tecnologias',
+      'tecnología',
+      'soporte',
+      'gerencia',
+      'ventas',
+      'recursos humanos',
+      'no especificado',
+      'sin especificar',
+      'no especificada',
+    ];
+
+    final bool esValorNoValido = nombresNoValidos.any(
+      (nombre) => normalizado == nombre || normalizado.contains(nombre),
+    );
+
+    if (esValorNoValido) {
+      return fallback.isNotEmpty ? fallback : 'No especificado';
+    }
+
+    return limpio;
+  }
+
   String _string(dynamic value, dynamic secondValue, {String fallback = ''}) {
     if (value != null && value.toString().trim().isNotEmpty) {
       return value.toString();
@@ -2987,6 +3254,24 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     final String hora = fecha.hour.toString().padLeft(2, '0');
     final String minuto = fecha.minute.toString().padLeft(2, '0');
     return '$dia/$mes/$anio $hora:$minuto';
+  }
+
+  bool _esProblemaSolucionado(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value == 1;
+
+    final String texto = value.toString().trim().toLowerCase();
+    if (texto.isEmpty) return false;
+    if (['1', 'true', 'si', 'sí', 'yes', 's', 'solucionado', 'resuelto']
+        .contains(texto)) {
+      return true;
+    }
+    if (['0', 'false', 'no', 'n', 'pendiente', 'sin resolver']
+        .contains(texto)) {
+      return false;
+    }
+    return texto.contains('solucion') || texto.contains('resuelto');
   }
 
   String _limpiarError(dynamic error) {
@@ -3380,7 +3665,7 @@ class TicketProNavigationDrawer extends StatelessWidget {
                 },
               ),
 
-              const Spacer(),
+              const Divider(color: Colors.white12, height: 1),
 
               _drawerItem(
                 icon: Icons.logout_rounded,

@@ -7,6 +7,7 @@ import '../../services/ticket_service.dart';
 import '../../widgets/loading_screen.dart';
 import 'avisos_screen.dart';
 import 'creartickets_screen.dart';
+import 'detalles_screen.dart';
 import 'mistickets_screen.dart';
 import 'perfil_screen.dart';
 
@@ -607,6 +608,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _abrirMisTickets(BuildContext context) {
     navigateWithLoading(context, const MisticketsScreen(), mensaje: 'Cargando tus tickets...');
+  }
+
+  void _abrirDetalleTicket(BuildContext context, Map<String, dynamic> ticket) {
+    navigateWithLoading(
+      context,
+      DetallesScreen(ticket: ticket),
+      mensaje: 'Cargando detalle del ticket...',
+    );
   }
 
   void _abrirAvisos(BuildContext context) {
@@ -1436,31 +1445,48 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF2563EB), width: 2),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
                 child: const UserAvatar(radius: 42),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Text(
                 nombreUsuario,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                rolUsuario,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.blueAccent,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1D4ED8).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.35)),
+                ),
+                child: Text(
+                  rolUsuario,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF93C5FD),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -1468,38 +1494,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF141C33),
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF101A2F), Color(0xFF171F38)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Column(
                   children: [
                     _infoRow(Icons.person_outline, 'Nombre:', nombreUsuario),
-                    _infoRow(
-                      Icons.account_circle_outlined,
-                      'Usuario:',
-                      loginUsuario,
-                    ),
-                    _infoRow(
-                      Icons.business_outlined,
-                      'Empresa:',
-                      empresaUsuario,
-                    ),
-                    _infoRow(
-                      Icons.apartment_outlined,
-                      'Departamento:',
-                      departamentoUsuario,
-                    ),
+                    _infoRow(Icons.account_circle_outlined, 'Usuario:', loginUsuario),
+                    _infoRow(Icons.business_outlined, 'Empresa:', empresaUsuario),
+                    _infoRow(Icons.apartment_outlined, 'Departamento:', departamentoUsuario),
                     _infoRow(Icons.email_outlined, 'Correo:', emailUsuario),
-                    _infoRow(
-                      Icons.location_city_outlined,
-                      'Oficina:',
-                      oficinaUsuario,
-                    ),
-                    _infoRow(
-                      Icons.badge_outlined,
-                      'Empleado:',
-                      empleadoUsuario,
-                    ),
+                    _infoRow(Icons.location_city_outlined, 'Oficina:', oficinaUsuario),
+                    _infoRow(Icons.badge_outlined, 'Empleado:', empleadoUsuario),
                     _infoRow(Icons.work_outline, 'Rol:', rolUsuario),
                   ],
                 ),
@@ -1512,20 +1523,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+    final bool isEmail = label == 'Correo:';
+    final bool isLongValue = value.length > 24;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121B2D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: isLongValue && !isEmail ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
-          SizedBox(width: 24, child: Icon(icon, size: 16, color: Colors.grey)),
-          const SizedBox(width: 8),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 15, color: const Color(0xFF93C5FD)),
+          ),
+          const SizedBox(width: 10),
           SizedBox(
-            width: 105,
+            width: isEmail ? 74 : 92,
             child: Text(
               label,
               style: const TextStyle(
                 color: Colors.grey,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1534,6 +1562,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               value,
               textAlign: TextAlign.left,
+              maxLines: isEmail ? 1 : 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 11,
@@ -1568,14 +1598,15 @@ class _HomeScreenState extends State<HomeScreen> {
           fontWeight: FontWeight.bold,
         ),
       ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      child: Row(
         children: [
-          _metricBadge(ticketsAbiertos, 'Abiertos', Colors.yellow),
-          _metricBadge(ticketsEnProceso, 'En proceso', Colors.blue),
-          _metricBadge(ticketsSolucionados, 'Solucionados', Colors.green),
-          _metricBadge(ticketsCancelados, 'Cancelados', Colors.red),
+          Expanded(child: _metricBadge(ticketsAbiertos, 'Abiertos', Colors.yellow)),
+          const SizedBox(width: 8),
+          Expanded(child: _metricBadge(ticketsEnProceso, 'En proceso', Colors.blue)),
+          const SizedBox(width: 8),
+          Expanded(child: _metricBadge(ticketsSolucionados, 'Solucionados', Colors.green)),
+          const SizedBox(width: 8),
+          Expanded(child: _metricBadge(ticketsCancelados, 'Cancelados', Colors.red)),
         ],
       ),
     );
@@ -1583,14 +1614,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _metricBadge(int count, String label, Color color) {
     return Container(
-      width: 72,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '$count',
@@ -1603,8 +1634,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Colors.white70),
+            style: const TextStyle(fontSize: 8, color: Colors.white70),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1678,66 +1711,137 @@ class _HomeScreenState extends State<HomeScreen> {
         problemaSolucionado == 1 ||
         problemaSolucionado?.toString().toLowerCase() == 'true';
 
+    final detailItems = [
+      {'label': 'Tipo de falla', 'value': tipo.isNotEmpty ? tipo : 'N/A'},
+      {'label': 'Prioridad', 'value': prioridad.isNotEmpty ? prioridad : 'N/A', 'color': _colorPrioridad(prioridad)},
+      {'label': 'Departamento', 'value': departamento.isNotEmpty ? departamento : 'N/A'},
+      {'label': 'Asignado a', 'value': asignadoA.isNotEmpty ? asignadoA : 'N/A'},
+      {'label': 'Sucursal / Oficina', 'value': oficina.isNotEmpty ? oficina : 'N/A'},
+      {'label': 'Tomado por', 'value': tomadoPor.isNotEmpty ? tomadoPor : 'N/A'},
+      {'label': 'Fecha reporte', 'value': fechaReporte},
+      {'label': 'Asignación', 'value': fechaAsignacion},
+      {'label': '¿Se solucionó?', 'value': seSoluciono ? 'Sí' : 'No', 'color': seSoluciono ? Colors.green : Colors.red},
+    ];
+
     return _buildCard(
       title: 'Último ticket',
       trailing: TextButton(
-        onPressed: () {
-          _abrirMisTickets(context);
-        },
+        onPressed: () => _abrirDetalleTicket(context, ticket),
         child: const Text('Ver detalles'),
       ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF141C33),
-          borderRadius: BorderRadius.circular(8),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF101A2F), Color(0xFF171F38)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              folio.isNotEmpty ? folio : 'Sin folio',
-              style: const TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.30)),
+                    ),
+                    child: Text(
+                      folio.isNotEmpty ? folio : 'Sin folio',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFBFDBFE),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _colorEstado(estado).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: _colorEstado(estado).withValues(alpha: 0.35)),
+                  ),
+                  child: Text(
+                    estado.isNotEmpty ? estado : 'N/A',
+                    style: TextStyle(
+                      color: _colorEstado(estado),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
-            _ticketDetailRow('Tipo de falla:', tipo.isNotEmpty ? tipo : 'N/A'),
-            _ticketDetailRow('Fecha reporte:', fechaReporte),
-            _ticketDetailRow(
-              'Departamento:',
-              departamento.isNotEmpty ? departamento : 'N/A',
-            ),
-            _ticketDetailRow(
-              'Asignado a:',
-              asignadoA.isNotEmpty ? asignadoA : 'N/A',
-            ),
-            _ticketDetailRow(
-              'Sucursal / Oficina:',
-              oficina.isNotEmpty ? oficina : 'N/A',
-            ),
-            _ticketDetailRow(
-              'Tomado por:',
-              tomadoPor.isNotEmpty ? tomadoPor : 'N/A',
-            ),
-            _ticketDetailRow(
-              'Estado:',
-              estado.isNotEmpty ? estado : 'N/A',
-              valueColor: _colorEstado(estado),
-            ),
-            _ticketDetailRow('Asignación:', fechaAsignacion),
-            _ticketDetailRow(
-              'Prioridad:',
-              prioridad.isNotEmpty ? prioridad : 'N/A',
-              valueColor: _colorPrioridad(prioridad),
-            ),
-            _ticketDetailRow(
-              '¿Se solucionó?',
-              seSoluciono ? 'Sí' : 'No',
-              valueColor: seSoluciono ? Colors.green : Colors.red,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final itemWidth = (constraints.maxWidth - 8) / 2;
+
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: detailItems.map((item) {
+                    final value = item['value']?.toString() ?? 'N/A';
+                    final color = item['color'] as Color? ?? Colors.white;
+
+                    return SizedBox(
+                      width: itemWidth,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        constraints: const BoxConstraints(minHeight: 62),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF121B2D),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.04),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item['label']?.toString() ?? '',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              value,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -1761,6 +1865,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return _textoSeguro(login);
+  }
+
+  String _obtenerEquipoTicket(Map<String, dynamic> ticket) {
+    final posibles = [
+      ticket['equipo'],
+      ticket['equipo_nombre'],
+      ticket['nombre_equipo'],
+      ticket['equipoName'],
+      ticket['team'],
+      ticket['team_name'],
+      ticket['nombreEquipo'],
+    ];
+
+    for (final valor in posibles) {
+      final texto = _textoSeguro(valor);
+      if (texto.isNotEmpty) {
+        return texto;
+      }
+    }
+
+    return '';
   }
 
   String _formatearFecha(dynamic fecha) {
@@ -1843,205 +1968,285 @@ class _HomeScreenState extends State<HomeScreen> {
     return '';
   }
 
-  Widget _ticketDetailRow(String label, String value, {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 125,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: valueColor ?? Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildRecentTickets(bool isDesktop) {
+    if (ticketsRecientes.isEmpty) {
+      return _buildCard(
+        title: 'Mis tickets recientes',
+        trailing: TextButton(
+          onPressed: () => _abrirMisTickets(context),
+          child: const Text('Ver todos'),
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Text(
+              'No tienes tickets recientes.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+        ),
+      );
+    }
+
     return _buildCard(
       title: 'Mis tickets recientes',
-      trailing: TextButton(
-        onPressed: () {
-          _abrirMisTickets(context);
-        },
-        child: const Text('Ver todos'),
+      trailing: TextButton.icon(
+        onPressed: () => _abrirMisTickets(context),
+        icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+        label: const Text('Ver todos'),
       ),
-      child: ticketsRecientes.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'No tienes tickets recientes.',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ),
-            )
-          : isDesktop
-          ? _buildTicketsDesktop()
-          : _buildTicketsMobile(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0F172A), Color(0xFF121B2D)],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: isDesktop ? _buildTicketsDesktop() : _buildTicketsMobile(),
+      ),
     );
   }
 
   Widget _buildTicketsDesktop() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columnSpacing: 12,
-          headingRowColor: WidgetStateProperty.all(const Color(0xFF141C33)),        columns: const [
-          DataColumn(
-            label: Text('Folio', style: TextStyle(color: Colors.white)),
-          ),
-          DataColumn(
-            label: Text('Tipo', style: TextStyle(color: Colors.white)),
-          ),
-          DataColumn(
-            label: Text('Estado', style: TextStyle(color: Colors.white)),
-          ),
-          DataColumn(
-            label: Text('Acción', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-        rows: ticketsRecientes.map((ticket) {
-          final folio = _textoSeguro(ticket['folio']);
+    final crossAxisCount = 2;
 
-          final tipo = _textoSeguro(ticket['tipo_falla']);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final itemWidth = (width - 12) / crossAxisCount;
 
-          final estado = _textoSeguro(ticket['estado']);
-
-          return DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  folio.isNotEmpty ? folio : 'Sin folio',
-                  style: const TextStyle(fontSize: 11, color: Colors.white),
-                ),
-              ),
-              DataCell(
-                Text(
-                  tipo.isNotEmpty ? tipo : 'No disponible',
-                  style: const TextStyle(fontSize: 11, color: Colors.white),
-                ),
-              ),
-              DataCell(
-                Text(
-                  estado.isNotEmpty ? estado : 'No disponible',
-                  style: TextStyle(color: _colorEstado(estado), fontSize: 11),
-                ),
-              ),
-              DataCell(
-                IconButton(
-                  icon: const Icon(
-                    Icons.visibility_outlined,
-                    size: 18,
-                    color: Colors.blueAccent,
-                  ),
-                  onPressed: () {
-                    _abrirMisTickets(context);
-                  },
-                  tooltip: 'Ver ticket',
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: ticketsRecientes.map((ticket) {
+            return SizedBox(
+              width: itemWidth,
+              child: _buildRecentTicketCard(ticket),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
   Widget _buildTicketsMobile() {
     return Column(
-      children: ticketsRecientes.map((ticket) {
-        final folio = _textoSeguro(ticket['folio']);
+      children: ticketsRecientes.map((ticket) => _buildRecentTicketCard(ticket)).toList(),
+    );
+  }
 
-        final tipo = _textoSeguro(ticket['tipo_falla']);
+  Widget _buildRecentTicketCard(Map<String, dynamic> ticket) {
+    final folio = _textoSeguro(ticket['folio']);
+    final titulo = _textoSeguro(ticket['titulo']);
+    final tipo = _textoSeguro(ticket['tipo_falla']);
+    final estado = _textoSeguro(ticket['estado']);
+    final fecha = _formatearFecha(ticket['created_at']);
+    final prioridad = _textoSeguro(ticket['prioridad']);
+    final equipo = _obtenerEquipoTicket(ticket);
+    final mostrarEquipo = _debeMostrarEquipo(ticket, tipo);
 
-        final estado = _textoSeguro(ticket['estado']);
+    final chips = <Widget>[];
+    chips.add(_ticketInfoChip('Tipo', tipo.isNotEmpty ? tipo : 'N/A', Colors.blue));
+    chips.add(
+      _ticketInfoChip(
+        'Prioridad',
+        prioridad.isNotEmpty ? prioridad : 'N/A',
+        _colorPrioridad(prioridad),
+      ),
+    );
+    if (mostrarEquipo && equipo.isNotEmpty) {
+      chips.add(_ticketInfoChip('Equipo', equipo, Colors.tealAccent));
+    }
+    chips.add(_ticketInfoChip('Fecha', fecha, Colors.purpleAccent));
 
-        final titulo = _textoSeguro(ticket['titulo']);
-
-        return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _abrirDetalleTicket(context, ticket),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF141C33),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      folio.isNotEmpty ? folio : 'Sin folio',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (titulo.isNotEmpty)
-                      Text(
-                        titulo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    const SizedBox(height: 2),
-                    Text(
-                      tipo.isNotEmpty ? tipo : 'No disponible',
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      estado.isNotEmpty ? estado : 'No disponible',
-                      style: TextStyle(
-                        color: _colorEstado(estado),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.visibility_outlined,
-                  color: Colors.blueAccent,
-                  size: 20,
-                ),
-                onPressed: () {
-                  _abrirMisTickets(context);
-                },
-                tooltip: 'Ver ticket',
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF101B2F), Color(0xFF111C32)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 16,
+                offset: const Offset(0, 7),
               ),
             ],
           ),
-        );
-      }).toList(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: const Color(0xFF93C5FD).withValues(alpha: 0.24),
+                        ),
+                      ),
+                      child: Text(
+                        folio.isNotEmpty ? folio : 'Sin folio',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFDBEAFE),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _colorEstado(estado).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: _colorEstado(estado).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Text(
+                      estado.isNotEmpty ? estado : 'No disponible',
+                      style: TextStyle(
+                        color: _colorEstado(estado),
+                        fontSize: 9.3,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                titulo.isNotEmpty ? titulo : 'Ticket sin título',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      ),
+                      child: Text(
+                        tipo.isNotEmpty ? tipo : 'Sin tipo',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => _abrirDetalleTicket(context, ticket),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 34),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      backgroundColor: const Color(0xFF1D4ED8).withValues(alpha: 0.18),
+                    ),
+                    icon: const Icon(Icons.visibility_outlined, size: 14),
+                    label: const Text('Ver', style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _debeMostrarEquipo(Map<String, dynamic> ticket, String tipo) {
+    final tipoFormateado = tipo.toLowerCase();
+    if (tipoFormateado.contains('equipo')) {
+      return true;
+    }
+
+    final opciones = [
+      ticket['tipo'],
+      ticket['categoria'],
+      ticket['tipo_ticket'],
+      ticket['tipo_falla'],
+    ];
+
+    for (final valor in opciones) {
+      final texto = _textoSeguro(valor).toLowerCase();
+      if (texto.contains('equipo')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  Widget _ticketInfoChip(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+                fontSize: 9.5,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 9.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2438,17 +2643,38 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF141C33),
-        borderRadius: BorderRadius.circular(6),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF111B2E), Color(0xFF131D31)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: 0.26)),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2456,40 +2682,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   date,
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
                 if (description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white60, fontSize: 10),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10.5,
+                    ),
                   ),
                 ],
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.grey,
-              size: 22,
-            ),
-            onPressed: () {
-              _abrirAvisos(context);
-            },
-            tooltip: 'Ver aviso',
           ),
         ],
       ),
@@ -2791,7 +3009,7 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
-            const Spacer(),
+            const Divider(color: Colors.white12, height: 1),
 
             _drawerItem(
               icon: Icons.logout_rounded,

@@ -1872,7 +1872,10 @@ class AppNavigationDrawer extends StatelessWidget {
             },
           ),
 
-          const Spacer(),
+          const Divider(
+            color: Colors.white12,
+            height: 1,
+          ),
 
           // ============================================================
           // CERRAR SESIÓN

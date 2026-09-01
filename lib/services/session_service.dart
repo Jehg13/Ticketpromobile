@@ -17,6 +17,7 @@ class SessionService {
   static const String departamentoKey = 'user_departamento';
   static const String oficinaKey = 'user_oficina';
 
+  static const String phoneKey = 'user_phone';
   static const String numeroEmpleadoKey = 'user_numero_empleado';
   static const String pictureKey = 'user_picture';
 
@@ -53,6 +54,11 @@ class SessionService {
     await _storage.write(key: oficinaKey, value: _toString(user['oficina']));
 
     await _storage.write(
+      key: phoneKey,
+      value: _toString(user['phone']),
+    );
+
+    await _storage.write(
       key: numeroEmpleadoKey,
       value: _toString(user['numero_empleado']),
     );
@@ -60,13 +66,14 @@ class SessionService {
       user['picture'] ?? user['foto'] ?? user['foto_perfil'],
     );
     final storedPicture = await _storage.read(key: pictureKey);
-    final normalizedPicture = picture.toLowerCase();
+    final finalPicture = picture.isNotEmpty ? picture : (storedPicture ?? '');
+    final normalizedPicture = finalPicture.toLowerCase();
     final isDefaultPicture =
         normalizedPicture.isEmpty ||
         normalizedPicture == 'user.png' ||
         normalizedPicture.endsWith('/user.png') ||
         normalizedPicture.contains('profile-photos/user.png');
-    final normalizedStored = storedPicture?.trim().toLowerCase() ?? '';
+    final normalizedStored = finalPicture.trim().toLowerCase();
     final hasStoredCustomPicture =
         normalizedStored.isNotEmpty &&
         normalizedStored != 'user.png' &&
@@ -74,7 +81,7 @@ class SessionService {
         !normalizedStored.contains('profile-photos/user.png');
 
     if (!isDefaultPicture || !hasStoredCustomPicture) {
-      await _storage.write(key: pictureKey, value: picture);
+      await _storage.write(key: pictureKey, value: finalPicture);
     }
   }
 
@@ -130,6 +137,10 @@ class SessionService {
     return await _storage.read(key: oficinaKey);
   }
 
+  static Future<String?> getPhone() async {
+    return await _storage.read(key: phoneKey);
+  }
+
   static Future<String?> getNumeroEmpleado() async {
     return await _storage.read(key: numeroEmpleadoKey);
   }
@@ -140,6 +151,14 @@ class SessionService {
 
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
+  }
+
+  static bool isDefaultProfilePicture(String? picture) {
+    final normalized = (picture ?? '').trim().toLowerCase();
+    return normalized.isEmpty ||
+        normalized == 'user.png' ||
+        normalized.endsWith('/user.png') ||
+        normalized.contains('profile-photos/user.png');
   }
 
   static Future<Map<String, dynamic>?> getUser() async {
@@ -160,6 +179,7 @@ class SessionService {
     final empresa = await getEmpresa();
     final departamento = await getDepartamento();
     final oficina = await getOficina();
+    final phone = await getPhone();
     final numeroEmpleado = await getNumeroEmpleado();
     final picture = await getPicture();
 
@@ -167,6 +187,7 @@ class SessionService {
       'login': login ?? '',
       'email': email ?? '',
       'name': name ?? '',
+      'phone': phone ?? '',
       'role': role ?? '',
       'priv_admin': privAdmin ?? '',
       'active': active ?? '',

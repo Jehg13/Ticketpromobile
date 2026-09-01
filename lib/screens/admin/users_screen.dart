@@ -3,8 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../services/session_service.dart';
 import '../../services/admin/users_services.dart';
+import '../../widgets/loading_screen.dart';
+import '../../services/session_service.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -32,23 +33,14 @@ class _UserScreenState extends State<UserScreen> {
 
   String selectedFilter = 'Todos';
   String searchQuery = '';
+  bool _isLoading = false;
+  int _paginaActual = 1;
+  int _ultimaPagina = 1;
+  int _totalUsuarios = 0;
+  Map<String, dynamic> _estadisticas = {};
 
   final TextEditingController searchController = TextEditingController();
-
   List<UsuarioItem> usuarios = [];
-
-  bool cargando = true;
-  bool eliminando = false;
-
-  String? error;
-
-  int paginaActual = 1;
-  int ultimaPagina = 1;
-  int totalUsuarios = 0;
-
-  int totalActivos = 0;
-  int totalInactivos = 0;
-  int totalAdministradores = 0;
 
   @override
   void initState() {
@@ -62,141 +54,102 @@ class _UserScreenState extends State<UserScreen> {
     super.dispose();
   }
 
-  Future<void> _cargarUsuarios({int pagina = 1}) async {
-    if (!mounted) return;
+  List<UsuarioItem> get usuariosFiltrados {
+    return usuarios.where((user) {
+      final coincideEstado =
+          selectedFilter == 'Todos' ||
+          (selectedFilter == 'Activos' && user.estado == 'Activa') ||
+          (selectedFilter == 'Inactivos' && user.estado == 'Inactiva');
+
+      final query = searchQuery.toLowerCase();
+
+      final coincideBusqueda =
+          query.isEmpty ||
+          user.nombre.toLowerCase().contains(query) ||
+          user.email.toLowerCase().contains(query) ||
+          user.login.toLowerCase().contains(query) ||
+          user.departamento.toLowerCase().contains(query);
+
+      return coincideEstado && coincideBusqueda;
+    }).toList();
+  }
+
+  Future<void> _cargarUsuarios({bool resetPage = false}) async {
+    if (_isLoading) return;
+
+    if (resetPage) {
+      _paginaActual = 1;
+    }
 
     setState(() {
-      cargando = true;
-      error = null;
+      _isLoading = true;
     });
 
     try {
+      final estado = selectedFilter == 'Activos'
+          ? 'activos'
+          : selectedFilter == 'Inactivos'
+              ? 'inactivos'
+              : 'todos';
+
       final respuesta = await UsersService.obtenerUsuarios(
-        estado: _estadoApi(),
-        buscar: searchQuery.trim(),
-        pagina: pagina,
+        estado: estado,
+        buscar: searchQuery,
+        pagina: _paginaActual,
       );
 
       if (!mounted) return;
 
-      if (respuesta['success'] == true) {
-        final usuariosData = respuesta['usuarios'];
+      final rawUsuarios = (respuesta['usuarios'] as List?) ?? const [];
+      final nuevaLista = rawUsuarios
+          .whereType<Map>()
+          .map((item) => UsuarioItem.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
 
-        final lista = usuariosData is List
-            ? usuariosData
-                  .whereType<Map>()
-                  .map(
-                    (item) =>
-                        UsuarioItem.fromMap(Map<String, dynamic>.from(item)),
-                  )
-                  .toList()
-            : <UsuarioItem>[];
-
-        final pagination = respuesta['pagination'] is Map
-            ? Map<String, dynamic>.from(respuesta['pagination'])
-            : <String, dynamic>{};
-
-        setState(() {
-          usuarios = lista;
-
-          paginaActual = _toInt(pagination['current_page'], pagina);
-
-          ultimaPagina = _toInt(pagination['last_page'], 1);
-
-          totalUsuarios = _toInt(pagination['total'], lista.length);
-
-          _cargarEstadisticas(respuesta);
-
-          cargando = false;
-        });
-      } else {
-        setState(() {
-          usuarios = [];
-          cargando = false;
-          error =
-              respuesta['message']?.toString() ??
-              'No se pudieron obtener los usuarios.';
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
+      final pagination = respuesta['pagination'] is Map
+          ? Map<String, dynamic>.from(respuesta['pagination'])
+          : <String, dynamic>{};
+      final estadisticas = respuesta['estadisticas'] is Map
+          ? Map<String, dynamic>.from(respuesta['estadisticas'])
+          : <String, dynamic>{};
 
       setState(() {
-        cargando = false;
-        error = 'No se pudieron cargar los usuarios.';
+        usuarios = nuevaLista;
+        _totalUsuarios = _toInt(pagination['total'] ?? estadisticas['total'] ?? 0);
+        _ultimaPagina = _toInt(pagination['last_page'] ?? 1);
+        _estadisticas = estadisticas;
       });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        usuarios = [];
+        _totalUsuarios = 0;
+        _ultimaPagina = 1;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  void _cargarEstadisticas(Map<String, dynamic> respuesta) {
-    final estadisticas = UsersService.obtenerEstadisticas(respuesta);
-
-    totalActivos = estadisticas['usuariosActivos'] ?? 0;
-
-    totalInactivos = estadisticas['usuariosInactivos'] ?? 0;
-
-    totalAdministradores = estadisticas['administradores'] ?? 0;
-
-    if (totalUsuarios == 0) {
-      totalUsuarios = estadisticas['totalUsuarios'] ?? 0;
-    }
-  }
-
-  String _estadoApi() {
-    switch (selectedFilter) {
-      case 'Activos':
-        return 'activa';
-
-      case 'Inactivos':
-        return 'inactiva';
-
-      default:
-        return 'todos';
-    }
-  }
-
-  Future<void> _buscar() async {
-    await _cargarUsuarios(pagina: 1);
-  }
-
-  Future<void> _cambiarPagina(int pagina) async {
-    if (pagina < 1 || pagina > ultimaPagina) {
-      return;
-    }
-
-    await _cargarUsuarios(pagina: pagina);
-  }
-
-  int _toInt(dynamic value, [int defecto = 0]) {
+  int _toInt(dynamic value) {
     if (value is int) return value;
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(value?.toString() ?? '') ?? defecto;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  List<UsuarioItem> get usuariosMostrados {
-    if (searchQuery.trim().isEmpty) {
-      return usuarios;
-    }
-
-    final query = searchQuery.trim().toLowerCase();
-
-    return usuarios.where((user) {
-      return user.nombre.toLowerCase().contains(query) ||
-          user.email.toLowerCase().contains(query) ||
-          user.login.toLowerCase().contains(query) ||
-          user.departamento.toLowerCase().contains(query) ||
-          user.oficina.toLowerCase().contains(query) ||
-          user.empresa.toLowerCase().contains(query);
-    }).toList();
+  Future<void> _irAPagina(int pagina) async {
+    if (pagina < 1 || pagina > _ultimaPagina) return;
+    _paginaActual = pagina;
+    await _cargarUsuarios();
   }
 
   @override
   Widget build(BuildContext context) {
-    final usuariosMostrados = usuariosMostradosGetter();
+    final usuariosMostrados = usuariosFiltrados;
 
     return Scaffold(
       backgroundColor: background,
@@ -228,326 +181,257 @@ class _UserScreenState extends State<UserScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: Colors.white),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: primaryBlue,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: const Text(
+                      '2',
+                      style: TextStyle(color: Colors.white, fontSize: 9),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
-          const AdminAvatar(radius: 16),
+          const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
         ],
       ),
       drawer: const CustomSidebar(activeMenu: 'Usuarios'),
-      body: RefreshIndicator(
-        color: accentBlue,
-        backgroundColor: cardBg,
-        onRefresh: () => _cargarUsuarios(pagina: paginaActual),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Usuarios',
-                style: TextStyle(
-                  color: textWhite,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Usuarios',
+              style: TextStyle(
+                color: textWhite,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Consulta y administra la información de los usuarios del sistema',
-                style: TextStyle(color: textMuted, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              _buildKpis(),
-              const SizedBox(height: 16),
-              Row(
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Consulta y administra la información de los usuarios del sistema',
+              style: TextStyle(color: textMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 90,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 children: [
-                  _buildFilterChip('Todos'),
-                  _buildFilterChip('Activos', dotColor: greenAccent),
-                  _buildFilterChip('Inactivos', dotColor: redAccent),
+                  KPIStatCard(
+                    title: 'Total de usuarios',
+                    count: _totalUsuarios.toString(),
+                    icon: Icons.people_outline,
+                    iconColor: accentBlue,
+                  ),
+                  const SizedBox(width: 10),
+                  KPIStatCard(
+                    title: 'Cuentas activas',
+                    count: _toInt(_estadisticas['activos'] ?? 0).toString(),
+                    icon: Icons.person_add_alt_1_outlined,
+                    iconColor: greenAccent,
+                  ),
+                  const SizedBox(width: 10),
+                  KPIStatCard(
+                    title: 'Cuentas inactivas',
+                    count: _toInt(_estadisticas['inactivos'] ?? 0).toString(),
+                    icon: Icons.person_off_outlined,
+                    iconColor: redAccent,
+                  ),
+                  const SizedBox(width: 10),
+                  KPIStatCard(
+                    title: 'Administradores',
+                    count: _toInt(_estadisticas['administradores'] ?? 0).toString(),
+                    icon: Icons.security,
+                    iconColor: primaryBlue,
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
-              _buildSearch(),
-              const SizedBox(height: 16),
-              if (cargando)
-                _buildLoading()
-              else if (error != null)
-                _buildError()
-              else if (usuariosMostrados.isEmpty)
-                _buildEmpty()
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: usuariosMostrados.length,
-                  itemBuilder: (context, index) {
-                    final user = usuariosMostrados[index];
-
-                    return UserCard(
-                      item: user,
-                      onView: () => _mostrarDetalleUsuario(context, user),
-                      onEdit: () => _mostrarEditarUsuario(context, user),
-                      onDelete: () => _mostrarEliminarUsuario(context, user),
-                    );
-                  },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildFilterChip('Todos'),
+                _buildFilterChip('Activos', dotColor: greenAccent),
+                _buildFilterChip('Inactivos', dotColor: redAccent),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: textMuted, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                        });
+                        _cargarUsuarios(resetPage: true);
+                      },
+                      style: const TextStyle(color: textWhite, fontSize: 13),
+                      decoration: const InputDecoration(
+                        hintText: 'Buscar usuario...',
+                        hintStyle: TextStyle(color: textMuted, fontSize: 13),
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  if (searchQuery.isNotEmpty)
+                    IconButton(
+                      onPressed: () {
+                        searchController.clear();
+                        setState(() {
+                          searchQuery = '';
+                        });
+                      },
+                      icon: const Icon(Icons.close, color: textMuted, size: 18),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 26),
+                  child: CircularProgressIndicator(),
                 ),
-              const SizedBox(height: 16),
-              if (!cargando && error == null) _buildPagination(),
-              const SizedBox(height: 20),
-            ],
-          ),
+              )
+            else if (usuariosMostrados.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.people_outline, color: textMuted, size: 40),
+                    SizedBox(height: 10),
+                    Text(
+                      'No se encontraron usuarios',
+                      style: TextStyle(
+                        color: textWhite,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Intenta cambiar el filtro o la búsqueda.',
+                      style: TextStyle(color: textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: usuariosMostrados.length,
+                itemBuilder: (context, index) {
+                  final user = usuariosMostrados[index];
+
+                  return UserCard(
+                    item: user,
+                    onView: () => _mostrarDetalleUsuario(context, user),
+                    onEdit: () => _mostrarEditarUsuario(context, user),
+                    onDelete: () => _mostrarEliminarUsuario(context, user),
+                  );
+                },
+              ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Mostrando ${usuariosMostrados.length} de $_totalUsuarios usuarios',
+                    style: const TextStyle(color: textMuted, fontSize: 11),
+                  ),
+                  Row(
+                    children: [
+                      _buildPageBtn(
+                        icon: Icons.chevron_left,
+                        disabled: _paginaActual <= 1,
+                        onTap: _paginaActual > 1
+                            ? () => _irAPagina(_paginaActual - 1)
+                            : null,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildPageBtn(
+                        text: '$_paginaActual',
+                        selected: true,
+                        disabled: false,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildPageBtn(
+                        icon: Icons.chevron_right,
+                        disabled: _paginaActual >= _ultimaPagina,
+                        onTap: _paginaActual < _ultimaPagina
+                            ? () => _irAPagina(_paginaActual + 1)
+                            : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
   }
 
-  List<UsuarioItem> usuariosMostradosGetter() {
-    return usuariosMostrados;
-  }
-
-  Widget _buildKpis() {
-    return SizedBox(
-      height: 90,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          KPIStatCard(
-            title: 'Total de usuarios',
-            count: totalUsuarios.toString(),
-            icon: Icons.people_outline,
-            iconColor: accentBlue,
-          ),
-          const SizedBox(width: 10),
-          KPIStatCard(
-            title: 'Cuentas activas',
-            count: totalActivos.toString(),
-            icon: Icons.person_add_alt_1_outlined,
-            iconColor: greenAccent,
-          ),
-          const SizedBox(width: 10),
-          KPIStatCard(
-            title: 'Cuentas inactivas',
-            count: totalInactivos.toString(),
-            icon: Icons.person_off_outlined,
-            iconColor: redAccent,
-          ),
-          const SizedBox(width: 10),
-          KPIStatCard(
-            title: 'Administradores',
-            count: totalAdministradores.toString(),
-            icon: Icons.security,
-            iconColor: primaryBlue,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearch() {
-    return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search, color: textMuted, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-              onSubmitted: (_) => _buscar(),
-              style: const TextStyle(color: textWhite, fontSize: 13),
-              decoration: const InputDecoration(
-                hintText: 'Buscar usuario...',
-                hintStyle: TextStyle(color: textMuted, fontSize: 13),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-          if (searchQuery.isNotEmpty)
-            IconButton(
-              onPressed: () {
-                searchController.clear();
-
-                setState(() {
-                  searchQuery = '';
-                });
-
-                _cargarUsuarios(pagina: 1);
-              },
-              icon: const Icon(Icons.close, color: textMuted, size: 18),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(35),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: const Column(
-        children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: accentBlue,
-            ),
-          ),
-          SizedBox(height: 14),
-          Text(
-            'Cargando usuarios...',
-            style: TextStyle(color: textMuted, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: redAccent.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline, color: redAccent, size: 40),
-          const SizedBox(height: 10),
-          Text(
-            error ?? 'Ocurrió un error.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: textMuted, fontSize: 12),
-          ),
-          const SizedBox(height: 14),
-          ElevatedButton.icon(
-            onPressed: () => _cargarUsuarios(pagina: paginaActual),
-            style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 16),
-            label: const Text(
-              'Reintentar',
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.people_outline, color: textMuted, size: 40),
-          SizedBox(height: 10),
-          Text(
-            'No se encontraron usuarios',
-            style: TextStyle(
-              color: textWhite,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Intenta cambiar el filtro o la búsqueda.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: textMuted, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPagination() {
-    final desde = usuarios.isEmpty
-        ? 0
-        : ((paginaActual - 1) * usuarios.length) + 1;
-
-    final hasta = usuarios.isEmpty ? 0 : desde + usuarios.length - 1;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Mostrando $desde-$hasta de $totalUsuarios usuarios',
-              style: const TextStyle(color: textMuted, fontSize: 11),
-            ),
-          ),
-          Row(
-            children: [
-              _buildPageBtn(
-                icon: Icons.chevron_left,
-                disabled: paginaActual <= 1,
-                onTap: paginaActual > 1
-                    ? () => _cambiarPagina(paginaActual - 1)
-                    : null,
-              ),
-              const SizedBox(width: 4),
-              _buildPageBtn(text: paginaActual.toString(), selected: true),
-              const SizedBox(width: 4),
-              _buildPageBtn(
-                icon: Icons.chevron_right,
-                disabled: paginaActual >= ultimaPagina,
-                onTap: paginaActual < ultimaPagina
-                    ? () => _cambiarPagina(paginaActual + 1)
-                    : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFilterChip(String label, {Color? dotColor}) {
-    final isSelected = selectedFilter == label;
+    final bool isSelected = selectedFilter == label;
 
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedFilter = label;
         });
-
-        _cargarUsuarios(pagina: 1);
+        _cargarUsuarios(resetPage: true);
       },
       child: Container(
         margin: const EdgeInsets.only(right: 8),
@@ -592,45 +476,43 @@ class _UserScreenState extends State<UserScreen> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: disabled ? null : onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: selected
-              ? primaryBlue
-              : disabled
-              ? Colors.white.withValues(alpha: 0.02)
-              : cardBg,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: selected ? primaryBlue : Colors.white10),
-        ),
-        child: Center(
-          child: icon != null
-              ? Icon(
-                  icon,
-                  color: disabled ? Colors.white24 : textWhite,
-                  size: 17,
-                )
-              : Text(
-                  text ?? '',
-                  style: TextStyle(
-                    color: selected ? textWhite : textMuted,
-                    fontSize: 11,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-        ),
+    final child = Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: selected
+            ? primaryBlue
+            : disabled
+                ? Colors.white.withValues(alpha: 0.02)
+                : cardBg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: selected ? primaryBlue : Colors.white10),
       ),
+      child: Center(
+        child: icon != null
+            ? Icon(icon, color: disabled ? Colors.white24 : textWhite, size: 16)
+            : Text(
+                text!,
+                style: TextStyle(
+                  color: selected ? textWhite : textMuted,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+      ),
+    );
+
+    if (disabled || onTap == null) {
+      return child;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: child,
     );
   }
 
-  Future<void> _mostrarDetalleUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) async {
+  void _mostrarDetalleUsuario(BuildContext context, UsuarioItem user) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -651,46 +533,115 @@ class _UserScreenState extends State<UserScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildSheetHandle(),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Información del usuario',
-                      style: TextStyle(
-                        color: textWhite,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    _buildStatusBadge(user.estado),
-                  ],
+                  ),
                 ),
-                const Text(
-                  'Detalle completo de la cuenta',
-                  style: TextStyle(color: textMuted, fontSize: 11),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF312E81)],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Información del usuario',
+                              style: TextStyle(
+                                color: textWhite,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Detalle completo de la cuenta',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildStatusBadge(user.estado),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 38,
-                        backgroundColor: primaryBlue,
-                        child: Text(
-                          user.getInitials(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                      Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: accentBlue, width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 36,
+                              backgroundColor: primaryBlue,
+                              child: Text(
+                                user.getInitials(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          Positioned(
+                            right: 4,
+                            bottom: 4,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: user.estado == 'Activa'
+                                    ? greenAccent
+                                    : redAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: background, width: 2),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       Text(
                         user.nombre,
-                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: textWhite,
                           fontSize: 18,
@@ -698,7 +649,7 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                       ),
                       Text(
-                        user.email.isEmpty ? 'Sin correo' : user.email,
+                        user.email,
                         style: const TextStyle(color: textMuted, fontSize: 12),
                       ),
                       const SizedBox(height: 6),
@@ -744,7 +695,79 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                _buildContactCard(user),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.email_outlined,
+                            color: textMuted,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Correo electrónico',
+                                  style: TextStyle(
+                                    color: textMuted,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                Text(
+                                  user.email,
+                                  style: const TextStyle(
+                                    color: textWhite,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white10, height: 16),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone_outlined,
+                            color: textMuted,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Teléfono',
+                                style: TextStyle(
+                                  color: textMuted,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              Text(
+                                user.telefono,
+                                style: const TextStyle(
+                                  color: textWhite,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Permisos',
@@ -755,7 +778,40 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildPermissions(user),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: user.permisos.isEmpty
+                      ? [
+                          const Text(
+                            'Sin permisos asignados',
+                            style: TextStyle(color: textMuted, fontSize: 12),
+                          ),
+                        ]
+                      : user.permisos.map((permission) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: primaryBlue.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: primaryBlue.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Text(
+                              permission,
+                              style: const TextStyle(
+                                color: accentBlue,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                ),
               ],
             ),
           ),
@@ -764,606 +820,532 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildSheetHandle() {
-    return Center(
-      child: Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: Colors.white24,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactCard(UsuarioItem user) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.email_outlined, color: textMuted, size: 18),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Correo electrónico',
-                      style: TextStyle(color: textMuted, fontSize: 10),
-                    ),
-                    Text(
-                      user.email.isEmpty ? 'Sin correo' : user.email,
-                      style: const TextStyle(color: textWhite, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.white10, height: 16),
-          Row(
-            children: [
-              const Icon(Icons.phone_outlined, color: textMuted, size: 18),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Teléfono',
-                    style: TextStyle(color: textMuted, fontSize: 10),
-                  ),
-                  Text(
-                    user.telefono.isEmpty ? 'Sin teléfono' : user.telefono,
-                    style: const TextStyle(color: textWhite, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPermissions(UsuarioItem user) {
-    if (user.permisos.isEmpty) {
-      return const Text(
-        'Sin permisos asignados',
-        style: TextStyle(color: textMuted, fontSize: 12),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: user.permisos.map((permission) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: primaryBlue.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: primaryBlue.withValues(alpha: 0.4)),
-          ),
-          child: Text(
-            permission,
-            style: const TextStyle(
-              color: accentBlue,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Future<void> _mostrarEditarUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) async {
-    final detalle = await UsersService.obtenerUsuario(user.login);
-
-    if (!context.mounted) return;
-
-    UsuarioItem usuarioEditar = user;
-
-    if (detalle['success'] == true && detalle['usuario'] is Map) {
-      usuarioEditar = UsuarioItem.fromMap(
-        Map<String, dynamic>.from(detalle['usuario']),
-      );
-    }
-
-    final nombreCtrl = TextEditingController(text: usuarioEditar.nombre);
-
-    final numEmpCtrl = TextEditingController(text: usuarioEditar.numEmpleado);
-
-    final loginCtrl = TextEditingController(text: usuarioEditar.login);
-
-    final emailCtrl = TextEditingController(text: usuarioEditar.email);
-
+  void _mostrarEditarUsuario(BuildContext context, UsuarioItem user) {
+    final nombreCtrl = TextEditingController(text: user.nombre);
+    final numEmpCtrl = TextEditingController(text: user.numEmpleado);
+    final loginCtrl = TextEditingController(text: user.login);
+    final emailCtrl = TextEditingController(text: user.email);
     final telCtrl = TextEditingController(
-      text: _formatearTelefono(usuarioEditar.telefono),
+      text: user.telefono == 'Sin teléfono'
+          ? ''
+          : _formatPhoneNumber(user.telefono),
     );
-
+    final deptoCtrl = TextEditingController(text: user.departamento);
+    final roleCtrl = TextEditingController(text: user.rol);
     final passwordCtrl = TextEditingController();
     bool passwordVisible = false;
-    final empresaCtrl = TextEditingController(text: usuarioEditar.empresa);
-    final rolCtrl = TextEditingController(
-      text: usuarioEditar.rol.isEmpty ? 'usuario' : usuarioEditar.rol,
-    );
-    final departamentoCtrl = TextEditingController(
-      text: usuarioEditar.departamento,
-    );
 
-    String selectedEstado = usuarioEditar.estado.isEmpty
-        ? 'Activa'
-        : usuarioEditar.estado;
-
-    String selectedAdmin = usuarioEditar.permisos.contains('Admin')
-        ? 'Sí'
-        : 'No';
-
-    int? selectedEmpresaId = usuarioEditar.empresaId;
-
-    String selectedEmpresa = usuarioEditar.empresa;
-
-    int? selectedOficinaId = usuarioEditar.oficinaId;
-
-    String selectedOficina = usuarioEditar.oficina;
-
-    bool cargandoEmpresas = false;
-    bool cargandoOficinas = false;
-
-    List<Map<String, dynamic>> empresas = [];
-    List<Map<String, dynamic>> oficinas = [];
-
-    cargandoEmpresas = true;
-    final empresasRespuesta = await UsersService.obtenerEmpresas();
-    if (empresasRespuesta['success'] == true &&
-        empresasRespuesta['empresas'] is List) {
-      empresas = (empresasRespuesta['empresas'] as List)
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-    }
-    cargandoEmpresas = false;
-
-    final empresaId = selectedEmpresaId;
-
-    if (empresaId != null) {
-      cargandoOficinas = true;
-
-      final respuesta = await UsersService.obtenerOficinasPorEmpresa(empresaId);
-
-      if (respuesta['success'] == true && respuesta['oficinas'] is List) {
-        oficinas = (respuesta['oficinas'] as List)
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-      }
-
-      cargandoOficinas = false;
-    } else {
-      cargandoOficinas = true;
-
-      final empresasRespuesta = await UsersService.obtenerEmpresas();
-
-      if (empresasRespuesta['success'] == true &&
-          empresasRespuesta['empresas'] is List) {
-        empresas = (empresasRespuesta['empresas'] as List)
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-
-        for (final empresa in empresas) {
-          final empresaIdActual = _toInt(empresa['id']);
-
-          if (empresaIdActual <= 0) {
-            continue;
-          }
-
-          final respuesta = await UsersService.obtenerOficinasPorEmpresa(
-            empresaIdActual,
-          );
-
-          if (respuesta['success'] == true && respuesta['oficinas'] is List) {
-            oficinas.addAll(
-              (respuesta['oficinas'] as List)
-                  .whereType<Map>()
-                  .map((item) => Map<String, dynamic>.from(item))
-                  .toList(),
-            );
-          }
-        }
-      }
-
-      cargandoOficinas = false;
-    }
-
-    if (!context.mounted) return;
+    String selectedOficina = user.oficina;
+    String selectedEstado = user.estado;
+    String selectedAdmin = user.permisos.contains('Admin') ? 'Sí' : 'No';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (modalContext) {
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                top: 20,
-                left: 16,
-                right: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                left: 12,
+                right: 12,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 14,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSheetHandle(),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1E3A8A), Color(0xFF312E81)],
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1220),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 5,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 14,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
                       ),
-                      child: const Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 21,
-                            backgroundColor: Colors.white12,
-                            child: Icon(
-                              Icons.edit_outlined,
-                              color: Colors.white,
-                              size: 21,
-                            ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF18213F), Color(0xFF111827)],
                           ),
-                          SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Editar usuario',
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF60A5FA), Color(0xFF4F46E5)],
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0xFF4F46E5),
+                                    blurRadius: 18,
+                                    offset: Offset(0, 12),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.edit_note_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Editar usuario',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Actualiza datos, acceso y permisos.',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.72),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selectedEstado == 'Activa'
+                                    ? greenAccent.withValues(alpha: 0.15)
+                                    : redAccent.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: selectedEstado == 'Activa'
+                                      ? greenAccent.withValues(alpha: 0.25)
+                                      : redAccent.withValues(alpha: 0.25),
+                                ),
+                              ),
+                              child: Text(
+                                selectedEstado,
                                 style: TextStyle(
-                                  color: textWhite,
-                                  fontSize: 18,
+                                  color: selectedEstado == 'Activa'
+                                      ? greenAccent
+                                      : redAccent,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(height: 3),
-                              Text(
-                                'Actualiza la información de la cuenta',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Información personal',
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildInputField(
+                              'Nombre',
+                              nombreCtrl,
+                              icon: Icons.person_outline_rounded,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildInputField(
+                              'Empleado',
+                              numEmpCtrl,
+                              icon: Icons.badge_outlined,
+                              trailing: InkWell(
+                                onTap: () {
+                                  setModalState(() {
+                                    numEmpCtrl.text = _generateEmployeeNumber(
+                                      usuarios,
+                                    );
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: accentBlue.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    'Generar',
+                                    style: TextStyle(
+                                      color: accentBlue,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInputField('Nombre', nombreCtrl),
-                    const SizedBox(height: 10),
-                    _buildInputField(
-                      'Número de empleado',
-                      numEmpCtrl,
-                      suffix: IconButton(
-                        tooltip: 'Generar número disponible',
-                        onPressed: () {
-                          numEmpCtrl.text = _generarNumeroEmpleado();
-                          numEmpCtrl.selection = TextSelection.collapsed(
-                            offset: numEmpCtrl.text.length,
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.auto_awesome,
-                          color: accentBlue,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildInputField('Login', loginCtrl, enabled: false),
-                    const SizedBox(height: 10),
-                    _buildInputField('Correo electrónico', emailCtrl),
-                    const SizedBox(height: 10),
-                    _buildInputField(
-                      'Teléfono',
-                      telCtrl,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [TelefonoInputFormatter()],
-                      hintText: '(899) 123-4567',
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Nueva contraseña',
-                      style: TextStyle(color: textMuted, fontSize: 11),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildPasswordField(
-                      passwordCtrl,
-                      'Nueva contraseña temporal',
-                      obscureText: !passwordVisible,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 10),
+                      Row(
                         children: [
-                          IconButton(
-                            tooltip: passwordVisible
-                                ? 'Ocultar contraseña'
-                                : 'Mostrar contraseña',
-                            onPressed: () {
-                              setModalState(() {
-                                passwordVisible = !passwordVisible;
-                              });
-                            },
-                            icon: Icon(
-                              passwordVisible
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: textMuted,
-                              size: 18,
+                          Expanded(
+                            child: _buildInputField(
+                              'Login',
+                              loginCtrl,
+                              icon: Icons.alternate_email_rounded,
                             ),
                           ),
-                          IconButton(
-                            tooltip: 'Generar contraseña temporal',
-                            onPressed: () {
-                              setModalState(() {
-                                passwordCtrl.text =
-                                    _generarContrasenaTemporal();
-                                passwordVisible = true;
-                              });
-                              passwordCtrl.selection = TextSelection.collapsed(
-                                offset: passwordCtrl.text.length,
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.auto_awesome,
-                              color: accentBlue,
-                              size: 18,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildInputField(
+                              'Teléfono',
+                              telCtrl,
+                              icon: Icons.phone_rounded,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (value) {
+                                final formatted = _formatPhoneNumber(value);
+                                if (formatted != value) {
+                                  telCtrl.value = telCtrl.value.copyWith(
+                                    text: formatted,
+                                    selection: TextSelection.collapsed(
+                                      offset: formatted.length,
+                                    ),
+                                    composing: TextRange.empty,
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Ubicación',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 10),
+                      _buildInputField(
+                        'Correo electrónico',
+                        emailCtrl,
+                        icon: Icons.mail_outline_rounded,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (cargandoEmpresas)
-                      const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Center(
-                          child: CircularProgressIndicator(color: accentBlue),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Seguridad y acceso',
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    else
-                      _buildInputField('Empresa', empresaCtrl, enabled: false),
-                    const SizedBox(height: 10),
-                    if (cargandoOficinas)
-                      const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Center(
-                          child: CircularProgressIndicator(color: accentBlue),
-                        ),
-                      )
-                    else
-                      _buildMapDropdown(
-                        label: 'Oficina',
-                        value: selectedOficinaId,
-                        items: oficinas,
-                        idKey: 'id',
-                        nameKeys: const ['nombre', 'name', 'descripcion'],
-                        fallback: selectedOficina,
-                        onChanged: (value) async {
-                          if (value == null) {
-                            return;
-                          }
-
-                          final oficina = oficinas.firstWhere(
-                            (item) => _toInt(item['id']) == value,
-                            orElse: () => <String, dynamic>{},
-                          );
-
-                          final empresaRelacionadaId = _toInt(
-                            oficina['empresa_id'],
-                          );
-                          final empresaRelacionada = empresas.firstWhere(
-                            (item) =>
-                                _toInt(item['id']) == empresaRelacionadaId,
-                            orElse: () => <String, dynamic>{},
-                          );
-
-                          setModalState(() {
-                            selectedOficinaId = value;
-                            selectedOficina = _nombreMap(oficina);
-                            selectedEmpresaId = empresaRelacionadaId == 0
-                                ? selectedEmpresaId
-                                : empresaRelacionadaId;
-                            selectedEmpresa = empresaRelacionadaId == 0
-                                ? selectedEmpresa
-                                : _nombreMap(empresaRelacionada);
-                            empresaCtrl.text = selectedEmpresa;
-                            departamentoCtrl.text = '';
-                          });
-                        },
                       ),
-                    const SizedBox(height: 10),
-                    _buildInputField('Departamento', departamentoCtrl),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Configuración de cuenta',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildInputField('Rol', rolCtrl),
-                    const SizedBox(height: 10),
-                    _buildDropdown(
-                      label: 'Estado',
-                      value: selectedEstado,
-                      items: const ['Activa', 'Inactiva'],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setModalState(() {
-                            selectedEstado = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _buildDropdown(
-                      label: 'Permiso administrador',
-                      value: selectedAdmin,
-                      items: const ['No', 'Sí'],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setModalState(() {
-                            selectedAdmin = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            'Cancelar',
-                            style: TextStyle(color: textWhite),
-                          ),
+                      const SizedBox(height: 10),
+                      _buildInputField(
+                        'Nueva contraseña',
+                        passwordCtrl,
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: !passwordVisible,
+                        hintText: 'Déjala vacía si no deseas cambiarla',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                setModalState(() {
+                                  passwordVisible = !passwordVisible;
+                                });
+                              },
+                              icon: Icon(
+                                passwordVisible
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                                color: textMuted,
+                                size: 17,
+                              ),
+                              splashRadius: 16,
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                            ),
+                            InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  passwordCtrl.text = _generatePassword();
+                                  passwordVisible = true;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: greenAccent.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'Generar',
+                                  style: TextStyle(
+                                    color: greenAccent,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentBlue,
-                          ),
-                          onPressed: () async {
-                            if (selectedEmpresaId == null) {
-                              _mostrarMensaje(
-                                context,
-                                'Debes seleccionar una empresa.',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            if (selectedOficinaId == null) {
-                              _mostrarMensaje(
-                                context,
-                                'Debes seleccionar una oficina.',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            final nombreDepartamento = departamentoCtrl.text
-                                .trim();
-                            final departamentoFinal = nombreDepartamento;
-                            final telefono = _soloDigitos(telCtrl.text);
-
-                            if (telefono.isNotEmpty && telefono.length != 10) {
-                              _mostrarMensaje(
-                                context,
-                                'El teléfono debe contener 10 dígitos.',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            if (numEmpCtrl.text.trim().isEmpty) {
-                              _mostrarMensaje(
-                                context,
-                                'El número de empleado es obligatorio.',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            final numeroDuplicado = usuarios.any(
-                              (item) =>
-                                  item.login != user.login &&
-                                  item.numEmpleado.trim().toLowerCase() ==
-                                      numEmpCtrl.text.trim().toLowerCase(),
-                            );
-
-                            if (numeroDuplicado) {
-                              _mostrarMensaje(
-                                context,
-                                'El número de empleado ya está asignado a otro usuario.',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            Navigator.pop(context);
-
-                            await _guardarUsuario(
-                              user: user,
-                              nombre: nombreCtrl.text,
-                              email: emailCtrl.text,
-                              phone: telefono,
-                              password: passwordCtrl.text,
-                              numeroEmpleado: numEmpCtrl.text,
-                              role: rolCtrl.text,
-                              active: selectedEstado,
-                              privAdmin: selectedAdmin,
-                              oficinaId: selectedOficinaId!,
-                              departamento: departamentoFinal,
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.save,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          label: const Text(
-                            'Guardar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Ubicación y permisos',
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Oficina',
+                              value: selectedOficina,
+                              icon: Icons.location_on_outlined,
+                              items: const ['Reynosa', 'Monterrey', 'CDMX'],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setModalState(() {
+                                    selectedOficina = value;
+                                  });
+                                }
+                              },
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Estado',
+                              value: selectedEstado,
+                              icon: Icons.toggle_on_outlined,
+                              items: const ['Activa', 'Inactiva'],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setModalState(() {
+                                    selectedEstado = value;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _buildInputField(
+                        'Departamento',
+                        deptoCtrl,
+                        icon: Icons.business_outlined,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildInputField(
+                              'Rol',
+                              roleCtrl,
+                              icon: Icons.shield_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Admin',
+                              value: selectedAdmin,
+                              icon: Icons.admin_panel_settings_outlined,
+                              items: const ['No', 'Sí'],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setModalState(() {
+                                    selectedAdmin = value;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: Colors.white.withValues(alpha: 0.03),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final currentContext = context;
+                                final officeId = _resolveOficinaId(selectedOficina);
+                                if (officeId == null) {
+                                  if (currentContext.mounted) {
+                                    _mostrarMensaje(
+                                      currentContext,
+                                      'Selecciona una oficina válida antes de guardar.',
+                                      error: true,
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                final passwordActual = await _mostrarDialogoConfirmacionPassword(
+                                  context: currentContext,
+                                  usuario: user.nombre,
+                                );
+
+                                if (passwordActual == null || passwordActual.trim().isEmpty) {
+                                  return;
+                                }
+
+                                final telefonoLimpio = telCtrl.text.trim();
+                                final password = passwordCtrl.text.trim();
+
+                                final result = await UsersService.actualizarUsuario(
+                                  login: user.login.trim(),
+                                  nombre: nombreCtrl.text.trim(),
+                                  email: emailCtrl.text.trim(),
+                                  phone: telefonoLimpio.isEmpty ? null : telefonoLimpio,
+                                  password: password.isEmpty ? null : password,
+                                  currentPassword: passwordActual,
+                                  numeroEmpleado: numEmpCtrl.text.trim(),
+                                  role: roleCtrl.text.trim(),
+                                  active: selectedEstado == 'Activa' ? 'Y' : 'N',
+                                  privAdmin: selectedAdmin == 'Sí' ? 'Y' : 'N',
+                                  oficinaId: officeId,
+                                  departamento: deptoCtrl.text.trim(),
+                                );
+
+                                if (!mounted || !currentContext.mounted) return;
+
+                                if (result['success'] == true) {
+                                  setState(() {
+                                    user.nombre = nombreCtrl.text.trim();
+                                    user.numEmpleado = numEmpCtrl.text.trim();
+                                    user.login = loginCtrl.text.trim();
+                                    user.email = emailCtrl.text.trim();
+                                    user.telefono = telefonoLimpio.isEmpty
+                                        ? 'Sin teléfono'
+                                        : telefonoLimpio;
+                                    user.departamento = deptoCtrl.text.trim();
+                                    user.oficina = selectedOficina;
+                                    user.rol = roleCtrl.text.trim();
+                                    user.estado = selectedEstado;
+                                    user.permisos = List<String>.from(user.permisos);
+                                    if (selectedAdmin == 'Sí') {
+                                      if (!user.permisos.contains('Admin')) {
+                                        user.permisos.add('Admin');
+                                      }
+                                    } else {
+                                      user.permisos.remove('Admin');
+                                    }
+                                  });
+
+                                  Navigator.pop(currentContext);
+                                  _mostrarMensaje(
+                                    currentContext,
+                                    result['message']?.toString() ??
+                                        'Usuario actualizado correctamente',
+                                  );
+                                  return;
+                                }
+
+                                _mostrarMensaje(
+                                  currentContext,
+                                  result['message']?.toString() ??
+                                      'No se pudo actualizar el usuario.',
+                                  error: true,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accentBlue,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.save_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'Guardar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1373,321 +1355,205 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Future<void> _guardarUsuario({
-    required UsuarioItem user,
-    required String nombre,
-    required String email,
-    required String phone,
-    required String password,
-    required String numeroEmpleado,
-    required String role,
-    required String active,
-    required String privAdmin,
-    required int oficinaId,
-    required String departamento,
-  }) async {
-    _mostrarCargando();
-
-    final activeApi = active.trim().toUpperCase();
-    final privAdminApi = privAdmin.trim().toUpperCase();
-
-    final respuesta = await UsersService.actualizarUsuario(
-      login: user.login,
-      nombre: nombre,
-      email: email,
-      phone: phone,
-      password: password,
-      numeroEmpleado: numeroEmpleado,
-      role: role,
-      active: activeApi == 'ACTIVA' || activeApi == 'Y' ? 'Y' : 'N',
-      privAdmin:
-          privAdminApi == 'SÍ' || privAdminApi == 'SI' || privAdminApi == 'Y'
-          ? 'Y'
-          : 'N',
-      oficinaId: oficinaId,
-      departamento: departamento,
-    );
-
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-
-    if (!mounted) return;
-
-    if (respuesta['success'] == true) {
-      _mostrarMensaje(
-        context,
-        respuesta['message']?.toString() ??
-            'Usuario actualizado correctamente.',
-      );
-
-      await _cargarUsuarios(pagina: paginaActual);
-    } else {
-      final errores = respuesta['errors'];
-      final detalleError = errores is Map
-          ? errores.values
-                .whereType<List>()
-                .expand((mensajes) => mensajes)
-                .map((mensaje) => mensaje.toString().trim())
-                .firstWhere((mensaje) => mensaje.isNotEmpty, orElse: () => '')
-          : '';
-      _mostrarMensaje(
-        context,
-        detalleError.isNotEmpty
-            ? detalleError
-            : respuesta['message']?.toString() ??
-                  'No se pudo actualizar el usuario.',
-        error: true,
-      );
-    }
-  }
-
-  Future<void> _mostrarEliminarUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) async {
+  void _mostrarEliminarUsuario(BuildContext context, UsuarioItem user) {
     final passwordCtrl = TextEditingController();
-    final safeContext = context;
+    bool passwordVisible = false;
 
-    final confirmar = await showDialog<bool>(
-      context: safeContext,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: cardBg,
-          title: const Text(
-            'Eliminar usuario',
-            style: TextStyle(color: textWhite, fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '¿Seguro que deseas eliminar a ${user.nombre}?',
-                style: const TextStyle(color: textMuted, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              _buildPasswordField(passwordCtrl, 'Tu contraseña actual'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar', style: TextStyle(color: textMuted)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: redAccent),
-              onPressed: () {
-                if (passwordCtrl.text.trim().isEmpty) {
-                  _mostrarMensaje(
-                    dialogContext,
-                    'Debes proporcionar tu contraseña.',
-                    error: true,
-                  );
-                  return;
-                }
-
-                Navigator.pop(dialogContext, true);
-              },
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar != true) {
-      passwordCtrl.dispose();
-      return;
-    }
-
-    final password = passwordCtrl.text.trim();
-
-    passwordCtrl.dispose();
-
-    _mostrarCargando();
-
-    final respuesta = await UsersService.eliminarUsuario(
-      login: user.login,
-      password: password,
-    );
-
-    if (mounted) {
-      Navigator.of(safeContext).pop();
-    }
-
-    if (!mounted) return;
-
-    if (respuesta['success'] == true) {
-      _mostrarMensaje(
-        safeContext,
-        respuesta['message']?.toString() ?? 'Usuario eliminado correctamente.',
-      );
-
-      if (usuarios.length == 1 && paginaActual > 1) {
-        await _cargarUsuarios(pagina: paginaActual - 1);
-      } else {
-        await _cargarUsuarios(pagina: paginaActual);
-      }
-    } else {
-      _mostrarMensaje(
-        safeContext,
-        respuesta['message']?.toString() ?? 'No se pudo eliminar el usuario.',
-        error: true,
-      );
-    }
-  }
-
-  void _mostrarCargando() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return const Center(
-          child: CircularProgressIndicator(color: accentBlue),
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: cardBg,
+              title: const Text(
+                'Eliminar usuario',
+                style: TextStyle(color: textWhite, fontWeight: FontWeight.bold),
+              ),
+              content: SizedBox(
+                width: 360,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¿Seguro que deseas eliminar a ${user.nombre}?',
+                      style: const TextStyle(color: textMuted, fontSize: 13),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Contraseña actual',
+                      style: TextStyle(color: textMuted, fontSize: 11),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D172A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.lock_outline_rounded, color: textMuted, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: passwordCtrl,
+                              obscureText: !passwordVisible,
+                              style: const TextStyle(color: textWhite, fontSize: 12),
+                              decoration: const InputDecoration(
+                                hintText: 'Escribe tu contraseña',
+                                hintStyle: TextStyle(color: textMuted, fontSize: 12),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setDialogState(() {
+                                passwordVisible = !passwordVisible;
+                              });
+                            },
+                            icon: Icon(
+                              passwordVisible
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: textMuted,
+                              size: 17,
+                            ),
+                            splashRadius: 16,
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancelar', style: TextStyle(color: textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: redAccent),
+                  onPressed: () async {
+                    final pass = passwordCtrl.text.trim();
+                    if (pass.isEmpty) {
+                      _mostrarMensaje(
+                        context,
+                        'Debes ingresar tu contraseña para eliminar al usuario.',
+                        error: true,
+                      );
+                      return;
+                    }
+
+                    final result = await UsersService.eliminarUsuario(
+                      login: user.login,
+                      password: pass,
+                    );
+
+                    if (!context.mounted) return;
+
+                    Navigator.pop(dialogContext);
+
+                    if (result['success'] == true) {
+                      setState(() {
+                        usuarios.remove(user);
+                      });
+                      _mostrarMensaje(context, result['message']?.toString() ?? 'Usuario eliminado correctamente');
+                      return;
+                    }
+
+                    _mostrarMensaje(
+                      context,
+                      result['message']?.toString() ?? 'No se pudo eliminar el usuario.',
+                      error: true,
+                    );
+                  },
+                  child: const Text(
+                    'Eliminar',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-  }
-
-  void _mostrarMensaje(
-    BuildContext context,
-    String mensaje, {
-    bool error = false,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: error ? redAccent : greenAccent,
-        content: Text(mensaje, style: const TextStyle(color: Colors.white)),
-      ),
-    );
-  }
-
-  String _generarNumeroEmpleado() {
-    final usados = usuarios
-        .map((user) => user.numEmpleado.trim())
-        .where((numero) => numero.isNotEmpty)
-        .toSet();
-    final random = Random();
-
-    for (var intento = 0; intento < 100; intento++) {
-      final numero = (100000 + random.nextInt(900000)).toString();
-      if (!usados.contains(numero)) {
-        return numero;
-      }
-    }
-
-    return DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-  }
-
-  String _generarContrasenaTemporal() {
-    const mayusculas = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const minusculas = 'abcdefghijkmnpqrstuvwxyz';
-    const numeros = '23456789';
-    const especiales = '@#%*-_';
-    const todos = '$mayusculas$minusculas$numeros$especiales';
-    final random = Random.secure();
-    final caracteres = <String>[
-      mayusculas[random.nextInt(mayusculas.length)],
-      minusculas[random.nextInt(minusculas.length)],
-      numeros[random.nextInt(numeros.length)],
-      especiales[random.nextInt(especiales.length)],
-    ];
-
-    while (caracteres.length < 12) {
-      caracteres.add(todos[random.nextInt(todos.length)]);
-    }
-
-    caracteres.shuffle(random);
-    return caracteres.join();
-  }
-
-  String _soloDigitos(String value) {
-    return value.replaceAll(RegExp(r'\D'), '');
-  }
-
-  String _formatearTelefono(String value) {
-    final digits = _soloDigitos(
-      value,
-    ).substring(0, min(_soloDigitos(value).length, 10));
-
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) {
-      return '(${digits.substring(0, 3)}) ${digits.substring(3)}';
-    }
-
-    return '(${digits.substring(0, 3)}) '
-        '${digits.substring(3, 6)}-${digits.substring(6)}';
   }
 
   Widget _buildInputField(
     String label,
     TextEditingController controller, {
-    bool enabled = true,
-    Widget? suffix,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
+    IconData? icon,
+    bool obscureText = false,
     String? hintText,
+    Widget? trailing,
+    ValueChanged<String>? onChanged,
+    List<TextInputFormatter>? inputFormatters,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
-        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(color: textMuted, fontSize: 11),
+        ),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
-            color: enabled ? cardBg : Colors.white.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white10),
+            color: const Color(0xFF0D172A),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: TextField(
-            controller: controller,
-            enabled: enabled,
-            keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
-            style: const TextStyle(color: textWhite, fontSize: 12),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              isDense: true,
-              hintText: hintText,
-              hintStyle: const TextStyle(color: textMuted, fontSize: 12),
-              suffixIcon: suffix,
-            ),
+          child: Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: textMuted, size: 16),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  obscureText: obscureText,
+                  onChanged: onChanged,
+                  keyboardType: keyboardType,
+                  inputFormatters: inputFormatters,
+                  style: const TextStyle(color: textWhite, fontSize: 12),
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintStyle: const TextStyle(
+                      color: textMuted,
+                      fontSize: 12,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing,
+              ],
+            ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPasswordField(
-    TextEditingController controller,
-    String hint, {
-    bool obscureText = true,
-    Widget? trailing,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        style: const TextStyle(color: textWhite, fontSize: 12),
-        decoration: InputDecoration(
-          icon: const Icon(Icons.lock_outline, color: textMuted, size: 16),
-          hintText: hint,
-          hintStyle: const TextStyle(color: textMuted, fontSize: 12),
-          border: InputBorder.none,
-          suffixIcon: trailing,
-        ),
-      ),
     );
   }
 
@@ -1695,114 +1561,99 @@ class _UserScreenState extends State<UserScreen> {
     required String label,
     required String value,
     required List<String> items,
+    IconData? icon,
     required ValueChanged<String?> onChanged,
   }) {
-    final dropdownValue = items.contains(value) ? value : items.first;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: dropdownValue,
-              dropdownColor: cardBg,
-              isExpanded: true,
-              style: const TextStyle(color: textWhite, fontSize: 12),
-              items: items.map((item) {
-                return DropdownMenuItem(value: item, child: Text(item));
-              }).toList(),
-              onChanged: onChanged,
-            ),
-          ),
+        Text(
+          label,
+          style: const TextStyle(color: textMuted, fontSize: 11),
         ),
-      ],
-    );
-  }
-
-  Widget _buildMapDropdown({
-    required String label,
-    required int? value,
-    required List<Map<String, dynamic>> items,
-    required String idKey,
-    required List<String> nameKeys,
-    required String fallback,
-    required ValueChanged<int?> onChanged,
-  }) {
-    final ids = items
-        .map((item) => _toInt(item[idKey]))
-        .where((id) => id > 0)
-        .toList();
-
-    int? dropdownValue = ids.contains(value) ? value : null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white10),
+            color: const Color(0xFF0D172A),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: dropdownValue,
-              hint: Text(
-                fallback.isEmpty ? 'Seleccionar $label' : fallback,
-                style: const TextStyle(color: textMuted, fontSize: 12),
+          child: Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: textMuted, size: 16),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: items.contains(value) ? value : items.first,
+                    dropdownColor: cardBg,
+                    isExpanded: true,
+                    style: const TextStyle(color: textWhite, fontSize: 12),
+                    iconEnabledColor: textMuted,
+                    items: items.map((item) {
+                      return DropdownMenuItem(value: item, child: Text(item));
+                    }).toList(),
+                    onChanged: onChanged,
+                  ),
+                ),
               ),
-              dropdownColor: cardBg,
-              isExpanded: true,
-              style: const TextStyle(color: textWhite, fontSize: 12),
-              items: items.map((item) {
-                final id = _toInt(item[idKey]);
-
-                return DropdownMenuItem<int>(
-                  value: id,
-                  child: Text(_nombreMap(item, keys: nameKeys)),
-                );
-              }).toList(),
-              onChanged: onChanged,
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  String _nombreMap(Map<String, dynamic> item, {List<String>? keys}) {
-    final posibles =
-        keys ??
-        const [
-          'nombre',
-          'name',
-          'descripcion',
-          'departamento',
-          'oficina',
-          'empresa',
-        ];
+  String _formatPhoneNumber(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    final limited = digits.substring(0, digits.length > 10 ? 10 : digits.length);
 
-    for (final key in posibles) {
-      final value = item[key];
-
-      if (value != null && value.toString().trim().isNotEmpty) {
-        return value.toString().trim();
-      }
+    if (limited.length <= 3) {
+      return limited.isEmpty ? '' : '(${limited.substring(0, limited.length)}';
     }
 
-    return 'Sin nombre';
+    if (limited.length <= 6) {
+      return '(${limited.substring(0, 3)}) ${limited.substring(3)}';
+    }
+
+    return '(${limited.substring(0, 3)}) ${limited.substring(3, 6)}-${limited.substring(6)}';
+  }
+
+  String _generateEmployeeNumber(List<UsuarioItem> existingUsers) {
+    final existingIds = existingUsers
+        .map((user) => user.numEmpleado.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet();
+
+    final random = Random();
+    int nextValue = 100000 + random.nextInt(900000);
+
+    while (existingIds.contains(nextValue.toString())) {
+      nextValue = 100000 + random.nextInt(900000);
+    }
+
+    return nextValue.toString();
+  }
+
+  String _generatePassword() {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#%^&*';
+    final random = Random();
+    return List.generate(12, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  int? _resolveOficinaId(String oficina) {
+    final normalized = oficina.trim();
+    const offices = {
+      'Reynosa': 1,
+      'Monterrey': 2,
+      'CDMX': 3,
+    };
+
+    return offices[normalized];
   }
 
   Widget _buildInfoTile(IconData icon, String title, String value) {
@@ -1827,7 +1678,7 @@ class _UserScreenState extends State<UserScreen> {
                   style: const TextStyle(color: textMuted, fontSize: 10),
                 ),
                 Text(
-                  value.isEmpty ? 'Sin información' : value,
+                  value,
                   style: const TextStyle(
                     color: textWhite,
                     fontSize: 12,
@@ -1842,17 +1693,192 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    final isActiva =
-        status.toLowerCase() == 'activa' ||
-        status.toLowerCase() == 'activo' ||
-        status.toLowerCase() == 'a';
+  Future<String?> _mostrarDialogoConfirmacionPassword({
+    required BuildContext context,
+    required String usuario,
+  }) async {
+    final controller = TextEditingController();
+    bool passwordVisible = false;
 
-    final bg = isActiva
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (innerContext, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF111827),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              title: const Text(
+                'Confirmar edición',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Para guardar los cambios de $usuario, escribe tu contraseña actual.',
+                    style: const TextStyle(color: textMuted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D172A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, color: textMuted, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            obscureText: !passwordVisible,
+                            style: const TextStyle(color: textWhite, fontSize: 12),
+                            decoration: const InputDecoration(
+                              hintText: 'Contraseña actual',
+                              hintStyle: TextStyle(color: textMuted, fontSize: 12),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              passwordVisible = !passwordVisible;
+                            });
+                          },
+                          icon: Icon(
+                            passwordVisible
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: textMuted,
+                            size: 17,
+                          ),
+                          splashRadius: 16,
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancelar', style: TextStyle(color: textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
+                  onPressed: () {
+                    final pass = controller.text.trim();
+                    if (pass.isEmpty) {
+                      _mostrarMensaje(
+                        innerContext,
+                        'Debes escribir tu contraseña actual.',
+                        error: true,
+                      );
+                      return;
+                    }
+                    Navigator.pop(dialogContext, pass);
+                  },
+                  child: const Text('Continuar', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
+  }
+
+  void _mostrarMensaje(
+    BuildContext context,
+    String mensaje, {
+    bool error = false,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final color = error ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+        final icon = error
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error ? 'Error' : 'Éxito',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    final bool isActiva = status == 'Activa';
+    final Color bg = isActiva
         ? greenAccent.withValues(alpha: 0.15)
         : redAccent.withValues(alpha: 0.15);
-
-    final text = isActiva ? greenAccent : redAccent;
+    final Color text = isActiva ? greenAccent : redAccent;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1870,7 +1896,7 @@ class _UserScreenState extends State<UserScreen> {
           ),
           const SizedBox(width: 4),
           Text(
-            status.isEmpty ? 'Sin estado' : status,
+            status,
             style: TextStyle(
               color: text,
               fontSize: 10,
@@ -1891,7 +1917,7 @@ class _UserScreenState extends State<UserScreen> {
         border: Border.all(color: primaryBlue.withValues(alpha: 0.3)),
       ),
       child: Text(
-        role.isEmpty ? 'Sin rol' : role,
+        role,
         style: const TextStyle(
           color: accentBlue,
           fontSize: 10,
@@ -1915,10 +1941,6 @@ class UsuarioItem {
   String telefono;
   List<String> permisos;
 
-  int? empresaId;
-  int? oficinaId;
-  int? departamentoId;
-
   UsuarioItem({
     required this.nombre,
     required this.email,
@@ -1931,247 +1953,60 @@ class UsuarioItem {
     required this.estado,
     required this.telefono,
     required this.permisos,
-    this.empresaId,
-    this.oficinaId,
-    this.departamentoId,
   });
 
   factory UsuarioItem.fromMap(Map<String, dynamic> map) {
-    final empresaData = _extraerMap(map, [
-      'empresa',
-      'empresa_data',
-      'company',
-    ]);
-
-    final oficinaData = _extraerMap(map, ['oficina', 'oficina_data', 'office']);
-
-    final departamentoData = _extraerMap(map, [
-      'departamento',
-      'departamento_data',
-      'department',
-    ]);
-
-    final permisosData = map['permisos'] ?? map['permissions'];
-
+    final nombre = (map['name'] ?? map['nombre'] ?? 'Sin nombre').toString();
+    final email = (map['email'] ?? '').toString();
+    final login = (map['login'] ?? '').toString();
+    final numeroEmpleado = (map['numero_empleado'] ?? map['numEmpleado'] ?? '').toString();
+    final empresa = (map['empresa'] ?? map['company'] ?? 'Sin empresa').toString();
+    final oficina = (map['oficina'] ?? map['office'] ?? 'Sin oficina').toString();
+    final departamento = (map['departamento'] ?? 'Sin departamento').toString();
+    final rol = (map['role'] ?? map['rol'] ?? 'usuario').toString();
+    final estado = ((map['active'] ?? map['estado']) == 'Y' ||
+            (map['active'] ?? map['estado']) == true ||
+            (map['estado'] ?? '').toString().toLowerCase() == 'activa')
+        ? 'Activa'
+        : 'Inactiva';
+    final telefonoRaw = (map['phone'] ?? map['telefono'] ?? '').toString();
     final permisos = <String>[];
-
-    if (permisosData is List) {
-      for (final permiso in permisosData) {
-        if (permiso is Map) {
-          final nombre =
-              permiso['nombre'] ?? permiso['name'] ?? permiso['descripcion'];
-
-          if (nombre != null) {
-            permisos.add(nombre.toString());
-          }
-        } else {
+    final privAdmin = (map['priv_admin'] ?? map['admin'] ?? 'N').toString();
+    if (privAdmin.toUpperCase() == 'Y') {
+      permisos.add('Admin');
+    }
+    final rolePermissions = map['permisos'];
+    if (rolePermissions is List) {
+      for (final permiso in rolePermissions) {
+        if (permiso != null) {
           permisos.add(permiso.toString());
         }
       }
     }
 
-    final privAdmin = map['priv_admin'] ?? map['privAdmin'] ?? map['admin'];
-
-    if (_esAdministrador(privAdmin) && !permisos.contains('Admin')) {
-      permisos.add('Admin');
-    }
-
-    final estado = _textoCampo(map, ['estado', 'status', 'active']);
-
     return UsuarioItem(
-      nombre: _textoCampo(map, ['name', 'nombre']),
-      email: _textoCampo(map, ['email', 'correo']),
-      login: _textoCampo(map, ['login', 'usuario', 'username']),
-      numEmpleado: _textoCampo(map, [
-        'numero_empleado',
-        'numEmpleado',
-        'numeroEmpleado',
-      ]),
-      empresa: _nombreRelacion(empresaData, map, [
-        'empresa',
-        'empresa_nombre',
-        'nombre_empresa',
-      ]),
-      oficina: _nombreRelacion(oficinaData, map, [
-        'oficina',
-        'oficina_nombre',
-        'nombre_oficina',
-      ]),
-      departamento: _nombreRelacion(departamentoData, map, [
-        'departamento',
-        'departamento_nombre',
-        'nombre_departamento',
-      ]),
-      rol: _textoCampo(map, ['role', 'rol', 'tipo_rol']),
-      estado: _normalizarEstado(estado),
-      telefono: _textoCampo(map, ['phone', 'telefono', 'tel']),
-      permisos: permisos,
-      empresaId: _idRelacion(empresaData, map, ['empresa_id']),
-      oficinaId: _idRelacion(oficinaData, map, ['oficina_id']),
-      departamentoId: _idRelacion(departamentoData, map, ['departamento_id']),
+      nombre: nombre,
+      email: email,
+      login: login,
+      numEmpleado: numeroEmpleado,
+      empresa: empresa,
+      oficina: oficina,
+      departamento: departamento,
+      rol: rol,
+      estado: estado,
+      telefono: telefonoRaw.isEmpty ? 'Sin teléfono' : telefonoRaw,
+      permisos: permisos.isEmpty ? ['Tickets'] : permisos,
     );
   }
 
   String getInitials() {
-    final texto = nombre.trim();
-
-    if (texto.isEmpty) {
-      return '?';
-    }
-
-    final parts = texto.split(RegExp(r'\s+'));
+    final parts = nombre.trim().split(' ');
 
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
 
     return parts[0][0].toUpperCase();
-  }
-
-  static Map<String, dynamic>? _extraerMap(
-    Map<String, dynamic> map,
-    List<String> keys,
-  ) {
-    for (final key in keys) {
-      final value = map[key];
-
-      if (value is Map) {
-        return Map<String, dynamic>.from(value);
-      }
-    }
-
-    return null;
-  }
-
-  static String _textoCampo(Map<String, dynamic> map, List<String> keys) {
-    for (final key in keys) {
-      final value = map[key];
-
-      if (value != null &&
-          value.toString().trim().isNotEmpty &&
-          value.toString() != 'null') {
-        return value.toString().trim();
-      }
-    }
-
-    return '';
-  }
-
-  static String _nombreRelacion(
-    Map<String, dynamic>? relation,
-    Map<String, dynamic> root,
-    List<String> rootKeys,
-  ) {
-    if (relation != null) {
-      final nombre =
-          relation['nombre'] ??
-          relation['name'] ??
-          relation['descripcion'] ??
-          relation['empresa'] ??
-          relation['oficina'] ??
-          relation['departamento'];
-
-      if (nombre != null && nombre.toString().trim().isNotEmpty) {
-        return nombre.toString().trim();
-      }
-    }
-
-    for (final key in rootKeys) {
-      final value = root[key];
-
-      if (value is String &&
-          value.trim().isNotEmpty &&
-          value.trim().toLowerCase() != 'null') {
-        return value.trim();
-      }
-    }
-
-    return _textoCampo(root, rootKeys);
-  }
-
-  static int? _idRelacion(
-    Map<String, dynamic>? relation,
-    Map<String, dynamic> root,
-    List<String> rootKeys,
-  ) {
-    if (relation != null) {
-      final id = relation['id'];
-
-      if (id != null) {
-        return int.tryParse(id.toString());
-      }
-    }
-
-    for (final key in rootKeys) {
-      final value = root[key];
-
-      if (value != null) {
-        return int.tryParse(value.toString());
-      }
-    }
-
-    return null;
-  }
-
-  static String _normalizarEstado(String value) {
-    final estado = value.trim().toLowerCase();
-
-    if (estado == '1' ||
-        estado == 'true' ||
-        estado == 'activo' ||
-        estado == 'activa' ||
-        estado == 'a') {
-      return 'Activa';
-    }
-
-    if (estado == '0' ||
-        estado == 'false' ||
-        estado == 'inactivo' ||
-        estado == 'inactiva' ||
-        estado == 'i') {
-      return 'Inactiva';
-    }
-
-    return value.isEmpty ? 'Sin estado' : value;
-  }
-
-  static bool _esAdministrador(dynamic value) {
-    if (value == null) return false;
-
-    final texto = value.toString().trim().toLowerCase();
-
-    return texto == '1' ||
-        texto == 'true' ||
-        texto == 'si' ||
-        texto == 'sí' ||
-        texto == 'yes';
-  }
-}
-
-class TelefonoInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final limited = digits.substring(0, min(digits.length, 10));
-    String formatted;
-
-    if (limited.length <= 3) {
-      formatted = limited;
-    } else if (limited.length <= 6) {
-      formatted = '(${limited.substring(0, 3)}) ${limited.substring(3)}';
-    } else {
-      formatted =
-          '(${limited.substring(0, 3)}) '
-          '${limited.substring(3, 6)}-${limited.substring(6)}';
-    }
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
   }
 }
 
@@ -2195,44 +2030,20 @@ class UserCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF111D35), Color(0xFF0B1224)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 5),
-          ),
-        ],
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF60A5FA), Color(0xFF4F46E5)],
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFF172554),
-                  child: Text(
-                    item.getInitials(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: const Color(0xFF4F46E5),
+                child: Text(
+                  item.getInitials(),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
               const SizedBox(width: 10),
@@ -2241,9 +2052,7 @@ class UserCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.nombre.isEmpty ? item.login : item.nombre,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      item.nombre,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -2251,9 +2060,7 @@ class UserCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      item.email.isEmpty ? item.login : item.email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      item.email,
                       style: const TextStyle(
                         color: Color(0xFF94A3B8),
                         fontSize: 10,
@@ -2267,88 +2074,86 @@ class UserCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Divider(color: Colors.white10, height: 1),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(child: _buildRoleBadge(item.rol)),
-              const SizedBox(width: 8),
+              Expanded(child: _buildRoleBadge(item.rol)),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      item.departamento.isEmpty
-                          ? 'Sin departamento'
-                          : item.departamento,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 11,
-                      ),
-                    ),
-                    Text(
-                      [
-                            if (item.empresa.isNotEmpty) item.empresa,
-                            if (item.oficina.isNotEmpty) item.oficina,
-                          ].join(' / ').isEmpty
-                          ? 'Sin ubicación'
-                          : [
-                              if (item.empresa.isNotEmpty) item.empresa,
-                              if (item.oficina.isNotEmpty) item.oficina,
-                            ].join(' / '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: Color(0xFF60A5FA),
-                        fontSize: 9,
-                      ),
-                    ),
-                  ],
+                flex: 2,
+                child: Text(
+                  item.departamento,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Row(
-                children: [
-                  InkWell(
-                    onTap: onView,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.remove_red_eye_outlined,
-                        color: Color(0xFF94A3B8),
-                        size: 18,
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 126,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
-                  ),
-                  InkWell(
-                    onTap: onEdit,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        color: Color(0xFF94A3B8),
-                        size: 18,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: onView,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.remove_red_eye_outlined,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onEdit,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.edit_outlined,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onDelete,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.delete_outline,
+                              color: Color(0xFFE11D48),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  InkWell(
-                    onTap: onDelete,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: Color(0xFFE11D48),
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -2358,14 +2163,15 @@ class UserCard extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(String status) {
-    final isActiva =
-        status.toLowerCase() == 'activa' || status.toLowerCase() == 'activo';
+    final bool isActiva = status == 'Activa';
 
-    final bg = isActiva
+    final Color bg = isActiva
         ? const Color(0xFF00A86B).withValues(alpha: 0.15)
         : const Color(0xFFE11D48).withValues(alpha: 0.15);
 
-    final text = isActiva ? const Color(0xFF00A86B) : const Color(0xFFE11D48);
+    final Color text = isActiva
+        ? const Color(0xFF00A86B)
+        : const Color(0xFFE11D48);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -2392,7 +2198,7 @@ class UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        role.isEmpty ? 'Sin rol' : role,
+        role,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
@@ -2503,38 +2309,51 @@ class CustomSidebar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const AdminAvatar(radius: 16),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: SessionService.getUser(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data ?? {};
+                    final name = (user['name'] ?? 'Administrador').toString();
+                    final role = (user['role'] ?? 'Admin').toString();
+
+                    return Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Gerente Ti',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
+                          const AdminAvatar(radius: 16),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name.isNotEmpty ? name : 'Administrador',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  role.isNotEmpty ? role : 'Admin',
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -2546,9 +2365,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Inicio',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const AdminScreen()),
+                const AdminScreen(),
+                mensaje: 'Cargando inicio...',
               );
             },
           ),
@@ -2559,9 +2379,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Tickets',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const TicketsScreen()),
+                const TicketsScreen(),
+                mensaje: 'Cargando tickets...',
               );
             },
           ),
@@ -2572,9 +2393,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Cambios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const CambiosScreen()),
+                const CambiosScreen(),
+                mensaje: 'Cargando cambios...',
               );
             },
           ),
@@ -2594,9 +2416,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Dispositivos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const DispositivosScreen()),
+                const DispositivosScreen(),
+                mensaje: 'Cargando dispositivos...',
               );
             },
           ),
@@ -2607,9 +2430,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Avisos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const AvisosadminScreen()),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos...',
               );
             },
           ),
@@ -2620,9 +2444,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Mi perfil',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const PerfiladminScreen()),
+                const PerfiladminScreen(),
+                mensaje: 'Cargando perfil...',
               );
             },
           ),
@@ -2637,9 +2462,7 @@ class CustomSidebar extends StatelessWidget {
 
               await SessionService.clearSession();
 
-              if (!context.mounted) {
-                return;
-              }
+              if (!context.mounted) return;
 
               Navigator.pushNamedAndRemoveUntil(
                 context,
@@ -2663,33 +2486,33 @@ class CustomSidebar extends StatelessWidget {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isExit
-              ? Colors.redAccent
-              : selected
-              ? Colors.white
-              : const Color(0xFF94A3B8),
-          size: 20,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
+        child: ListTile(
+          leading: Icon(
+            icon,
             color: isExit
                 ? Colors.redAccent
                 : selected
                 ? Colors.white
                 : const Color(0xFF94A3B8),
-            fontSize: 14,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            size: 20,
           ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isExit
+                  ? Colors.redAccent
+                  : selected
+                  ? Colors.white
+                  : const Color(0xFF94A3B8),
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }

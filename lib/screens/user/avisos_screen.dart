@@ -1306,7 +1306,7 @@ class AppNavigationDrawer extends StatelessWidget {
               _drawerItem(icon: Icons.build_outlined, title: 'Crear ticket', isActive: activeRoute == 'Crear ticket', onTap: () => _navegar(context, 'Crear ticket', const CrearticketsScreen())),
               _drawerItem(icon: Icons.warning_amber_rounded, title: 'Avisos', isActive: activeRoute == 'Avisos', onTap: () => _navegar(context, 'Avisos', const AvisosScreen())),
               _drawerItem(icon: Icons.person_outline_rounded, title: 'Mi perfil', isActive: activeRoute == 'Mi perfil', onTap: () => _navegar(context, 'Mi perfil', const MiPerfilScreen())),
-              const Spacer(),
+              const Divider(color: Colors.white12, height: 1),
               _drawerItem(icon: Icons.logout_rounded, title: 'Cerrar sesión', color: Colors.white70, onTap: () async { Navigator.pop(context); await SessionService.clearSession(); if (!context.mounted) return; Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false); }),
             ],
           ),

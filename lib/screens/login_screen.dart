@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/session_service.dart';
 import 'admin/home_screen.dart';
 import 'user/home_screen.dart';
+import 'recoverpassword_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,145 +32,145 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-Future<void> iniciarSesion() async {
-  if (iniciandoSesion) return;
+  Future<void> iniciarSesion() async {
+    if (iniciandoSesion) return;
 
-  final String usuario = usuarioController.text.trim();
-  final String password = passwordController.text;
+    final String usuario = usuarioController.text.trim();
+    final String password = passwordController.text;
 
-  if (usuario.isEmpty) {
-    mostrarMensaje(
-      'Ingresa tu usuario o correo electrónico.',
-    );
-    return;
+    if (usuario.isEmpty) {
+      mostrarMensaje(
+        'Ingresa tu usuario o correo electrónico.',
+      );
+      return;
+    }
+
+    if (password.isEmpty) {
+      mostrarMensaje(
+        'Ingresa tu contraseña.',
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      iniciandoSesion = true;
+    });
+
+    try {
+      final resultado = await ApiService.login(
+        usuario: usuario,
+        password: password,
+        remember: recordarUsuario,
+      );
+
+      if (!mounted) return;
+
+      final bool success = resultado['success'] == true;
+
+      final bool mfaRequired =
+          resultado['mfa_required'] == true;
+
+      if (!success) {
+        mostrarMensaje(
+          resultado['message']?.toString() ??
+              'No fue posible iniciar sesión.',
+        );
+        return;
+      }
+
+      if (mfaRequired) {
+        mostrarMensaje(
+          'Se requiere verificación de autenticación.',
+        );
+        return;
+      }
+
+      final String? token =
+          resultado['token']?.toString();
+
+      if (token == null || token.isEmpty) {
+        mostrarMensaje(
+          'El servidor no devolvió un token de acceso.',
+        );
+        return;
+      }
+
+      final dynamic usuarioDatos =
+          resultado['user'];
+
+      if (usuarioDatos is! Map<String, dynamic>) {
+        mostrarMensaje(
+          'No se recibieron los datos del usuario.',
+        );
+        return;
+      }
+
+      await SessionService.saveSession(
+        token: token,
+        user: usuarioDatos,
+      );
+
+      if (!mounted) return;
+
+      final String role =
+          usuarioDatos['role']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      final String privAdmin =
+          usuarioDatos['priv_admin']
+                  ?.toString()
+                  .trim()
+                  .toUpperCase() ??
+              'N';
+
+      final String rolNormalizado = role
+          .toLowerCase()
+          .replaceAll('á', 'a')
+          .replaceAll('é', 'e')
+          .replaceAll('í', 'i')
+          .replaceAll('ó', 'o')
+          .replaceAll('ú', 'u');
+
+      final bool rolPermitido =
+          rolNormalizado == 'gerente ti' ||
+          rolNormalizado == 'soporte tecnico';
+
+      final bool accesoAdministrativo =
+          rolPermitido && privAdmin == 'Y';
+
+      if (accesoAdministrativo) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AdminScreen(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      mostrarMensaje(
+        'No se pudo conectar con el servidor.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          iniciandoSesion = false;
+        });
+      }
+    }
   }
-
-  if (password.isEmpty) {
-    mostrarMensaje(
-      'Ingresa tu contraseña.',
-    );
-    return;
-  }
-
-  FocusScope.of(context).unfocus();
-
-  setState(() {
-    iniciandoSesion = true;
-  });
-
-  try {
-    final resultado = await ApiService.login(
-      usuario: usuario,
-      password: password,
-      remember: recordarUsuario,
-    );
-
-    if (!mounted) return;
-
-    final bool success = resultado['success'] == true;
-
-    final bool mfaRequired =
-        resultado['mfa_required'] == true;
-
-    if (!success) {
-      mostrarMensaje(
-        resultado['message']?.toString() ??
-            'No fue posible iniciar sesión.',
-      );
-      return;
-    }
-
-    if (mfaRequired) {
-      mostrarMensaje(
-        'Se requiere verificación de autenticación.',
-      );
-      return;
-    }
-
-    final String? token =
-        resultado['token']?.toString();
-
-    if (token == null || token.isEmpty) {
-      mostrarMensaje(
-        'El servidor no devolvió un token de acceso.',
-      );
-      return;
-    }
-
-    final dynamic usuarioDatos =
-        resultado['user'];
-
-    if (usuarioDatos is! Map<String, dynamic>) {
-      mostrarMensaje(
-        'No se recibieron los datos del usuario.',
-      );
-      return;
-    }
-
-    await SessionService.saveSession(
-      token: token,
-      user: usuarioDatos,
-    );
-
-    if (!mounted) return;
-
-    final String role =
-        usuarioDatos['role']
-                ?.toString()
-                .trim() ??
-            '';
-
-    final String privAdmin =
-        usuarioDatos['priv_admin']
-                ?.toString()
-                .trim()
-                .toUpperCase() ??
-            'N';
-
-    final String rolNormalizado = role
-        .toLowerCase()
-        .replaceAll('á', 'a')
-        .replaceAll('é', 'e')
-        .replaceAll('í', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ú', 'u');
-
-    final bool rolPermitido =
-        rolNormalizado == 'gerente ti' ||
-        rolNormalizado == 'soporte tecnico';
-
-    final bool accesoAdministrativo =
-        rolPermitido && privAdmin == 'Y';
-
-    if (accesoAdministrativo) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminScreen(),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
-    }
-  } catch (e) {
-    if (!mounted) return;
-
-    mostrarMensaje(
-      'No se pudo conectar con el servidor.',
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        iniciandoSesion = false;
-      });
-    }
-  }
-}
 
   void mostrarMensaje(String mensaje) {
     if (!mounted) return;
@@ -367,8 +368,7 @@ Future<void> iniciarSesion() async {
                         child: SizedBox(
                           width: contentWidth,
                           child: Padding(
-                            padding:
-                                EdgeInsets.fromLTRB(
+                            padding: EdgeInsets.fromLTRB(
                               horizontalPadding,
                               topPadding,
                               horizontalPadding,
@@ -426,7 +426,9 @@ Future<void> iniciarSesion() async {
                                             ? 12.5
                                             : 14,
                                     color: Colors.white
-                                        .withValues(alpha: 0.55),
+                                        .withValues(
+                                      alpha: 0.55,
+                                    ),
                                     height: 1.4,
                                     letterSpacing:
                                         0.1,
@@ -526,7 +528,8 @@ Future<void> iniciarSesion() async {
             borderRadius:
                 BorderRadius.circular(17),
             border: Border.all(
-              color: Colors.white.withValues(alpha: .18),
+              color:
+                  Colors.white.withValues(alpha: .18),
             ),
             boxShadow: [
               BoxShadow(
@@ -578,7 +581,8 @@ Future<void> iniciarSesion() async {
           'Plataforma de soporte interno',
           style: TextStyle(
             fontSize: smallPhone ? 11 : 12,
-            color: Colors.white.withValues(alpha: 0.35),
+            color:
+                Colors.white.withValues(alpha: 0.35),
             letterSpacing: 0.6,
             fontWeight: FontWeight.w500,
           ),
@@ -661,7 +665,8 @@ Future<void> iniciarSesion() async {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color:
+                Colors.black.withValues(alpha: 0.25),
             blurRadius: 35,
             spreadRadius: -5,
             offset: const Offset(0, 18),
@@ -910,8 +915,8 @@ Future<void> iniciarSesion() async {
                     side: BorderSide(
                       color:
                           Colors.white.withValues(
-                            alpha: 0.32,
-                          ),
+                        alpha: 0.32,
+                      ),
                       width: 1.4,
                     ),
                     shape:
@@ -941,8 +946,17 @@ Future<void> iniciarSesion() async {
           ),
           const Spacer(),
           TextButton(
-            onPressed:
-                iniciandoSesion ? null : () {},
+            onPressed: iniciandoSesion
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const RecoverPasswordScreen(),
+                      ),
+                    );
+                  },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.only(
                 left: 8,

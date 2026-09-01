@@ -14,6 +14,40 @@ class PerfiladminService {
     );
   }
 
+  static Future<Map<String, dynamic>> actualizarPerfilAdmin({
+    required String name,
+    required String login,
+    required String email,
+    required String phone,
+    required String departamento,
+    required String role,
+    required String numeroEmpleado,
+  }) async {
+    final token = await SessionService.getToken();
+    if (token == null || token.isEmpty) {
+      return {'success': false, 'message': 'No hay una sesión activa.'};
+    }
+
+    final response = await http.put(
+      Uri.parse('${ApiService.baseUrl}/perfil/admin'),
+      headers: {
+        ..._headers(token),
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'name': name.trim(),
+        'login': login.trim(),
+        'email': email.trim(),
+        'phone': phone.trim(),
+        'departamento': departamento.trim(),
+        'role': role.trim(),
+        'numero_empleado': numeroEmpleado.trim(),
+      }),
+    );
+
+    return _decode(response);
+  }
+
   static Future<Map<String, dynamic>> actualizarPassword({
     required String passwordActual,
     required String password,
@@ -21,7 +55,7 @@ class PerfiladminService {
   }) {
     return _request(
       (token) => http.put(
-        Uri.parse('${ApiService.baseUrl}/password'),
+        Uri.parse('${ApiService.baseUrl}/perfil/password'),
         headers: {..._headers(token), 'Content-Type': 'application/json'},
         body: jsonEncode({
           'password_actual': passwordActual,

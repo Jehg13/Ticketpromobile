@@ -400,6 +400,7 @@ class UsersService {
     required String email,
     String? phone,
     String? password,
+    String? currentPassword,
     required String numeroEmpleado,
     required String role,
     required String active,
@@ -442,7 +443,7 @@ class UsersService {
         'priv_admin': _normalizarEstadoApi(privAdmin),
         'oficina_id': oficinaId,
         'departamento': departamento?.trim() ?? '',
-        'password': password?.trim() ?? '',
+        'current_password': currentPassword?.trim() ?? '',
       };
 
       if (password != null && password.trim().isNotEmpty) {
@@ -632,7 +633,7 @@ class UsersService {
           ? Map<String, dynamic>.from(data)
           : <String, dynamic>{};
 
-      final empresasData = dataMap['empresas'];
+      final empresasData = dataMap['empresas'] ?? responseData['empresas'];
 
       final empresas = empresasData is List
           ? empresasData
@@ -707,7 +708,7 @@ class UsersService {
           ? Map<String, dynamic>.from(data)
           : <String, dynamic>{};
 
-      final oficinasData = dataMap['oficinas'];
+      final oficinasData = dataMap['oficinas'] ?? responseData['oficinas'];
 
       final oficinas = oficinasData is List
           ? oficinasData
@@ -782,7 +783,8 @@ class UsersService {
           ? Map<String, dynamic>.from(data)
           : <String, dynamic>{};
 
-      final departamentosData = dataMap['departamentos'];
+      final departamentosData =
+          dataMap['departamentos'] ?? responseData['departamentos'];
 
       final departamentos = departamentosData is List
           ? departamentosData

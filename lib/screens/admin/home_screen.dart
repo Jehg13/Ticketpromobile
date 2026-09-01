@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin/indexadmin_services.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
+import '../../widgets/loading_screen.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -503,16 +504,15 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             ),
             onPressed: () {
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AvisosadminScreen(),
-                ),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos del admin...',
               );
             },
           ),
           const SizedBox(width: 8),
-          const AdminAvatar(radius: 16),
+          const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
         ],
       ),
@@ -1236,9 +1236,10 @@ class CustomSidebar extends StatelessWidget {
             'Tickets',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const TicketsScreen()),
+                const TicketsScreen(),
+                mensaje: 'Cargando tickets...',
               );
             },
           ),
@@ -1247,9 +1248,10 @@ class CustomSidebar extends StatelessWidget {
             'Cambios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const CambiosScreen()),
+                const CambiosScreen(),
+                mensaje: 'Cargando cambios...',
               );
             },
           ),
@@ -1258,9 +1260,10 @@ class CustomSidebar extends StatelessWidget {
             'Usuarios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const UserScreen()),
+                const UserScreen(),
+                mensaje: 'Cargando usuarios...',
               );
             },
           ),
@@ -1269,11 +1272,10 @@ class CustomSidebar extends StatelessWidget {
             'Dispositivos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const DispositivosScreen(),
-                ),
+                const DispositivosScreen(),
+                mensaje: 'Cargando dispositivos...',
               );
             },
           ),
@@ -1282,11 +1284,10 @@ class CustomSidebar extends StatelessWidget {
             'Avisos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AvisosadminScreen(),
-                ),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos...',
               );
             },
           ),
@@ -1295,11 +1296,10 @@ class CustomSidebar extends StatelessWidget {
             'Mi perfil',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const PerfiladminScreen(),
-                ),
+                const PerfiladminScreen(),
+                mensaje: 'Cargando perfil...',
               );
             },
           ),
@@ -1330,29 +1330,29 @@ class CustomSidebar extends StatelessWidget {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: selected ? AdminScreen.primaryBlue : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isExit
-              ? Colors.redAccent
-              : (selected ? Colors.white : AdminScreen.textMuted),
-          size: 20,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
+        child: ListTile(
+          leading: Icon(
+            icon,
             color: isExit
                 ? Colors.redAccent
                 : (selected ? Colors.white : AdminScreen.textMuted),
-            fontSize: 14,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            size: 20,
           ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isExit
+                  ? Colors.redAccent
+                  : (selected ? Colors.white : AdminScreen.textMuted),
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }
@@ -1369,19 +1369,14 @@ class AdminAvatar extends StatelessWidget {
       future: SessionService.getUser(),
       builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString().trim() ?? '';
-        final imageUrl = ApiService.profileImageUrl(picture);
+        final isDefault = SessionService.isDefaultProfilePicture(picture);
+        final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
         return CircleAvatar(
           radius: radius,
           backgroundColor: const Color(0xFF4F46E5),
           child: ClipOval(
-            child: imageUrl.isEmpty
-                ? Image.asset(
-                    'assets/images/user.png',
-                    width: radius * 2,
-                    height: radius * 2,
-                    fit: BoxFit.cover,
-                  )
-                : Image.network(
+            child: !isDefault && imageUrl.isNotEmpty
+                ? Image.network(
                     '$imageUrl?profile_refresh=${picture.hashCode}',
                     width: radius * 2,
                     height: radius * 2,
@@ -1392,10 +1387,78 @@ class AdminAvatar extends StatelessWidget {
                       height: radius * 2,
                       fit: BoxFit.cover,
                     ),
+                  )
+                : Image.asset(
+                    'assets/images/user.png',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
                   ),
           ),
         );
       },
+    );
+  }
+}
+
+class AdminProfileMenu extends StatelessWidget {
+  const AdminProfileMenu({super.key, this.radius = 16});
+
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Abrir menú del administrador',
+      offset: const Offset(0, 46),
+      padding: EdgeInsets.zero,
+      color: const Color(0xFF0F172A),
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.white12),
+      ),
+      onSelected: (value) async {
+        if (value == 'perfil') {
+          await navigateWithLoading(
+            context,
+            const PerfiladminScreen(),
+            mensaje: 'Cargando perfil...',
+          );
+          return;
+        }
+
+        if (value == 'logout') {
+          await SessionService.clearSession();
+          if (!context.mounted) {
+            return;
+          }
+          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'perfil',
+          child: Row(
+            children: [
+              Icon(Icons.person_outline_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Mi perfil', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      ],
+      child: AdminAvatar(radius: radius),
     );
   }
 }

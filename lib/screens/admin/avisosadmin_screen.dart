@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/admin/avisosadmin_services.dart';
+import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import 'cambios_screen.dart';
@@ -832,11 +833,69 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
 
   void _mostrarMensaje(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-      ),
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final color = isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+        final icon = isError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isError ? 'Error' : 'Éxito',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1161,7 +1220,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
             onPressed: _abrirNotificaciones,
           ),
           const SizedBox(width: 8),
-          const AdminAvatar(radius: 16),
+          const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
         ],
       ),
@@ -1403,9 +1462,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Inicio',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdminScreen()),
+                  const AdminScreen(),
+                  mensaje: 'Cargando inicio...',
                 );
               },
             ),
@@ -1416,11 +1476,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Tickets',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const TicketsScreen(),
-                  ),
+                  const TicketsScreen(),
+                  mensaje: 'Cargando tickets...',
                 );
               },
             ),
@@ -1431,11 +1490,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Cambios',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const CambiosScreen(),
-                  ),
+                  const CambiosScreen(),
+                  mensaje: 'Cargando cambios...',
                 );
               },
             ),
@@ -1446,9 +1504,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Usuarios',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(builder: (context) => const UserScreen()),
+                  const UserScreen(),
+                  mensaje: 'Cargando usuarios...',
                 );
               },
             ),
@@ -1459,11 +1518,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Dispositivos',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const DispositivosScreen(),
-                  ),
+                  const DispositivosScreen(),
+                  mensaje: 'Cargando dispositivos...',
                 );
               },
             ),
@@ -1481,11 +1539,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
               selected: activeMenu == 'Mi perfil',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
+                navigateWithLoading(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const PerfiladminScreen(),
-                  ),
+                  const PerfiladminScreen(),
+                  mensaje: 'Cargando perfil...',
                 );
               },
             ),
@@ -1520,12 +1577,9 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: selected ? AdminScreen.primaryBlue : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Material(
-        color: Colors.transparent,
         child: ListTile(
           leading: Icon(icon, color: itemColor, size: 20),
           title: Text(

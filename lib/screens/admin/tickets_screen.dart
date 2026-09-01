@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/admin/ticketsadmin_services.dart';
+import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
@@ -670,11 +671,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 }
                                 final id = ticket.id;
                                 if (id == null) return;
+                                final messenger = ScaffoldMessenger.maybeOf(context);
+                                final dialogNavigator = Navigator.of(dialogContext);
                                 try {
+                                  final String nombreFirmante =
+                                      nombreUsuario.trim().isEmpty
+                                          ? 'Usuario'
+                                          : nombreUsuario;
+
                                   await _ticketsService.guardarSolucion(
                                     ticketId: id,
                                     solucion: solucionController.text.trim(),
-                                    nombreFirmante: 'Administrador',
+                                    nombreFirmante: nombreFirmante,
                                     fechaSolucion: DateTime.now()
                                         .toIso8601String(),
                                     fechaFirma: DateTime.now()
@@ -685,11 +693,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                     evidencias: archivosSolucion,
                                   );
                                 } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(e.toString())),
-                                    );
-                                  }
+                                  if (!mounted) return;
+                                  messenger?.showSnackBar(
+                                    SnackBar(content: Text(e.toString())),
+                                  );
                                   return;
                                 }
                                 if (ticket.id != null) {
@@ -707,10 +714,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                   };
                                 }
 
-                                Navigator.pop(dialogContext);
+                                if (!mounted) return;
+                                dialogNavigator.pop();
                                 if (mounted) setState(() {});
-                                _mostrarSuccess(
-                                  'Solución guardada correctamente.',
+                                messenger?.showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Solución guardada correctamente.'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
                                 );
                               },
                               icon: const Icon(Icons.check_rounded, size: 17),
@@ -2445,26 +2456,71 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   void _mostrarSuccess(String mensaje) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF16A34A),
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  mensaje,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
           ),
-        ),
-      );
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF22C55E),
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Éxito',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -2527,7 +2583,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             onPressed: () {},
           ),
           const SizedBox(width: 8),
-          const AdminAvatar(radius: 16),
+          const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
         ],
       ),
@@ -3408,9 +3464,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Inicio',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const AdminScreen()),
+                const AdminScreen(),
+                mensaje: 'Cargando inicio...',
               );
             },
           ),
@@ -3430,9 +3487,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Cambios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const CambiosScreen()),
+                const CambiosScreen(),
+                mensaje: 'Cargando cambios...',
               );
             },
           ),
@@ -3443,9 +3501,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Usuarios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const UserScreen()),
+                const UserScreen(),
+                mensaje: 'Cargando usuarios...',
               );
             },
           ),
@@ -3456,11 +3515,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Dispositivos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const DispositivosScreen(),
-                ),
+                const DispositivosScreen(),
+                mensaje: 'Cargando dispositivos...',
               );
             },
           ),
@@ -3471,11 +3529,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Avisos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AvisosadminScreen(),
-                ),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos...',
               );
             },
           ),
@@ -3486,11 +3543,10 @@ class CustomSidebar extends StatelessWidget {
             selected: activeMenu == 'Mi perfil',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const PerfiladminScreen(),
-                ),
+                const PerfiladminScreen(),
+                mensaje: 'Cargando perfil...',
               );
             },
           ),
@@ -3519,29 +3575,29 @@ class CustomSidebar extends StatelessWidget {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isExit
-              ? Colors.redAccent
-              : (selected ? Colors.white : const Color(0xFF94A3B8)),
-          size: 20,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
+        child: ListTile(
+          leading: Icon(
+            icon,
             color: isExit
                 ? Colors.redAccent
                 : (selected ? Colors.white : const Color(0xFF94A3B8)),
-            fontSize: 14,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            size: 20,
           ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isExit
+                  ? Colors.redAccent
+                  : (selected ? Colors.white : const Color(0xFF94A3B8)),
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }

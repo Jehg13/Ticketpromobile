@@ -1,9 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../services/api_service.dart';
+import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../services/admin/perfiladmin_service.dart';
 import 'avisosadmin_screen.dart';
@@ -60,6 +60,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   bool _tieneFoto = false;
   bool _actualizandoFoto = false;
   bool _eliminandoFoto = false;
+  bool _hayCambios = false;
+  bool _guardandoCambios = false;
+  final Map<String, String> _valoresOriginales = {};
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +123,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16, left: 8),
-            child: const AdminAvatar(radius: 16),
+            child: const AdminProfileMenu(radius: 16),
           ),
         ],
       ),
@@ -149,7 +152,44 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   @override
   void initState() {
     super.initState();
+    _suscribirCambios();
     _cargarPerfil();
+  }
+
+  void _suscribirCambios() {
+    final controllers = [
+      _nombreController,
+      _usuarioController,
+      _correoController,
+      _telefonoController,
+      _departamentoController,
+      _rolController,
+      _numEmpleadoController,
+    ];
+
+    for (final controller in controllers) {
+      controller.addListener(_evaluarCambios);
+    }
+  }
+
+  void _evaluarCambios() {
+    final cambios = _camposEditables
+        .map((campo) => _obtenerValorActual(campo))
+        .toList();
+    final originales = _camposEditables
+        .map((campo) => _valoresOriginales[campo] ?? '')
+        .toList();
+
+    final hayCambios = List.generate(
+      _camposEditables.length,
+      (index) => cambios[index] != originales[index],
+    ).any((cambio) => cambio);
+
+    if (_hayCambios != hayCambios) {
+      setState(() {
+        _hayCambios = hayCambios;
+      });
+    }
   }
 
   Future<void> _cargarPerfil() async {
@@ -160,11 +200,17 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     _nombreController.text = data['name']?.toString() ?? '';
     _usuarioController.text = data['login']?.toString() ?? '';
     _correoController.text = data['email']?.toString() ?? '';
-    _telefonoController.text = data['phone']?.toString() ?? '';
+    _telefonoController.text = _formatearTelefono(data['phone']?.toString() ?? '');
     _departamentoController.text = data['departamento']?.toString() ?? '';
     _oficinaController.text = data['oficina']?.toString() ?? '';
     _rolController.text = data['role']?.toString() ?? '';
     _numEmpleadoController.text = data['numero_empleado']?.toString() ?? '';
+
+    _valoresOriginales.clear();
+    for (final campo in _camposEditables) {
+      _valoresOriginales[campo] = _obtenerValorActual(campo);
+    }
+
     final pictureApi =
         (data['picture'] ??
                 data['picture_url'] ??
@@ -176,10 +222,118 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     final picture = _esFotoPersonalizada(fotoGuardada)
         ? fotoGuardada
         : pictureApi;
+    final esFotoCustom = _esFotoPersonalizada(picture);
     setState(() {
-      _fotoUrl = ApiService.storageFileUrl(picture);
-      _tieneFoto = picture.isNotEmpty && !_esFotoPredeterminada(picture);
+      _fotoUrl = esFotoCustom ? ApiService.storageFileUrl(picture) : null;
+      _tieneFoto = esFotoCustom;
+      _hayCambios = false;
     });
+  }
+
+  List<String> get _camposEditables => const [
+    'nombre',
+    'usuario',
+    'correo',
+    'telefono',
+    'departamento',
+    'role',
+    'numeroempleado',
+  ];
+
+  String _obtenerValorActual(String campo) {
+    switch (campo) {
+      case 'nombre':
+        return _nombreController.text.trim();
+      case 'usuario':
+        return _usuarioController.text.trim();
+      case 'correo':
+        return _correoController.text.trim();
+      case 'telefono':
+        return _telefonoController.text.replaceAll(RegExp(r'\D'), '').trim();
+      case 'departamento':
+        return _departamentoController.text.trim();
+      case 'role':
+        return _rolController.text.trim();
+      case 'numeroempleado':
+        return _numEmpleadoController.text.trim();
+      default:
+        return '';
+    }
+  }
+
+  String _formatearTelefono(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '').substring(
+      0,
+      value.replaceAll(RegExp(r'\D'), '').length > 10
+          ? 10
+          : value.replaceAll(RegExp(r'\D'), '').length,
+    );
+
+    if (digits.isEmpty) return '';
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) {
+      return '(${digits.substring(0, 3)}) ${digits.substring(3)}';
+    }
+    return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
+  }
+
+  Future<void> _guardarCambiosPerfil() async {
+    if (_guardandoCambios || !_hayCambios) return;
+
+    final nombre = _nombreController.text.trim();
+    final usuario = _usuarioController.text.trim();
+    final correo = _correoController.text.trim();
+    final telefono = _telefonoController.text.replaceAll(RegExp(r'\D'), '').trim();
+    final departamento = _departamentoController.text.trim();
+    final rol = _rolController.text.trim();
+    final numeroEmpleado = _numEmpleadoController.text.trim();
+
+    setState(() => _guardandoCambios = true);
+
+    try {
+      final respuesta = await PerfiladminService.actualizarPerfilAdmin(
+        name: nombre,
+        login: usuario,
+        email: correo,
+        phone: telefono,
+        departamento: departamento,
+        role: rol,
+        numeroEmpleado: numeroEmpleado,
+      );
+
+      if (!mounted) return;
+
+      final usuarioActualizado = respuesta['usuario'] as Map<String, dynamic>?;
+      if (usuarioActualizado != null) {
+        await SessionService.saveSession(
+          token: await SessionService.getToken() ?? '',
+          user: usuarioActualizado,
+        );
+      }
+
+      _valoresOriginales['nombre'] = nombre;
+      _valoresOriginales['usuario'] = usuario;
+      _valoresOriginales['correo'] = correo;
+      _valoresOriginales['telefono'] = telefono;
+      _valoresOriginales['departamento'] = departamento;
+      _valoresOriginales['role'] = rol;
+      _valoresOriginales['numeroempleado'] = numeroEmpleado;
+
+      setState(() {
+        _hayCambios = false;
+        _guardandoCambios = false;
+      });
+
+      _mostrarMensaje(
+        respuesta['message']?.toString() ?? 'Información actualizada correctamente.',
+        false,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _guardandoCambios = false);
+      }
+      _mostrarMensaje(e.toString().replaceFirst('Exception: ', ''), true);
+    }
   }
 
   Widget _buildHeaderPerfil() {
@@ -254,18 +408,18 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                       ? Image.network(
                           '$_fotoUrl?profile_refresh=${_fotoUrl.hashCode}',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _avatarInicial(),
-                        )
-                      : Center(
-                          child: Text(
-                            _nombreController.text,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          errorBuilder: (_, _, _) => Image.asset(
+                            'assets/images/user.png',
+                            fit: BoxFit.cover,
+                            width: 110,
+                            height: 110,
                           ),
+                        )
+                      : Image.asset(
+                          'assets/images/user.png',
+                          fit: BoxFit.cover,
+                          width: 110,
+                          height: 110,
                         ),
                 ),
               ),
@@ -504,15 +658,28 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             width: double.infinity,
             height: 40,
             child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: const Text(
-                'Sin cambios',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              onPressed: _hayCambios && !_guardandoCambios
+                  ? _guardarCambiosPerfil
+                  : null,
+              icon: Icon(
+                _guardandoCambios ? Icons.sync_rounded : Icons.save_outlined,
+                size: 18,
+              ),
+              label: Text(
+                _guardandoCambios
+                    ? 'Guardando...'
+                    : (_hayCambios ? 'Guardar cambios' : 'Sin cambios'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: inputBg,
-                foregroundColor: Colors.grey,
+                backgroundColor: _hayCambios && !_guardandoCambios
+                    ? primaryGradientStart
+                    : inputBg,
+                foregroundColor:
+                    _hayCambios && !_guardandoCambios ? Colors.white : Colors.grey,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1126,7 +1293,11 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Inicio',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/admin');
+              navigateWithLoading(
+                context,
+                const AdminScreen(),
+                mensaje: 'Cargando inicio...',
+              );
             },
           ),
           _buildDrawerItem(
@@ -1134,9 +1305,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Tickets',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const TicketsScreen()),
+                const TicketsScreen(),
+                mensaje: 'Cargando tickets...',
               );
             },
           ),
@@ -1145,9 +1317,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Cambios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const CambiosScreen()),
+                const CambiosScreen(),
+                mensaje: 'Cargando cambios...',
               );
             },
           ),
@@ -1156,9 +1329,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Usuarios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (context) => const UserScreen()),
+                const UserScreen(),
+                mensaje: 'Cargando usuarios...',
               );
             },
           ),
@@ -1167,11 +1341,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Dispositivos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const DispositivosScreen(),
-                ),
+                const DispositivosScreen(),
+                mensaje: 'Cargando dispositivos...',
               );
             },
           ),
@@ -1180,11 +1353,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Avisos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AvisosadminScreen(),
-                ),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos...',
               );
             },
           ),
@@ -1203,6 +1375,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             isExit: true,
             onTap: () async {
               await SessionService.clearSession();
+
+              if (!mounted) {
+                return;
+              }
 
               if (!context.mounted) {
                 return;
@@ -1224,30 +1400,22 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     bool isExit = false,
     VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    final itemColor = isExit
+        ? Colors.redAccent
+        : selected
+        ? Colors.white
+        : const Color(0xFF94A3B8);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isExit
-              ? Colors.redAccent
-              : selected
-              ? Colors.white
-              : const Color(0xFF94A3B8),
-          size: 20,
-        ),
+        tileColor: selected ? const Color(0xFF4F46E5) : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        leading: Icon(icon, color: itemColor, size: 20),
         title: Text(
           title,
           style: TextStyle(
-            color: isExit
-                ? Colors.redAccent
-                : selected
-                ? Colors.white
-                : const Color(0xFF94A3B8),
+            color: itemColor,
             fontSize: 14,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -1303,6 +1471,21 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           TextField(
             controller: controller,
             readOnly: !isEditable,
+            keyboardType: label == 'Teléfono' ? TextInputType.phone : TextInputType.text,
+            inputFormatters: label == 'Teléfono'
+                ? [FilteringTextInputFormatter.digitsOnly]
+                : null,
+            onChanged: label == 'Teléfono'
+                ? (value) {
+                    final formatted = _formatearTelefono(value);
+                    if (formatted != value) {
+                      controller.value = TextEditingValue(
+                        text: formatted,
+                        selection: TextSelection.collapsed(offset: formatted.length),
+                      );
+                    }
+                  }
+                : null,
             style: TextStyle(
               color: isEditable ? Colors.white : Colors.white54,
               fontSize: 13,
@@ -1446,35 +1629,6 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     );
   }
 
-  Widget _avatarInicial() {
-    final nombre = _nombreController.text.trim();
-    final iniciales = nombre.isEmpty
-        ? 'U'
-        : nombre
-              .split(RegExp(r'\s+'))
-              .take(2)
-              .map((parte) => parte[0].toUpperCase())
-              .join();
-    return Center(
-      child: Text(
-        iniciales,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  bool _esFotoPredeterminada(String picture) {
-    final normalized = picture.trim().toLowerCase();
-    return normalized.isEmpty ||
-        normalized == 'user.png' ||
-        normalized.endsWith('/user.png') ||
-        normalized.contains('profile-photos/user.png');
-  }
-
   bool _esFotoPersonalizada(String picture) {
     final normalized = picture.trim().toLowerCase();
     return normalized.isNotEmpty &&
@@ -1484,11 +1638,70 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   void _mostrarMensaje(String mensaje, bool esError) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: esError ? Colors.redAccent : Colors.green,
-      ),
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final color = esError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+        final icon = esError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  esError ? 'Error' : 'Éxito',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

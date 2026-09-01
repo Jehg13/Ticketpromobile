@@ -96,7 +96,7 @@ final headers = await _headers();
 
 
 final response = await http.get(
-  Uri.parse('$baseUrl/avisos'),
+  Uri.parse('$baseUrl/admin/avisos'),
   headers: headers,
 );
 
@@ -294,7 +294,7 @@ final headers = await _headers();
 
 
 final response = await http.get(
-  Uri.parse('$baseUrl/avisos/$id'),
+  Uri.parse('$baseUrl/admin/avisos/$id'),
   headers: headers,
 );
 
@@ -349,7 +349,7 @@ if (token == null || token.isEmpty) {
 
 final request = http.MultipartRequest(
   'POST',
-  Uri.parse('$baseUrl/avisos'),
+  Uri.parse('$baseUrl/admin/avisos'),
 );
 
 request.headers.addAll({
@@ -443,7 +443,7 @@ if (token == null || token.isEmpty) {
 
 final request = http.MultipartRequest(
   'POST',
-  Uri.parse('$baseUrl/avisos/$id'),
+  Uri.parse('$baseUrl/admin/avisos/$id'),
 );
 
 request.headers.addAll({
@@ -519,7 +519,7 @@ final headers = await _headers();
 
 
 final response = await http.delete(
-  Uri.parse('$baseUrl/avisos/$id'),
+  Uri.parse('$baseUrl/admin/avisos/$id'),
   headers: headers,
 );
 

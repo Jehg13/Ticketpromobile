@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/session_service.dart';
+import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
@@ -86,39 +87,6 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
         _error = _limpiarError(e);
       });
     }
-  }
-
-  List<Map<String, dynamic>> _extraerLista(dynamic valor) {
-    if (valor is List) {
-      return valor
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-    }
-
-    if (valor is Map) {
-      final posiblesClaves = [
-        'data',
-        'usuarios',
-        'users',
-        'resultados',
-        'results',
-        'items',
-      ];
-
-      for (final clave in posiblesClaves) {
-        final contenido = valor[clave];
-
-        if (contenido is List) {
-          return contenido
-              .whereType<Map>()
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-        }
-      }
-    }
-
-    return [];
   }
 
   String _limpiarError(Object error) {
@@ -376,18 +344,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           ),
           const Padding(
             padding: EdgeInsets.only(right: 16, left: 4),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Color(0xFF4F46E5),
-              child: Text(
-                'JH',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: AdminProfileMenu(radius: 16),
           ),
         ],
       ),
@@ -545,9 +502,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Inicio',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const AdminScreen()),
+                const AdminScreen(),
+                mensaje: 'Cargando inicio...',
               );
             },
           ),
@@ -556,9 +514,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Tickets',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const TicketsScreen()),
+                const TicketsScreen(),
+                mensaje: 'Cargando tickets...',
               );
             },
           ),
@@ -567,9 +526,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Cambios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const CambiosScreen()),
+                const CambiosScreen(),
+                mensaje: 'Cargando cambios...',
               );
             },
           ),
@@ -578,9 +538,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Usuarios',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const UserScreen()),
+                const UserScreen(),
+                mensaje: 'Cargando usuarios...',
               );
             },
           ),
@@ -597,9 +558,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Avisos',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const AvisosadminScreen()),
+                const AvisosadminScreen(),
+                mensaje: 'Cargando avisos...',
               );
             },
           ),
@@ -608,9 +570,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
             'Mi perfil',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
+              navigateWithLoading(
                 context,
-                MaterialPageRoute(builder: (_) => const PerfiladminScreen()),
+                const PerfiladminScreen(),
+                mensaje: 'Cargando perfil...',
               );
             },
           ),
@@ -639,13 +602,11 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
         ? Colors.white
         : const Color(0xFF94A3B8);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
+        tileColor: selected ? const Color(0xFF4F46E5) : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         leading: Icon(icon, color: color, size: 20),
         title: Text(
           title,
@@ -1914,14 +1875,72 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     );
   }
 
-  void _mostrarMensaje(String mensaje) {
+  void _mostrarMensaje(String mensaje, {bool isError = false}) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(mensaje), behavior: SnackBarBehavior.floating),
-      );
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final color = isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+        final icon = isError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isError ? 'Error' : 'Éxito',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildLabel(String text) {
