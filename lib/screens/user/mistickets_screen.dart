@@ -1964,6 +1964,18 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       nombreFirmanteReal = tSolucionadoPor.toString().trim();
     }
 
+    final dynamic usuarioTicket =
+        ticket['user'] ??
+        ticket['usuario'] ??
+        ticket['levantado_por'] ??
+        ticket['usuario_ticket'];
+
+    final String nombreCreadorTicket = _string(
+      usuarioTicket is Map ? usuarioTicket['name'] : null,
+      usuarioTicket is Map ? usuarioTicket['nombre'] : null,
+      fallback: '',
+    );
+
     final String nombreFirmanteRaw = _string(
       sMap?['nombre_firmante'],
       ticket['nombre_firmante'],
@@ -1971,7 +1983,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     );
     final String nombreFirmante = _normalizarNombreFirmante(
       nombreFirmanteRaw,
-      nombreFirmanteReal,
+      nombreCreadorTicket.isNotEmpty ? nombreCreadorTicket : nombreFirmanteReal,
     );
     final String fechaFirma = _formatearFecha(
       sMap?['fecha_firma'] ?? ticket['fecha_firma'],
