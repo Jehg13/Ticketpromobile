@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../services/session_service.dart';
 import 'avisosadmin_screen.dart';
-import 'backup_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -1824,19 +1823,6 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const AvisosadminScreen()),
-              );
-            },
-          ),
-          _drawerItem(
-            context,
-            Icons.backup_outlined,
-            'Backups',
-            selected: activeMenu == 'Backups',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BackupScreen()),
               );
             },
           ),
