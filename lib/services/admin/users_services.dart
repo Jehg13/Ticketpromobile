@@ -363,6 +363,18 @@ class UsersService {
   }
 
   // ============================================================
+  static Future<bool> existeLogin(String login) async {
+    final loginLimpio = login.trim();
+    if (loginLimpio.isEmpty) return false;
+
+    final respuesta = await obtenerUsuario(loginLimpio);
+    if (respuesta['statusCode'] == 404) return false;
+    if (respuesta['success'] != true) {
+      throw StateError('No se pudo verificar la disponibilidad del login.');
+    }
+    return true;
+  }
+
   // ACTUALIZAR USUARIO
   // ============================================================
   //
@@ -396,6 +408,7 @@ class UsersService {
 
   static Future<Map<String, dynamic>> actualizarUsuario({
     required String login,
+    required String nuevoLogin,
     required String nombre,
     required String email,
     String? phone,
@@ -434,6 +447,7 @@ class UsersService {
       );
 
       final body = <String, dynamic>{
+        'login': nuevoLogin.trim(),
         'name': nombre.trim(),
         'email': email.trim(),
         'phone': phone?.trim(),

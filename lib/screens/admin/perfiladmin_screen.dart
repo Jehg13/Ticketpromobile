@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../services/admin/perfiladmin_service.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -98,7 +99,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications_none, color: Colors.grey),
-                onPressed: () {},
+                onPressed: () {
+                  showAdminNotificationsDialog(context);
+                },
               ),
               Positioned(
                 right: 10,
@@ -200,7 +203,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     _nombreController.text = data['name']?.toString() ?? '';
     _usuarioController.text = data['login']?.toString() ?? '';
     _correoController.text = data['email']?.toString() ?? '';
-    _telefonoController.text = _formatearTelefono(data['phone']?.toString() ?? '');
+    _telefonoController.text = _formatearTelefono(
+      data['phone']?.toString() ?? '',
+    );
     _departamentoController.text = data['departamento']?.toString() ?? '';
     _oficinaController.text = data['oficina']?.toString() ?? '';
     _rolController.text = data['role']?.toString() ?? '';
@@ -262,12 +267,14 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   String _formatearTelefono(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '').substring(
-      0,
-      value.replaceAll(RegExp(r'\D'), '').length > 10
-          ? 10
-          : value.replaceAll(RegExp(r'\D'), '').length,
-    );
+    final digits = value
+        .replaceAll(RegExp(r'\D'), '')
+        .substring(
+          0,
+          value.replaceAll(RegExp(r'\D'), '').length > 10
+              ? 10
+              : value.replaceAll(RegExp(r'\D'), '').length,
+        );
 
     if (digits.isEmpty) return '';
     if (digits.length <= 3) return digits;
@@ -283,7 +290,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     final nombre = _nombreController.text.trim();
     final usuario = _usuarioController.text.trim();
     final correo = _correoController.text.trim();
-    final telefono = _telefonoController.text.replaceAll(RegExp(r'\D'), '').trim();
+    final telefono = _telefonoController.text
+        .replaceAll(RegExp(r'\D'), '')
+        .trim();
     final departamento = _departamentoController.text.trim();
     final rol = _rolController.text.trim();
     final numeroEmpleado = _numEmpleadoController.text.trim();
@@ -325,7 +334,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       });
 
       _mostrarMensaje(
-        respuesta['message']?.toString() ?? 'Información actualizada correctamente.',
+        respuesta['message']?.toString() ??
+            'Información actualizada correctamente.',
         false,
       );
     } catch (e) {
@@ -678,8 +688,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 backgroundColor: _hayCambios && !_guardandoCambios
                     ? primaryGradientStart
                     : inputBg,
-                foregroundColor:
-                    _hayCambios && !_guardandoCambios ? Colors.white : Colors.grey,
+                foregroundColor: _hayCambios && !_guardandoCambios
+                    ? Colors.white
+                    : Colors.grey,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1471,7 +1482,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           TextField(
             controller: controller,
             readOnly: !isEditable,
-            keyboardType: label == 'Teléfono' ? TextInputType.phone : TextInputType.text,
+            keyboardType: label == 'Teléfono'
+                ? TextInputType.phone
+                : TextInputType.text,
             inputFormatters: label == 'Teléfono'
                 ? [FilteringTextInputFormatter.digitsOnly]
                 : null,
@@ -1481,7 +1494,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     if (formatted != value) {
                       controller.value = TextEditingValue(
                         text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
+                        selection: TextSelection.collapsed(
+                          offset: formatted.length,
+                        ),
                       );
                     }
                   }
@@ -1644,8 +1659,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        final color = esError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
-        final icon = esError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+        final color = esError
+            ? const Color(0xFFEF4444)
+            : const Color(0xFF22C55E);
+        final icon = esError
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),

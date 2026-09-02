@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'home_screen.dart';
@@ -309,12 +310,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               IconButton(
                 icon: const Icon(Icons.notifications_none, color: Colors.white),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AvisosadminScreen(),
-                    ),
-                  );
+                  showAdminNotificationsDialog(context);
                 },
               ),
               Positioned(
@@ -1882,8 +1878,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        final color = isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
-        final icon = isError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+        final color = isError
+            ? const Color(0xFFEF4444)
+            : const Color(0xFF22C55E);
+        final icon = isError
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),

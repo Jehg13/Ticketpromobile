@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin/cambios_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import 'avisosadmin_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -363,8 +364,12 @@ class _CambiosScreenState extends State<CambiosScreen> {
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        final color = isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
-        final icon = isError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+        final color = isError
+            ? const Color(0xFFEF4444)
+            : const Color(0xFF22C55E);
+        final icon = isError
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -473,7 +478,9 @@ class _CambiosScreenState extends State<CambiosScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              showAdminNotificationsDialog(context);
+            },
           ),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),

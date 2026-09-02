@@ -9,8 +9,7 @@ class ApiService {
   // URLS
   // ============================================================
 
-  static const String serverUrl = 'http://127.0.0.1:8000';
-
+static const String serverUrl = 'http://127.0.0.1:8000';
   static const String baseUrl = '$serverUrl/api';
 
   // Todos los archivos que están dentro de storage/app/public
@@ -167,6 +166,175 @@ class ApiService {
   // ============================================================
   // LOGIN
   // ============================================================
+
+  static Map<String, dynamic> _decodeJsonBody(String body) {
+    if (body.trim().isEmpty) {
+      return {};
+    }
+
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+
+      if (decoded is Map) {
+        return decoded.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+      }
+
+      return {'raw': decoded};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    final cleanEmail = email.trim();
+
+    if (cleanEmail.isEmpty) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'Ingresa tu correo electrónico.',
+      };
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/password/forgot'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: jsonEncode({
+          'email': cleanEmail,
+        }),
+      );
+
+      final payload = _decodeJsonBody(response.body);
+      final bool success = response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          payload['success'] == true;
+
+      return {
+        'statusCode': response.statusCode,
+        'success': success,
+        'message': payload['message']?.toString() ??
+            'No se pudo enviar el enlace de recuperación.',
+        'data': payload,
+      };
+    } catch (e) {
+      return {
+        'statusCode': 0,
+        'success': false,
+        'message': 'No se pudo conectar con el servidor.',
+        'error': e.toString(),
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final cleanEmail = email.trim();
+    final cleanToken = token.trim();
+    final cleanPassword = password.trim();
+    final cleanConfirmation = passwordConfirmation.trim();
+
+    if (cleanEmail.isEmpty) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'Ingresa tu correo electrónico.',
+      };
+    }
+
+    if (cleanToken.isEmpty) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'Pega el token recibido en tu correo para continuar.',
+      };
+    }
+
+    if (cleanPassword.isEmpty) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'Ingresa una nueva contraseña.',
+      };
+    }
+
+    if (cleanPassword.length < 8) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'La contraseña debe tener al menos 8 caracteres.',
+      };
+    }
+
+    if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$')
+        .hasMatch(cleanPassword)) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
+      };
+    }
+
+    if (cleanPassword != cleanConfirmation) {
+      return {
+        'statusCode': 400,
+        'success': false,
+        'message': 'Las contraseñas no coinciden.',
+      };
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/password/reset'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: jsonEncode({
+          'email': cleanEmail,
+          'token': cleanToken,
+          'password': cleanPassword,
+          'password_confirmation': cleanConfirmation,
+        }),
+      );
+
+      final payload = _decodeJsonBody(response.body);
+      final bool success = response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          payload['success'] == true;
+
+      return {
+        'statusCode': response.statusCode,
+        'success': success,
+        'message': payload['message']?.toString() ??
+            'No se pudo restablecer la contraseña.',
+        'data': payload,
+      };
+    } catch (e) {
+      return {
+        'statusCode': 0,
+        'success': false,
+        'message': 'No se pudo conectar con el servidor.',
+        'error': e.toString(),
+      };
+    }
+  }
 
   static Future<Map<String, dynamic>> login({
     required String usuario,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin/indexadmin_services.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import '../../widgets/loading_screen.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
@@ -79,10 +80,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   IndexAdminService get _service {
-    return IndexAdminService(
-      baseUrl: ApiService.serverUrl,
-      token: _token,
-    );
+    return IndexAdminService(baseUrl: ApiService.serverUrl, token: _token);
   }
 
   Future<void> _loadEvolution() async {
@@ -127,11 +125,9 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       firstDate: DateTime(now.year - 2),
       lastDate: DateTime(now.year + 1),
-      initialDateRange: _selectedDateRange ??
-          DateTimeRange(
-            start: DateTime(now.year, now.month, 1),
-            end: now,
-          ),
+      initialDateRange:
+          _selectedDateRange ??
+          DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: ColorScheme.dark(
@@ -220,26 +216,32 @@ class _AdminScreenState extends State<AdminScreen> {
       'textoTiempo': data.textoTiempo,
       'subtextoTiempo': data.subtextoTiempo,
       'quejas': data.quejasRecurrentes
-          .map((item) => {
-                'label': item.tipoFalla,
-                'valor': item.total,
-                'total': item.total,
-              })
+          .map(
+            (item) => {
+              'label': item.tipoFalla,
+              'valor': item.total,
+              'total': item.total,
+            },
+          )
           .toList(),
       'equipos': data.equipos
-          .map((item) => {
-                'nombre': item.equipo,
-                'tipo': item.tipo,
-                'fallas': item.fallas,
-                'fecha': item.ultimaIncidencia ?? '',
-              })
+          .map(
+            (item) => {
+              'nombre': item.equipo,
+              'tipo': item.tipo,
+              'fallas': item.fallas,
+              'fecha': item.ultimaIncidencia ?? '',
+            },
+          )
           .toList(),
       'ubicaciones': data.ubicaciones
-          .map((item) => {
-                'label': item.nombre,
-                'valor': item.total,
-                'total': item.total,
-              })
+          .map(
+            (item) => {
+              'label': item.nombre,
+              'valor': item.total,
+              'total': item.total,
+            },
+          )
           .toList(),
       'chart': {
         'series': data.evolucionTickets.map((item) => item.total).toList(),
@@ -253,8 +255,9 @@ class _AdminScreenState extends State<AdminScreen> {
     return match == null ? null : int.tryParse(match.group(1)!);
   }
 
-  Map<String, dynamic> get _stats =>
-      _dashboard['stats'] is Map ? Map<String, dynamic>.from(_dashboard['stats']) : <String, dynamic>{};
+  Map<String, dynamic> get _stats => _dashboard['stats'] is Map
+      ? Map<String, dynamic>.from(_dashboard['stats'])
+      : <String, dynamic>{};
 
   List<Map<String, dynamic>> _lista(dynamic value) {
     if (value is! List) {
@@ -336,7 +339,20 @@ class _AdminScreenState extends State<AdminScreen> {
       case 'Mes':
         return ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
       case 'Año':
-        return ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return [
+          'Ene',
+          'Feb',
+          'Mar',
+          'Abr',
+          'May',
+          'Jun',
+          'Jul',
+          'Ago',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dic',
+        ];
       case 'Semana':
       default:
         return ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
@@ -344,20 +360,34 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   List<double> _chartSeriesForRange() {
-    final rawChart = _dashboard['chart'] is Map ? Map<String, dynamic>.from(_dashboard['chart']) : <String, dynamic>{};
+    final rawChart = _dashboard['chart'] is Map
+        ? Map<String, dynamic>.from(_dashboard['chart'])
+        : <String, dynamic>{};
     final currentSeries = rawChart['series'];
     final seriesByRange = <String, List<double>>{
       'Hoy': _parseNumericList(
-        rawChart['series_hoy'] ?? rawChart['data_hoy'] ?? rawChart['today'] ?? currentSeries,
+        rawChart['series_hoy'] ??
+            rawChart['data_hoy'] ??
+            rawChart['today'] ??
+            currentSeries,
       ),
       'Semana': _parseNumericList(
-        rawChart['series_semana'] ?? rawChart['data_semana'] ?? rawChart['week'] ?? currentSeries,
+        rawChart['series_semana'] ??
+            rawChart['data_semana'] ??
+            rawChart['week'] ??
+            currentSeries,
       ),
       'Mes': _parseNumericList(
-        rawChart['series_mes'] ?? rawChart['data_mes'] ?? rawChart['month'] ?? currentSeries,
+        rawChart['series_mes'] ??
+            rawChart['data_mes'] ??
+            rawChart['month'] ??
+            currentSeries,
       ),
       'Año': _parseNumericList(
-        rawChart['series_anio'] ?? rawChart['data_anio'] ?? rawChart['year'] ?? currentSeries,
+        rawChart['series_anio'] ??
+            rawChart['data_anio'] ??
+            rawChart['year'] ??
+            currentSeries,
       ),
     };
 
@@ -425,16 +455,23 @@ class _AdminScreenState extends State<AdminScreen> {
       _dashboard['tickets_del_mes'],
     ], fallback: 0);
     final complaints = _lista(
-      _dashboard['quejas'] ?? _dashboard['complaints'] ?? _dashboard['quejas_recurrentes'],
+      _dashboard['quejas'] ??
+          _dashboard['complaints'] ??
+          _dashboard['quejas_recurrentes'],
     );
     final equipments = _lista(
-      _dashboard['equipos'] ?? _dashboard['equipment'] ?? _dashboard['equipos_mas_fallas'],
+      _dashboard['equipos'] ??
+          _dashboard['equipment'] ??
+          _dashboard['equipos_mas_fallas'],
     );
     final locations = _lista(
-      _dashboard['ubicaciones'] ?? _dashboard['locations'] ?? _dashboard['sucursales'],
+      _dashboard['ubicaciones'] ??
+          _dashboard['locations'] ??
+          _dashboard['sucursales'],
     );
     final maxComplaintValue = complaints.fold<int>(0, (prev, item) {
-      final value = item['valor'] ?? item['value'] ?? item['cantidad'] ?? item['count'];
+      final value =
+          item['valor'] ?? item['value'] ?? item['cantidad'] ?? item['count'];
       final parsed = int.tryParse(value?.toString() ?? '') ?? 0;
       return parsed > prev ? parsed : prev;
     });
@@ -443,8 +480,12 @@ class _AdminScreenState extends State<AdminScreen> {
     final chartAverage = chartValues.isEmpty
         ? 0.0
         : chartValues.reduce((a, b) => a + b) / chartValues.length;
-    final chartMax = chartValues.isEmpty ? 0.0 : chartValues.reduce((a, b) => a > b ? a : b);
-    final chartMin = chartValues.isEmpty ? 0.0 : chartValues.reduce((a, b) => a < b ? a : b);
+    final chartMax = chartValues.isEmpty
+        ? 0.0
+        : chartValues.reduce((a, b) => a > b ? a : b);
+    final chartMin = chartValues.isEmpty
+        ? 0.0
+        : chartValues.reduce((a, b) => a < b ? a : b);
 
     return Scaffold(
       backgroundColor: AdminScreen.background,
@@ -504,11 +545,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             ),
             onPressed: () {
-              navigateWithLoading(
-                context,
-                const AvisosadminScreen(),
-                mensaje: 'Cargando avisos del admin...',
-              );
+              showAdminNotificationsDialog(context);
             },
           ),
           const SizedBox(width: 8),
@@ -534,16 +571,24 @@ class _AdminScreenState extends State<AdminScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                           TextButton(
@@ -564,7 +609,10 @@ class _AdminScreenState extends State<AdminScreen> {
                   const SizedBox(height: 4),
                   const Text(
                     'Dashboard de estadísticas y métricas del soporte técnico.',
-                    style: TextStyle(color: AdminScreen.textMuted, fontSize: 13),
+                    style: TextStyle(
+                      color: AdminScreen.textMuted,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -572,7 +620,9 @@ class _AdminScreenState extends State<AdminScreen> {
                     decoration: BoxDecoration(
                       color: AdminScreen.cardBg,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +661,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                   child: ChoiceChip(
                                     label: Text(label),
                                     selected: _dateFilterLabel == label,
-                                    onSelected: (_) => _applyQuickDateFilter(label),
+                                    onSelected: (_) =>
+                                        _applyQuickDateFilter(label),
                                     selectedColor: AdminScreen.primaryBlue,
                                     backgroundColor: AdminScreen.background,
                                     labelStyle: TextStyle(
@@ -683,7 +734,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         iconColor: AdminScreen.accentBlue,
                         title: 'Tickets abiertos',
                         value: openTickets.toString(),
-                        badgeText: '${_dashboard['textoSemana'] ?? ''} ${_dashboard['subtextoSemana'] ?? ''}',
+                        badgeText:
+                            '${_dashboard['textoSemana'] ?? ''} ${_dashboard['subtextoSemana'] ?? ''}',
                         badgeColor: AdminScreen.greenAccent,
                       ),
                       KPICard(
@@ -699,7 +751,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         iconColor: AdminScreen.greenAccent,
                         title: 'Tickets resueltos',
                         value: resolvedTickets.toString(),
-                        badgeText: _dashboard['textoMes']?.toString() ?? 'Este mes',
+                        badgeText:
+                            _dashboard['textoMes']?.toString() ?? 'Este mes',
                         badgeColor: AdminScreen.greenAccent,
                       ),
                       KPICard(
@@ -708,7 +761,9 @@ class _AdminScreenState extends State<AdminScreen> {
                         title: 'Tiempo promedio',
                         subtitle: 'de atención',
                         value: _formatAverageMinutes(_stats['tiempo_promedio']),
-                        badgeText: _dashboard['textoTiempo']?.toString() ?? 'Promedio actual',
+                        badgeText:
+                            _dashboard['textoTiempo']?.toString() ??
+                            'Promedio actual',
                         badgeColor: AdminScreen.cyanAccent,
                       ),
                     ],
@@ -749,11 +804,18 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'Problemas más reportados por los usuarios.',
-                          style: TextStyle(color: AdminScreen.textMuted, fontSize: 12),
+                          style: TextStyle(
+                            color: AdminScreen.textMuted,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ...complaints.map((item) {
-                          final label = item['label'] ?? item['nombre'] ?? item['categoria'] ?? 'Sin nombre';
+                          final label =
+                              item['label'] ??
+                              item['nombre'] ??
+                              item['categoria'] ??
+                              'Sin nombre';
                           final value = _intValue([
                             item['valor'],
                             item['value'],
@@ -825,7 +887,10 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'Equipos con mayor número de incidencias.',
-                          style: TextStyle(color: AdminScreen.textMuted, fontSize: 12),
+                          style: TextStyle(
+                            color: AdminScreen.textMuted,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const Padding(
@@ -836,28 +901,40 @@ class _AdminScreenState extends State<AdminScreen> {
                                 flex: 3,
                                 child: Text(
                                   'Equipo',
-                                  style: TextStyle(color: AdminScreen.textMuted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: AdminScreen.textMuted,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                               Expanded(
                                 flex: 2,
                                 child: Text(
                                   'Tipo',
-                                  style: TextStyle(color: AdminScreen.textMuted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: AdminScreen.textMuted,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                               Expanded(
                                 flex: 1,
                                 child: Text(
                                   'Fallas',
-                                  style: TextStyle(color: AdminScreen.textMuted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: AdminScreen.textMuted,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                               Expanded(
                                 flex: 2,
                                 child: Text(
                                   'Última incidencia',
-                                  style: TextStyle(color: AdminScreen.textMuted, fontSize: 11),
+                                  style: TextStyle(
+                                    color: AdminScreen.textMuted,
+                                    fontSize: 11,
+                                  ),
                                   textAlign: TextAlign.right,
                                 ),
                               ),
@@ -866,7 +943,11 @@ class _AdminScreenState extends State<AdminScreen> {
                         ),
                         const Divider(color: Colors.white10),
                         ...equipments.take(4).map((item) {
-                          final name = item['nombre'] ?? item['equipo'] ?? item['label'] ?? 'Equipo';
+                          final name =
+                              item['nombre'] ??
+                              item['equipo'] ??
+                              item['label'] ??
+                              'Equipo';
                           final type = item['tipo'] ?? item['type'] ?? 'Equipo';
                           final count = _intValue([
                             item['fallas'],
@@ -874,7 +955,12 @@ class _AdminScreenState extends State<AdminScreen> {
                             item['cantidad'],
                             item['total'],
                           ], fallback: 0).toString();
-                          final date = item['fecha'] ?? item['date'] ?? item['ultima_incidencia'] ?? item['updated_at'] ?? '';
+                          final date =
+                              item['fecha'] ??
+                              item['date'] ??
+                              item['ultima_incidencia'] ??
+                              item['updated_at'] ??
+                              '';
 
                           return EquipmentRow(
                             name: name.toString(),
@@ -914,7 +1000,10 @@ class _AdminScreenState extends State<AdminScreen> {
                                       ),
                                       TextSpan(
                                         text: mainEquipment != null
-                                            ? (mainEquipment['nombre'] ?? mainEquipment['equipo'] ?? 'Sin datos').toString()
+                                            ? (mainEquipment['nombre'] ??
+                                                      mainEquipment['equipo'] ??
+                                                      'Sin datos')
+                                                  .toString()
                                             : 'Sin datos',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -957,11 +1046,19 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'Tickets generados por ubicación / sucursal.',
-                          style: TextStyle(color: AdminScreen.textMuted, fontSize: 12),
+                          style: TextStyle(
+                            color: AdminScreen.textMuted,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ...locations.map((item) {
-                          final label = item['label'] ?? item['nombre'] ?? item['ubicacion'] ?? item['oficina'] ?? 'Ubicación';
+                          final label =
+                              item['label'] ??
+                              item['nombre'] ??
+                              item['ubicacion'] ??
+                              item['oficina'] ??
+                              'Ubicación';
                           final value = _intValue([
                             item['valor'],
                             item['value'],
@@ -992,7 +1089,11 @@ class _AdminScreenState extends State<AdminScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.show_chart, color: AdminScreen.accentBlue, size: 18),
+                            Icon(
+                              Icons.show_chart,
+                              color: AdminScreen.accentBlue,
+                              size: 18,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Evolución de tickets',
@@ -1007,7 +1108,10 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'Comportamiento de tickets en el periodo seleccionado.',
-                          style: TextStyle(color: AdminScreen.textMuted, fontSize: 11),
+                          style: TextStyle(
+                            color: AdminScreen.textMuted,
+                            fontSize: 11,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Container(
@@ -1072,7 +1176,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                     showTitles: true,
                                     getTitlesWidget: (value, meta) {
                                       final labels = _chartLabelsForRange();
-                                      if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                                      if (value.toInt() >= 0 &&
+                                          value.toInt() < labels.length) {
                                         return Text(
                                           labels[value.toInt()],
                                           style: const TextStyle(
@@ -1130,11 +1235,7 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
-  Widget _buildFilterTab(
-    String text,
-    bool isSelected, {
-    VoidCallback? onTap,
-  }) {
+  Widget _buildFilterTab(String text, bool isSelected, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

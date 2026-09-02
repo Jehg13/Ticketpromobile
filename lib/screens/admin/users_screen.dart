@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../services/admin/users_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -89,8 +90,8 @@ class _UserScreenState extends State<UserScreen> {
       final estado = selectedFilter == 'Activos'
           ? 'activos'
           : selectedFilter == 'Inactivos'
-              ? 'inactivos'
-              : 'todos';
+          ? 'inactivos'
+          : 'todos';
 
       final respuesta = await UsersService.obtenerUsuarios(
         estado: estado,
@@ -115,7 +116,9 @@ class _UserScreenState extends State<UserScreen> {
 
       setState(() {
         usuarios = nuevaLista;
-        _totalUsuarios = _toInt(pagination['total'] ?? estadisticas['total'] ?? 0);
+        _totalUsuarios = _toInt(
+          pagination['total'] ?? estadisticas['total'] ?? 0,
+        );
         _ultimaPagina = _toInt(pagination['last_page'] ?? 1);
         _estadisticas = estadisticas;
       });
@@ -206,7 +209,9 @@ class _UserScreenState extends State<UserScreen> {
                 ),
               ],
             ),
-            onPressed: () {},
+            onPressed: () {
+              showAdminNotificationsDialog(context);
+            },
           ),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
@@ -261,7 +266,9 @@ class _UserScreenState extends State<UserScreen> {
                   const SizedBox(width: 10),
                   KPIStatCard(
                     title: 'Administradores',
-                    count: _toInt(_estadisticas['administradores'] ?? 0).toString(),
+                    count: _toInt(
+                      _estadisticas['administradores'] ?? 0,
+                    ).toString(),
                     icon: Icons.security,
                     iconColor: primaryBlue,
                   ),
@@ -483,8 +490,8 @@ class _UserScreenState extends State<UserScreen> {
         color: selected
             ? primaryBlue
             : disabled
-                ? Colors.white.withValues(alpha: 0.02)
-                : cardBg,
+            ? Colors.white.withValues(alpha: 0.02)
+            : cardBg,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: selected ? primaryBlue : Colors.white10),
       ),
@@ -506,10 +513,7 @@ class _UserScreenState extends State<UserScreen> {
       return child;
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: child,
-    );
+    return GestureDetector(onTap: onTap, child: child);
   }
 
   void _mostrarDetalleUsuario(BuildContext context, UsuarioItem user) {
@@ -859,7 +863,9 @@ class _UserScreenState extends State<UserScreen> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(30),
                   ),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
@@ -887,7 +893,9 @@ class _UserScreenState extends State<UserScreen> {
                             colors: [Color(0xFF18213F), Color(0xFF111827)],
                           ),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -897,7 +905,10 @@ class _UserScreenState extends State<UserScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF60A5FA), Color(0xFF4F46E5)],
+                                  colors: [
+                                    Color(0xFF60A5FA),
+                                    Color(0xFF4F46E5),
+                                  ],
                                 ),
                                 boxShadow: const [
                                   BoxShadow(
@@ -930,7 +941,9 @@ class _UserScreenState extends State<UserScreen> {
                                   Text(
                                     'Actualiza datos, acceso y permisos.',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.72),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
+                                      ),
                                       fontSize: 11,
                                     ),
                                   ),
@@ -1218,8 +1231,12 @@ class _UserScreenState extends State<UserScreen> {
                             child: TextButton(
                               onPressed: () => Navigator.pop(context),
                               style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: Colors.white.withValues(alpha: 0.03),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.03,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -1239,7 +1256,9 @@ class _UserScreenState extends State<UserScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () async {
                                 final currentContext = context;
-                                final officeId = _resolveOficinaId(selectedOficina);
+                                final officeId = _resolveOficinaId(
+                                  selectedOficina,
+                                );
                                 if (officeId == null) {
                                   if (currentContext.mounted) {
                                     _mostrarMensaje(
@@ -1251,32 +1270,71 @@ class _UserScreenState extends State<UserScreen> {
                                   return;
                                 }
 
-                                final passwordActual = await _mostrarDialogoConfirmacionPassword(
-                                  context: currentContext,
-                                  usuario: user.nombre,
-                                );
+                                final loginNuevo = loginCtrl.text.trim();
+                                if (loginNuevo.isEmpty) {
+                                  _mostrarMensaje(
+                                    currentContext,
+                                    'El login es obligatorio.',
+                                    error: true,
+                                  );
+                                  return;
+                                }
 
-                                if (passwordActual == null || passwordActual.trim().isEmpty) {
+                                if (loginNuevo.toLowerCase() !=
+                                    user.login.trim().toLowerCase()) {
+                                  final loginExiste =
+                                      await UsersService.existeLogin(
+                                        loginNuevo,
+                                      );
+                                  if (!currentContext.mounted) return;
+                                  if (loginExiste) {
+                                    _mostrarMensaje(
+                                      currentContext,
+                                      'Ese login ya está asignado a otro usuario.',
+                                      error: true,
+                                    );
+                                    return;
+                                  }
+                                }
+
+                                final passwordActual =
+                                    await _mostrarDialogoConfirmacionPassword(
+                                      context: currentContext,
+                                      usuario: user.nombre,
+                                    );
+
+                                if (passwordActual == null ||
+                                    passwordActual.trim().isEmpty) {
                                   return;
                                 }
 
                                 final telefonoLimpio = telCtrl.text.trim();
                                 final password = passwordCtrl.text.trim();
 
-                                final result = await UsersService.actualizarUsuario(
-                                  login: user.login.trim(),
-                                  nombre: nombreCtrl.text.trim(),
-                                  email: emailCtrl.text.trim(),
-                                  phone: telefonoLimpio.isEmpty ? null : telefonoLimpio,
-                                  password: password.isEmpty ? null : password,
-                                  currentPassword: passwordActual,
-                                  numeroEmpleado: numEmpCtrl.text.trim(),
-                                  role: roleCtrl.text.trim(),
-                                  active: selectedEstado == 'Activa' ? 'Y' : 'N',
-                                  privAdmin: selectedAdmin == 'Sí' ? 'Y' : 'N',
-                                  oficinaId: officeId,
-                                  departamento: deptoCtrl.text.trim(),
-                                );
+                                final result =
+                                    await UsersService.actualizarUsuario(
+                                      login: user.login.trim(),
+                                      nuevoLogin: loginNuevo,
+                                      nombre: nombreCtrl.text.trim(),
+                                      email: emailCtrl.text.trim(),
+                                      phone: telefonoLimpio.isEmpty
+                                          ? null
+                                          : telefonoLimpio,
+                                      password: password.isEmpty
+                                          ? null
+                                          : password,
+                                      currentPassword: passwordActual,
+                                      numeroEmpleado: numEmpCtrl.text.trim(),
+                                      role: roleCtrl.text.trim(),
+                                      active: selectedEstado == 'Activa'
+                                          ? 'Y'
+                                          : 'N',
+                                      privAdmin: selectedAdmin == 'Sí'
+                                          ? 'Y'
+                                          : 'N',
+                                      oficinaId: officeId,
+                                      departamento: deptoCtrl.text.trim(),
+                                    );
 
                                 if (!mounted || !currentContext.mounted) return;
 
@@ -1293,7 +1351,9 @@ class _UserScreenState extends State<UserScreen> {
                                     user.oficina = selectedOficina;
                                     user.rol = roleCtrl.text.trim();
                                     user.estado = selectedEstado;
-                                    user.permisos = List<String>.from(user.permisos);
+                                    user.permisos = List<String>.from(
+                                      user.permisos,
+                                    );
                                     if (selectedAdmin == 'Sí') {
                                       if (!user.permisos.contains('Admin')) {
                                         user.permisos.add('Admin');
@@ -1321,7 +1381,9 @@ class _UserScreenState extends State<UserScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: accentBlue,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -1387,24 +1449,39 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D172A),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.lock_outline_rounded, color: textMuted, size: 16),
+                          const Icon(
+                            Icons.lock_outline_rounded,
+                            color: textMuted,
+                            size: 16,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
                               controller: passwordCtrl,
                               obscureText: !passwordVisible,
-                              style: const TextStyle(color: textWhite, fontSize: 12),
+                              style: const TextStyle(
+                                color: textWhite,
+                                fontSize: 12,
+                              ),
                               decoration: const InputDecoration(
                                 hintText: 'Escribe tu contraseña',
-                                hintStyle: TextStyle(color: textMuted, fontSize: 12),
+                                hintStyle: TextStyle(
+                                  color: textMuted,
+                                  fontSize: 12,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                               ),
@@ -1436,7 +1513,10 @@ class _UserScreenState extends State<UserScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancelar', style: TextStyle(color: textMuted)),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(color: textMuted),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: redAccent),
@@ -1464,13 +1544,18 @@ class _UserScreenState extends State<UserScreen> {
                       setState(() {
                         usuarios.remove(user);
                       });
-                      _mostrarMensaje(context, result['message']?.toString() ?? 'Usuario eliminado correctamente');
+                      _mostrarMensaje(
+                        context,
+                        result['message']?.toString() ??
+                            'Usuario eliminado correctamente',
+                      );
                       return;
                     }
 
                     _mostrarMensaje(
                       context,
-                      result['message']?.toString() ?? 'No se pudo eliminar el usuario.',
+                      result['message']?.toString() ??
+                          'No se pudo eliminar el usuario.',
                       error: true,
                     );
                   },
@@ -1501,10 +1586,7 @@ class _UserScreenState extends State<UserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: textMuted, fontSize: 11),
-        ),
+        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -1536,20 +1618,14 @@ class _UserScreenState extends State<UserScreen> {
                   style: const TextStyle(color: textWhite, fontSize: 12),
                   decoration: InputDecoration(
                     hintText: hintText,
-                    hintStyle: const TextStyle(
-                      color: textMuted,
-                      fontSize: 12,
-                    ),
+                    hintStyle: const TextStyle(color: textMuted, fontSize: 12),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
         ),
@@ -1567,10 +1643,7 @@ class _UserScreenState extends State<UserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: textMuted, fontSize: 11),
-        ),
+        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1609,7 +1682,10 @@ class _UserScreenState extends State<UserScreen> {
 
   String _formatPhoneNumber(String value) {
     final digits = value.replaceAll(RegExp(r'\D'), '');
-    final limited = digits.substring(0, digits.length > 10 ? 10 : digits.length);
+    final limited = digits.substring(
+      0,
+      digits.length > 10 ? 10 : digits.length,
+    );
 
     if (limited.length <= 3) {
       return limited.isEmpty ? '' : '(${limited.substring(0, limited.length)}';
@@ -1647,11 +1723,7 @@ class _UserScreenState extends State<UserScreen> {
 
   int? _resolveOficinaId(String oficina) {
     final normalized = oficina.trim();
-    const offices = {
-      'Reynosa': 1,
-      'Monterrey': 2,
-      'CDMX': 3,
-    };
+    const offices = {'Reynosa': 1, 'Monterrey': 2, 'CDMX': 3};
 
     return offices[normalized];
   }
@@ -1713,7 +1785,10 @@ class _UserScreenState extends State<UserScreen> {
               ),
               title: const Text(
                 'Confirmar edición',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1725,24 +1800,39 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D172A),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.lock_outline_rounded, color: textMuted, size: 16),
+                        const Icon(
+                          Icons.lock_outline_rounded,
+                          color: textMuted,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
                             controller: controller,
                             obscureText: !passwordVisible,
-                            style: const TextStyle(color: textWhite, fontSize: 12),
+                            style: const TextStyle(
+                              color: textWhite,
+                              fontSize: 12,
+                            ),
                             decoration: const InputDecoration(
                               hintText: 'Contraseña actual',
-                              hintStyle: TextStyle(color: textMuted, fontSize: 12),
+                              hintStyle: TextStyle(
+                                color: textMuted,
+                                fontSize: 12,
+                              ),
                               border: InputBorder.none,
                               isDense: true,
                             ),
@@ -1773,7 +1863,10 @@ class _UserScreenState extends State<UserScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancelar', style: TextStyle(color: textMuted)),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(color: textMuted),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: accentBlue),
@@ -1789,7 +1882,10 @@ class _UserScreenState extends State<UserScreen> {
                     }
                     Navigator.pop(dialogContext, pass);
                   },
-                  child: const Text('Continuar', style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Continuar',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -1959,12 +2055,16 @@ class UsuarioItem {
     final nombre = (map['name'] ?? map['nombre'] ?? 'Sin nombre').toString();
     final email = (map['email'] ?? '').toString();
     final login = (map['login'] ?? '').toString();
-    final numeroEmpleado = (map['numero_empleado'] ?? map['numEmpleado'] ?? '').toString();
-    final empresa = (map['empresa'] ?? map['company'] ?? 'Sin empresa').toString();
-    final oficina = (map['oficina'] ?? map['office'] ?? 'Sin oficina').toString();
+    final numeroEmpleado = (map['numero_empleado'] ?? map['numEmpleado'] ?? '')
+        .toString();
+    final empresa = (map['empresa'] ?? map['company'] ?? 'Sin empresa')
+        .toString();
+    final oficina = (map['oficina'] ?? map['office'] ?? 'Sin oficina')
+        .toString();
     final departamento = (map['departamento'] ?? 'Sin departamento').toString();
     final rol = (map['role'] ?? map['rol'] ?? 'usuario').toString();
-    final estado = ((map['active'] ?? map['estado']) == 'Y' ||
+    final estado =
+        ((map['active'] ?? map['estado']) == 'Y' ||
             (map['active'] ?? map['estado']) == true ||
             (map['estado'] ?? '').toString().toLowerCase() == 'activa')
         ? 'Activa'

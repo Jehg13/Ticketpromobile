@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/admin/ticketsadmin_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
+import '../../widgets/admin_notifications_dialog.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -671,13 +672,17 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 }
                                 final id = ticket.id;
                                 if (id == null) return;
-                                final messenger = ScaffoldMessenger.maybeOf(context);
-                                final dialogNavigator = Navigator.of(dialogContext);
+                                final messenger = ScaffoldMessenger.maybeOf(
+                                  context,
+                                );
+                                final dialogNavigator = Navigator.of(
+                                  dialogContext,
+                                );
                                 try {
                                   final String nombreFirmante =
                                       nombreUsuario.trim().isEmpty
-                                          ? 'Usuario'
-                                          : nombreUsuario;
+                                      ? 'Usuario'
+                                      : nombreUsuario;
 
                                   await _ticketsService.guardarSolucion(
                                     ticketId: id,
@@ -719,7 +724,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 if (mounted) setState(() {});
                                 messenger?.showSnackBar(
                                   const SnackBar(
-                                    content: Text('Solución guardada correctamente.'),
+                                    content: Text(
+                                      'Solución guardada correctamente.',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                   ),
                                 );
@@ -2580,7 +2587,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 ),
               ],
             ),
-            onPressed: () {},
+            onPressed: () {
+              showAdminNotificationsDialog(context);
+            },
           ),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),

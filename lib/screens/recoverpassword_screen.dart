@@ -1,11 +1,86 @@
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'resetpassword_screen.dart';
 
-class RecoverPasswordScreen extends StatelessWidget {
+class RecoverPasswordScreen extends StatefulWidget {
   const RecoverPasswordScreen({Key? key})
       : super(key: key ?? const Key('recover_password_screen'));
+
+  @override
+  State<RecoverPasswordScreen> createState() => _RecoverPasswordScreenState();
+}
+
+class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendRecoveryLink() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _showMessage(
+        'Ingresa un correo electrónico válido.',
+        isSuccess: false,
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final response = await ApiService.forgotPassword(email: email);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
+
+    if (response['success'] == true) {
+      _showMessage(
+        response['message']?.toString() ??
+            'Se envió el enlace de recuperación a tu correo.',
+        isSuccess: true,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordScreen(email: email),
+        ),
+      );
+      return;
+    }
+
+    _showMessage(
+      response['message']?.toString() ??
+          'No se pudo enviar el enlace de recuperación.',
+      isSuccess: false,
+    );
+  }
+
+  void _showMessage(String message, {required bool isSuccess}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isSuccess ? Colors.green.shade600 : Colors.red.shade600,
+          content: Text(message),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,11 +166,15 @@ class RecoverPasswordScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: _emailController,
+                        enabled: !_isSubmitting,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                         ),
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _sendRecoveryLink(),
                         decoration: InputDecoration(
                           hintText: 'correo@ejemplo.com',
                           hintStyle: const TextStyle(
@@ -133,23 +212,26 @@ class RecoverPasswordScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ResetPasswordScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.mail_outline,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                          label: const Text(
-                            'Enviar enlace de recuperación',
-                            style: TextStyle(
+                          onPressed: _isSubmitting ? null : _sendRecoveryLink,
+                          icon: _isSubmitting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.mail_outline,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                          label: Text(
+                            _isSubmitting
+                                ? 'Enviando...'
+                                : 'Enviar enlace de recuperación',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -167,15 +249,16 @@ class RecoverPasswordScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       Center(
                         child: InkWell(
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const LoginScreen(),
-                              ),
-                            );
-                          },
+                          onTap: _isSubmitting
+                              ? null
+                              : () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(

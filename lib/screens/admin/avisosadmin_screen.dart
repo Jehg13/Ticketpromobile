@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -104,34 +103,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     }
   }
 
-  IconData _iconoTipoAviso(String value) {
-    switch (value) {
-      case 'mantenimiento':
-        return Icons.build_rounded;
-      case 'incidente':
-        return Icons.warning_amber_rounded;
-      case 'informativo':
-        return Icons.info_outline_rounded;
-      case 'general':
-      default:
-        return Icons.notifications_active_outlined;
-    }
-  }
-
-  Color _colorTipoAviso(String value) {
-    switch (value) {
-      case 'mantenimiento':
-        return const Color(0xFFFF8A00);
-      case 'incidente':
-        return const Color(0xFFEF4444);
-      case 'informativo':
-        return const Color(0xFF3B82F6);
-      case 'general':
-      default:
-        return Colors.white70;
-    }
-  }
-
   String _importanciaApi(String value) {
     final normalized = value.trim().toLowerCase();
     switch (normalized) {
@@ -144,34 +115,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
       case 'normal':
       default:
         return 'normal';
-    }
-  }
-
-  IconData _iconoImportancia(String value) {
-    switch (value.toLowerCase()) {
-      case 'critica':
-        return Icons.priority_high_rounded;
-      case 'alta':
-        return Icons.warning_amber_rounded;
-      case 'media':
-        return Icons.flag_rounded;
-      case 'normal':
-      default:
-        return Icons.check_circle_rounded;
-    }
-  }
-
-  Color _colorImportancia(String value) {
-    switch (value.toLowerCase()) {
-      case 'critica':
-        return const Color(0xFFDC2626);
-      case 'alta':
-        return const Color(0xFFF97316);
-      case 'media':
-        return const Color(0xFFFACC15);
-      case 'normal':
-      default:
-        return const Color(0xFF22C55E);
     }
   }
 
@@ -206,22 +149,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     } catch (_) {
       _mostrarMensaje('No se pudo adjuntar el archivo.', isError: true);
     }
-  }
-
-  File? _archivoAdjuntoFile() {
-    if (_archivoAdjunto == null) return null;
-    final path = _archivoAdjunto!.path;
-    if (path == null || path.isEmpty) return null;
-    return File(path);
-  }
-
-  List<String> _parseAfectaA(String text) {
-    final clean = text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    return clean;
   }
 
   void _reiniciarSelecciones() {
@@ -838,8 +765,12 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        final color = isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
-        final icon = isError ? Icons.error_outline_rounded : Icons.check_circle_rounded;
+        final color = isError
+            ? const Color(0xFFEF4444)
+            : const Color(0xFF22C55E);
+        final icon = isError
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -957,22 +888,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     return 'Sin descripción.';
   }
 
-  String _normalizarImportancia(String value) {
-    final normalized = value.trim().toLowerCase();
-    switch (normalized) {
-      case 'critica':
-      case 'alta':
-        return 'alta';
-      case 'media':
-      case 'normal':
-        return 'media';
-      case 'baja':
-        return 'baja';
-      default:
-        return 'media';
-    }
-  }
-
   String _normalizarEstado(String value) {
     final normalized = value.trim().toLowerCase();
     if (normalized.contains('inactivo') ||
@@ -1010,8 +925,9 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     );
     if (value.isEmpty) return 'Activo';
     final lower = value.toLowerCase();
-    if (lower.contains('inactivo') || lower == '0' || lower == 'false')
+    if (lower.contains('inactivo') || lower == '0' || lower == 'false') {
       return 'Inactivo';
+    }
     return 'Activo';
   }
 
@@ -1112,12 +1028,15 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     final tipo = _textoSeguro(item['tipo'] ?? item['type'] ?? '').toLowerCase();
     if (tipo.contains('aviso') ||
         tipo.contains('warning') ||
-        tipo.contains('advertencia'))
+        tipo.contains('advertencia')) {
       return Icons.warning_amber_rounded;
-    if (tipo.contains('error') || tipo.contains('cancel'))
+    }
+    if (tipo.contains('error') || tipo.contains('cancel')) {
       return Icons.error_outline;
-    if (tipo.contains('success') || tipo.contains('solucion'))
+    }
+    if (tipo.contains('success') || tipo.contains('solucion')) {
       return Icons.check_circle_outline;
+    }
     if (tipo.contains('coment')) return Icons.comment_outlined;
     if (tipo.contains('ticket')) return Icons.confirmation_number_outlined;
     return Icons.notifications_none_rounded;
@@ -1127,12 +1046,15 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     final tipo = _textoSeguro(item['tipo'] ?? item['type'] ?? '').toLowerCase();
     if (tipo.contains('aviso') ||
         tipo.contains('warning') ||
-        tipo.contains('advertencia'))
+        tipo.contains('advertencia')) {
       return Colors.amber;
-    if (tipo.contains('error') || tipo.contains('cancel'))
+    }
+    if (tipo.contains('error') || tipo.contains('cancel')) {
       return Colors.redAccent;
-    if (tipo.contains('success') || tipo.contains('solucion'))
+    }
+    if (tipo.contains('success') || tipo.contains('solucion')) {
       return Colors.green;
+    }
     return Colors.blueAccent;
   }
 
@@ -2703,9 +2625,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     String editPrioridad = _prioridadAviso(item);
     final editFecha = TextEditingController(text: _fechaInicio(item));
     final editHora = TextEditingController(text: _horaInicio(item));
-    final editAplicaA = TextEditingController(
-      text: _textoSeguro(item['aplica_a']),
-    );
     final tipoActual = _textoSeguro(item['tipo']).isNotEmpty
         ? _textoSeguro(item['tipo']).toLowerCase()
         : 'informativo';

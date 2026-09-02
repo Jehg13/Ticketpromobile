@@ -1,30 +1,123 @@
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import 'login_screen.dart';
-import 'recoverpassword_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({Key? key})
-      : super(key: key ?? const Key('reset_password_screen'));
+  final String email;
+  final String token;
+
+  const ResetPasswordScreen({
+    Key? key,
+    this.email = '',
+    this.token = '',
+  }) : super(key: key ?? const Key('reset_password_screen'));
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final TextEditingController _emailController =
-      TextEditingController(text: 'jefehi13@gmail.com');
-  final TextEditingController _passwordController =
-      TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  late final TextEditingController _emailController;
+  late final TextEditingController _tokenController;
+  late final TextEditingController _passwordController;
+  late final TextEditingController _confirmPasswordController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.email);
+    _tokenController = TextEditingController(text: widget.token);
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
+    _tokenController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    final token = _tokenController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (email.isEmpty || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _showMessage('Ingresa un correo válido.', isSuccess: false);
+      return;
+    }
+
+    if (token.isEmpty) {
+      _showMessage('Pega el token que llegó a tu correo para continuar.', isSuccess: false);
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showMessage('Ingresa tu nueva contraseña.', isSuccess: false);
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showMessage('Las contraseñas no coinciden.', isSuccess: false);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final response = await ApiService.resetPassword(
+      email: email,
+      token: token,
+      password: password,
+      passwordConfirmation: confirmPassword,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
+
+    if (response['success'] == true) {
+      _showMessage(
+        response['message']?.toString() ?? 'Contraseña actualizada correctamente.',
+        isSuccess: true,
+      );
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
+    _showMessage(
+      response['message']?.toString() ?? 'No se pudo restablecer la contraseña.',
+      isSuccess: false,
+    );
+  }
+
+  void _showMessage(String message, {required bool isSuccess}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isSuccess ? Colors.green.shade600 : Colors.red.shade600,
+          content: Text(message),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
   }
 
   @override
@@ -178,14 +271,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _emailController,
-                        readOnly: true,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
                         ),
                         decoration: _buildInputDecoration(
-                          hintText: '',
+                          hintText: 'correo@ejemplo.com',
                           icon: Icons.mail_outline,
+                          inputBorderColor: inputBorderColor,
+                          textColorMuted: textColorMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('TOKEN DE RECUPERACIÓN'),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _tokenController,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Pega el token del enlace recibido',
+                          icon: Icons.key_rounded,
                           inputBorderColor: inputBorderColor,
                           textColorMuted: textColorMuted,
                         ),
@@ -247,21 +355,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            _buildRequirementItem(
-                              'Mínimo 8 caracteres',
-                            ),
-                            _buildRequirementItem(
-                              'Una letra mayúscula',
-                            ),
-                            _buildRequirementItem(
-                              'Una letra minúscula',
-                            ),
-                            _buildRequirementItem(
-                              'Un número',
-                            ),
-                            _buildRequirementItem(
-                              'Un símbolo especial (! @ # \$ % &)',
-                            ),
+                            _buildRequirementItem('Mínimo 8 caracteres'),
+                            _buildRequirementItem('Una letra mayúscula'),
+                            _buildRequirementItem('Una letra minúscula'),
+                            _buildRequirementItem('Un número'),
+                            _buildRequirementItem('Un símbolo especial (! @ # \$ % &)'),
                           ],
                         ),
                       ),
@@ -270,23 +368,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         width: double.infinity,
                         height: 46,
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RecoverPasswordScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.check,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                          label: const Text(
-                            'Restablecer contraseña',
-                            style: TextStyle(
+                          onPressed: _isSubmitting ? null : _resetPassword,
+                          icon: _isSubmitting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.check,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                          label: Text(
+                            _isSubmitting ? 'Actualizando...' : 'Restablecer contraseña',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -307,15 +406,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       const SizedBox(height: 16),
                       Center(
                         child: InkWell(
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const LoginScreen(),
-                              ),
-                            );
-                          },
+                          onTap: _isSubmitting
+                              ? null
+                              : () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
@@ -386,7 +486,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(
-        color: textColorMuted.withOpacity(0.6),
+        color: textColorMuted.withValues(alpha: 0.6),
         fontSize: 13,
       ),
       prefixIcon: Icon(
