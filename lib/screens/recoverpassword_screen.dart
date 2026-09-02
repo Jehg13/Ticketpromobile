@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../widgets/auth_background.dart';
 import 'login_screen.dart';
 import 'resetpassword_screen.dart';
 
@@ -95,9 +96,10 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
+      body: AuthBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 20,
               vertical: 24,
@@ -292,14 +294,15 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                 ),
                 const SizedBox(height: 32),
                 const Text(
-                  '© 2026 TicketPro. Todos los derechos reservados.',
+                  '© 2026 Cymez. Todos los derechos reservados.',
                   style: TextStyle(
-                    color: Color(0xFF475569),
+                    color: Colors.white,
                     fontSize: 11,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
+            ),
             ),
           ),
         ),

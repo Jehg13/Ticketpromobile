@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../widgets/auth_background.dart';
 import 'login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -135,9 +136,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
+      body: AuthBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 20.0,
               vertical: 24.0,
@@ -449,15 +451,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  '© 2026 TicketPro\nEste proceso está protegido y es confidencial.',
+                  '© 2026 Cymez. Todos los derechos reservados.\nEste proceso está protegido y es confidencial.',
                   style: TextStyle(
-                    color: textColorMuted,
+                    color: Colors.white,
                     fontSize: 11,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
+            ),
             ),
           ),
         ),

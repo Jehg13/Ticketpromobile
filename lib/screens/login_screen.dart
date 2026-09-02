@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../services/session_service.dart';
 import 'admin/home_screen.dart';
 import 'user/home_screen.dart';
@@ -111,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
         token: token,
         user: usuarioDatos,
       );
+      await NotificationService.initialize();
 
       if (!mounted) return;
 
@@ -478,10 +480,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                           : 17,
                                 ),
                                 const Text(
-                                  '© 2026 Cymez',
+                                  '© 2026 Cymez. Todos los derechos reservados.',
                                   style: TextStyle(
-                                    color:
-                                        Colors.white30,
+                                    color: Colors.white,
                                     fontSize: 10,
                                     fontWeight:
                                         FontWeight.w400,

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../../services/admin/indexadmin_services.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import '../../widgets/loading_screen.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
@@ -516,38 +517,7 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: AdminScreen.primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 14,
-                      minHeight: 14,
-                    ),
-                    child: Text(
-                      _intValue([
-                        _dashboard['notificacionesNoLeidas'],
-                      ]).toString(),
-                      style: TextStyle(color: Colors.white, fontSize: 9),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {
-              showAdminNotificationsDialog(context);
-            },
-          ),
+          const AdminNotificationBell(),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
@@ -1429,7 +1399,7 @@ class CustomSidebar extends StatelessWidget {
     bool isExit = false,
     VoidCallback? onTap,
   }) {
-    return Container(
+    final item = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: selected ? AdminScreen.primaryBlue : Colors.transparent,
@@ -1456,6 +1426,10 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
     );
+    if (title == 'Cambios' || title == 'Usuarios') {
+      return AdminOnlyDrawerItem(child: item);
+    }
+    return item;
   }
 }
 

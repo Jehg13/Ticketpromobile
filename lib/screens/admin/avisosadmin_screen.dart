@@ -8,6 +8,7 @@ import '../../services/admin/avisosadmin_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
+import '../../widgets/admin_notification_bell.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -1107,40 +1108,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                if (notificacionesNoLeidas > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: AdminScreen.primaryBlue,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 14,
-                        minHeight: 14,
-                      ),
-                      child: Text(
-                        notificacionesNoLeidas > 99
-                            ? '99+'
-                            : '$notificacionesNoLeidas',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: _abrirNotificaciones,
-          ),
+          AdminNotificationBell(onPressed: _abrirNotificaciones),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),

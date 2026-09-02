@@ -9,7 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/admin/ticketsadmin_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -145,7 +146,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
       'created_at': '${ticket.date} ${ticket.time}',
       'tomado_por': ticket.assignedTo == 'Sin asignar'
           ? null
-          : {'name': ticket.assignedTo, 'departamento': ticket.assignedRole},
+          : {
+              'name': ticket.assignedTo,
+              'departamento': ticket.assignedRole,
+              'picture': ticket.assignedPhoto,
+            },
     };
   }
 
@@ -241,6 +246,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
       tomadoPor?['correo'],
       fallback: 'Sin correo',
     );
+    final String fotoTecnico = _string(
+      tomadoPor?['picture'] ?? tomadoPor?['foto'] ?? tomadoPor?['foto_perfil'],
+      null,
+      fallback: '',
+    );
     final List<Map<String, dynamic>> comentarios = _convertirMapas(
       ticket['historial_comentarios'] ?? ticket['comentarios'],
     );
@@ -319,7 +329,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           infoAdicional,
                         ),
                         const SizedBox(height: 18),
-                        _buildTechnicianSection(nombreTecnico, correoTecnico),
+                        _buildTechnicianSection(
+                          nombreTecnico,
+                          correoTecnico,
+                          foto: fotoTecnico,
+                        ),
                         const SizedBox(height: 18),
                         _buildEvidenceSection(
                           'Evidencia proporcionada',
@@ -384,9 +398,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                       Map<String, dynamic>.from(comentario),
                                     );
                                   }
-                                  _mostrarSuccess(
-                                    'Mensaje enviado correctamente.',
-                                  );
                                   _mensajeController.clear();
                                   _archivoComentarioPath = null;
                                   _archivoComentarioNombre = null;
@@ -526,6 +537,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
       technician?['correo'],
       fallback: 'Sin correo',
     );
+    final String fotoTecnico = _string(
+      technician?['picture'] ??
+          technician?['foto'] ??
+          technician?['foto_perfil'],
+      null,
+      fallback: '',
+    );
     final String conformidad = _string(
       solution['conformidad'],
       detalle['conformidad'] ?? detalle['usuario_conformidad'],
@@ -643,6 +661,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           tomadoPor,
                           correoTecnico,
                           label: 'Tomado por',
+                          foto: fotoTecnico,
                         ),
                         if (puedeEditar) ...[
                           const SizedBox(height: 20),
@@ -1577,6 +1596,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     String nombre,
     String correo, {
     String label = 'Técnico',
+    String foto = '',
   }) {
     return _solutionCard(
       title: 'Técnico asignado',
@@ -1584,6 +1604,25 @@ class _TicketsScreenState extends State<TicketsScreen> {
       iconColor: const Color(0xFF60A5FA),
       child: Column(
         children: [
+          Row(
+            children: [
+              _buildProfileImage(foto, radius: 25),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           _solutionDetailRow(label, nombre),
           _solutionDetailRow('Correo', correo, last: true),
         ],
@@ -2561,36 +2600,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 14,
-                      minHeight: 14,
-                    ),
-                    child: const Text(
-                      '2',
-                      style: TextStyle(color: Colors.white, fontSize: 9),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {
-              showAdminNotificationsDialog(context);
-            },
-          ),
+          const AdminNotificationBell(),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
@@ -2962,6 +2972,7 @@ class TicketItem {
   final String status;
   final String assignedTo;
   final String assignedRole;
+  final String assignedPhoto;
   final String date;
   final String time;
   final String description;
@@ -2976,6 +2987,7 @@ class TicketItem {
     required this.status,
     required this.assignedTo,
     required this.assignedRole,
+    this.assignedPhoto = '',
     required this.date,
     required this.time,
     this.description = '',
@@ -3023,6 +3035,11 @@ class TicketItem {
       assignedName,
       fallback: 'Sin asignar',
     );
+    final String assignedPhoto = textValue(
+      assignedMap?['picture'] ??
+          assignedMap?['foto'] ??
+          assignedMap?['foto_perfil'],
+    );
     return TicketItem(
       id: int.tryParse((map['id'] ?? '').toString()),
       folio: textValue(map['folio'], fallback: 'Sin folio'),
@@ -3035,6 +3052,7 @@ class TicketItem {
       status: textValue(map['estado'], fallback: 'No especificado'),
       assignedTo: assignedText,
       assignedRole: departmentText,
+      assignedPhoto: assignedPhoto,
       date: date == null
           ? 'Sin fecha'
           : '${date.day}/${date.month}/${date.year}',
@@ -3167,14 +3185,7 @@ class TicketCard extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        const CircleAvatar(
-                          radius: 10,
-                          backgroundColor: Color(0xFF3B82F6),
-                          child: Text(
-                            'US',
-                            style: TextStyle(color: Colors.white, fontSize: 8),
-                          ),
-                        ),
+                        _assignedPhoto(),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Column(
@@ -3312,6 +3323,32 @@ class TicketCard extends StatelessWidget {
           color: text,
           fontSize: 10,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _assignedPhoto() {
+    final path = ticket.assignedPhoto.trim();
+    if (path.isEmpty) {
+      return const CircleAvatar(
+        radius: 10,
+        backgroundColor: Color(0xFF3B82F6),
+        child: Text('US', style: TextStyle(color: Colors.white, fontSize: 8)),
+      );
+    }
+
+    final imageUrl = ApiService.profileImageUrl(path);
+    return ClipOval(
+      child: Image.network(
+        imageUrl,
+        width: 20,
+        height: 20,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          radius: 10,
+          backgroundColor: Color(0xFF3B82F6),
+          child: Text('US', style: TextStyle(color: Colors.white, fontSize: 8)),
         ),
       ),
     );
@@ -3489,33 +3526,37 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
             },
           ),
-          _drawerItem(
-            context,
-            Icons.published_with_changes_rounded,
-            'Cambios',
-            selected: activeMenu == 'Cambios',
-            onTap: () {
-              Navigator.pop(context);
-              navigateWithLoading(
-                context,
-                const CambiosScreen(),
-                mensaje: 'Cargando cambios...',
-              );
-            },
+          AdminOnlyDrawerItem(
+            child: _drawerItem(
+              context,
+              Icons.published_with_changes_rounded,
+              'Cambios',
+              selected: activeMenu == 'Cambios',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(
+                  context,
+                  const CambiosScreen(),
+                  mensaje: 'Cargando cambios...',
+                );
+              },
+            ),
           ),
-          _drawerItem(
-            context,
-            Icons.people_outline,
-            'Usuarios',
-            selected: activeMenu == 'Usuarios',
-            onTap: () {
-              Navigator.pop(context);
-              navigateWithLoading(
-                context,
-                const UserScreen(),
-                mensaje: 'Cargando usuarios...',
-              );
-            },
+          AdminOnlyDrawerItem(
+            child: _drawerItem(
+              context,
+              Icons.people_outline,
+              'Usuarios',
+              selected: activeMenu == 'Usuarios',
+              onTap: () {
+                Navigator.pop(context);
+                navigateWithLoading(
+                  context,
+                  const UserScreen(),
+                  mensaje: 'Cargando usuarios...',
+                );
+              },
+            ),
           ),
           _drawerItem(
             context,

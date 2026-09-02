@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../services/notification_service.dart';
 import '../services/session_service.dart';
 import 'admin/home_screen.dart';
 import 'user/home_screen.dart';
@@ -135,6 +136,12 @@ Future<void> _verificarSesion() async {
     if (!mounted) return;
 
     if (tieneSesion) {
+      // The initial Firebase setup runs before authentication; retry token
+      // registration now that the stored Sanctum session is available.
+      await NotificationService.initialize();
+
+      if (!mounted) return;
+
       final role = (await SessionService.getRole() ?? '')
           .toLowerCase()
           .replaceAll('á', 'a')

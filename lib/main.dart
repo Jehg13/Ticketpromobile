@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'screens/splash_screen.dart';
 import 'services/deep_link_service.dart';
+import 'services/notification_service.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initialize();
 
   final deepLinkService = DeepLinkService(appNavigatorKey);
   await deepLinkService.initialize();
@@ -28,7 +30,7 @@ class TicketProMobile extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TicketProMobile',
+      title: 'TicketPro',
       navigatorKey: appNavigatorKey,
       theme: ThemeData(
         brightness: Brightness.dark,

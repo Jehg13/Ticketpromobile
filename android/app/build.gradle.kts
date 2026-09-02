@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
 
     // Flutter Gradle Plugin
     // debe aplicarse después de Android y Kotlin

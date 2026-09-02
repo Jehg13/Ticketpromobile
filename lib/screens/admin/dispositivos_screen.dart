@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'home_screen.dart';
@@ -304,40 +304,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
           ],
         ),
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.white),
-                onPressed: () {
-                  showAdminNotificationsDialog(context);
-                },
-              ),
-              Positioned(
-                right: 8,
-                top: 10,
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 15,
-                    minHeight: 15,
-                  ),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF4F46E5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '2',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const AdminNotificationBell(),
           const Padding(
             padding: EdgeInsets.only(right: 16, left: 4),
             child: AdminProfileMenu(radius: 16),

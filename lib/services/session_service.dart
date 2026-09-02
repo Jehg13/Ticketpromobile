@@ -149,6 +149,16 @@ class SessionService {
     return await _storage.read(key: pictureKey);
   }
 
+  static Future<bool> canManageUsersAndChanges() async {
+    final role = (await getRole() ?? '').trim().toLowerCase();
+    final privAdmin = (await getPrivAdmin() ?? '').trim().toLowerCase();
+    final hasAdminPermission =
+        privAdmin == 'y' || privAdmin == 'yes' || privAdmin == 'true' ||
+        privAdmin == '1';
+
+    return role == 'gerente ti' && hasAdminPermission;
+  }
+
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
   }

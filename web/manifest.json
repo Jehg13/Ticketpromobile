@@ -1,6 +1,6 @@
 {
-    "name": "ticketpromobile",
-    "short_name": "ticketpromobile",
+    "name": "TicketPro",
+    "short_name": "TicketPro",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

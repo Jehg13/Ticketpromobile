@@ -6,7 +6,7 @@ import '../../services/api_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../services/admin/perfiladmin_service.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -97,12 +97,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.grey),
-                onPressed: () {
-                  showAdminNotificationsDialog(context);
-                },
-              ),
+              const AdminNotificationBell(),
               Positioned(
                 right: 10,
                 top: 12,

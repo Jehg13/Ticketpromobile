@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin/cambios_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
 import 'avisosadmin_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -476,12 +476,7 @@ class _CambiosScreenState extends State<CambiosScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {
-              showAdminNotificationsDialog(context);
-            },
-          ),
+          const AdminNotificationBell(),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),

@@ -247,10 +247,9 @@ class AboutScreen extends StatelessWidget {
                             const SizedBox(height: 26),
                             Center(
                               child: Text(
-                                '© 2026 Cymez',
+                                '© 2026 Cymez. Todos los derechos reservados.',
                                 style: TextStyle(
-                                  color:
-                                      Colors.white.withValues(alpha: 0.32),
+                                  color: Colors.white,
                                   fontSize: 10,
                                   fontWeight:
                                       FontWeight.w400,

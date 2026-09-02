@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../services/admin/users_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
-import '../../widgets/admin_notifications_dialog.dart';
+import '../../widgets/admin_notification_bell.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -183,36 +183,7 @@ class _UserScreenState extends State<UserScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 14,
-                      minHeight: 14,
-                    ),
-                    child: const Text(
-                      '2',
-                      style: TextStyle(color: Colors.white, fontSize: 9),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {
-              showAdminNotificationsDialog(context);
-            },
-          ),
+          const AdminNotificationBell(),
           const SizedBox(width: 8),
           const AdminProfileMenu(radius: 16),
           const SizedBox(width: 12),
