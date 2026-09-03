@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/admin/ticketsadmin_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
@@ -3460,45 +3461,51 @@ class CustomSidebar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Color(0xFF4F46E5),
-                        child: Text(
-                          'JH',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: SessionService.getUser(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data ?? {};
+                    final name = (user['name'] ?? 'Administrador').toString();
+                    final role = (user['role'] ?? 'Admin').toString();
+
+                    return Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Gerente Ti',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
+                          const TicketsAdminAvatar(radius: 16),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name.isNotEmpty ? name : 'Administrador',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  role.isNotEmpty ? role : 'Admin',
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -3649,6 +3656,50 @@ class CustomSidebar extends StatelessWidget {
           onTap: onTap,
         ),
       ),
+    );
+  }
+}
+
+class TicketsAdminAvatar extends StatelessWidget {
+  const TicketsAdminAvatar({super.key, this.radius = 16});
+
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final picture = snapshot.data?['picture']?.toString().trim() ?? '';
+        final isDefault = SessionService.isDefaultProfilePicture(picture);
+        final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
+
+        return CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFF4F46E5),
+          child: ClipOval(
+            child: !isDefault && imageUrl.isNotEmpty
+                ? Image.network(
+                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Image.asset(
+                      'assets/images/user.png',
+                      width: radius * 2,
+                      height: radius * 2,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(
+                    'assets/images/user.png',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        );
+      },
     );
   }
 }
