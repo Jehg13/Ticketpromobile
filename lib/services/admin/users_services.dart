@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../api_service.dart';
+import '../../utils/password_hasher.dart';
 
 class UsersService {
   // ============================================================
@@ -387,8 +388,7 @@ class UsersService {
   //   La columna de la base de datos se llama "pswd".
   //
   //   Flutter envía "password".
-  //   Laravel se encarga de guardar ese valor
-  //   en users.pswd utilizando Hash::make().
+  //   La API guarda ese valor MD5 en users.pswd.
   //
   // ============================================================
 
@@ -457,11 +457,13 @@ class UsersService {
         'priv_admin': _normalizarEstadoApi(privAdmin),
         'oficina_id': oficinaId,
         'departamento': departamento?.trim() ?? '',
-        'current_password': currentPassword?.trim() ?? '',
+        'current_password': currentPassword == null
+            ? ''
+            : PasswordHasher.md5(currentPassword),
       };
 
       if (password != null && password.trim().isNotEmpty) {
-        body['password'] = password.trim();
+        body['password'] = PasswordHasher.md5(password.trim());
       }
 
       final response = await http.put(
@@ -575,7 +577,7 @@ class UsersService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({'password': password.trim()}),
+        body: jsonEncode({'password': PasswordHasher.md5(password.trim())}),
       );
 
       final responseData = _decodeResponse(response);

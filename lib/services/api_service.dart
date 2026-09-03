@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../utils/password_hasher.dart';
+
 class ApiService {
   // ============================================================
   // URLS
@@ -309,8 +311,8 @@ static const String serverUrl = 'http://127.0.0.1:8000';
         body: jsonEncode({
           'email': cleanEmail,
           'token': cleanToken,
-          'password': cleanPassword,
-          'password_confirmation': cleanConfirmation,
+          'password': PasswordHasher.md5(cleanPassword),
+          'password_confirmation': PasswordHasher.md5(cleanConfirmation),
         }),
       );
 
@@ -350,7 +352,7 @@ static const String serverUrl = 'http://127.0.0.1:8000';
         },
         body: jsonEncode({
           'usuario': usuario.trim(),
-          'password': password,
+          'password': PasswordHasher.md5(password),
           'remember': remember,
         }),
       );

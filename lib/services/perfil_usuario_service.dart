@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
 import 'session_service.dart';
+import '../utils/password_hasher.dart';
 
 class PerfilUsuarioService {
   static Future<Map<String, dynamic>> obtenerPerfil() async {
@@ -86,9 +87,9 @@ class PerfilUsuarioService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'password_actual': passwordActual,
-          'password': nuevaPassword,
-          'password_confirmation': confirmPassword.trim(),
+          'password_actual': PasswordHasher.md5(passwordActual),
+          'password': PasswordHasher.md5(nuevaPassword),
+          'password_confirmation': PasswordHasher.md5(confirmPassword.trim()),
         }),
       );
 
