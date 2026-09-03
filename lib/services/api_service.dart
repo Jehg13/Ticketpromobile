@@ -19,8 +19,7 @@ class ApiService {
   //
   static const String fileUrl = '$serverUrl/archivo';
 
-  static const FlutterSecureStorage storage =
-      FlutterSecureStorage();
+  static const FlutterSecureStorage storage = FlutterSecureStorage();
 
   // ============================================================
   // ARCHIVOS / IMÁGENES
@@ -49,8 +48,7 @@ class ApiService {
 
     // Si Laravel ya devuelve una URL completa,
     // no hacemos ninguna modificación.
-    if (cleanPath.startsWith('http://') ||
-        cleanPath.startsWith('https://')) {
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
       final uri = Uri.tryParse(cleanPath);
       if (uri != null && uri.path.contains('/storage/')) {
         cleanPath = uri.path.substring(uri.path.indexOf('/storage/') + 9);
@@ -60,10 +58,7 @@ class ApiService {
     }
 
     // Elimina / iniciales.
-    cleanPath = cleanPath.replaceFirst(
-      RegExp(r'^/+'),
-      '',
-    );
+    cleanPath = cleanPath.replaceFirst(RegExp(r'^/+'), '');
 
     // Si por alguna razón viene como:
     // storage/profile-photos/foto.jpg
@@ -71,9 +66,7 @@ class ApiService {
     // lo convertimos a:
     // profile-photos/foto.jpg
     if (cleanPath.startsWith('storage/')) {
-      cleanPath = cleanPath.substring(
-        'storage/'.length,
-      );
+      cleanPath = cleanPath.substring('storage/'.length);
     }
 
     // Si viene como:
@@ -81,9 +74,7 @@ class ApiService {
     //
     // eliminamos api/.
     if (cleanPath.startsWith('api/')) {
-      cleanPath = cleanPath.substring(
-        'api/'.length,
-      );
+      cleanPath = cleanPath.substring('api/'.length);
     }
 
     return '$fileUrl/$cleanPath';
@@ -156,10 +147,7 @@ class ApiService {
         final String? token = data['token']?.toString();
 
         if (token != null && token.isNotEmpty) {
-          await storage.write(
-            key: 'auth_token',
-            value: token,
-          );
+          await storage.write(key: 'auth_token', value: token);
         }
 
         final user = data['user'] ?? data['usuario'];
@@ -195,9 +183,7 @@ class ApiService {
   // GUARDAR USUARIO
   // ============================================================
 
-  static Future<void> _guardarUsuario(
-    Map<String, dynamic> user,
-  ) async {
+  static Future<void> _guardarUsuario(Map<String, dynamic> user) async {
     await storage.write(
       key: 'user_login',
       value: user['login']?.toString() ?? '',
@@ -228,10 +214,7 @@ class ApiService {
       value: user['active']?.toString() ?? 'N',
     );
 
-    await storage.write(
-      key: 'user_mfa',
-      value: user['mfa']?.toString() ?? 'N',
-    );
+    await storage.write(key: 'user_mfa', value: user['mfa']?.toString() ?? 'N');
 
     await storage.write(
       key: 'user_empresa',
@@ -254,7 +237,8 @@ class ApiService {
     );
     await storage.write(
       key: 'user_picture',
-      value: (user['picture'] ?? user['foto'] ?? user['foto_perfil'])
+      value:
+          (user['picture'] ?? user['foto'] ?? user['foto_perfil'])
               ?.toString() ??
           '',
     );
@@ -265,9 +249,7 @@ class ApiService {
   // ============================================================
 
   static Future<String?> getToken() async {
-    return await storage.read(
-      key: 'auth_token',
-    );
+    return await storage.read(key: 'auth_token');
   }
 
   // ============================================================
@@ -279,20 +261,13 @@ class ApiService {
     final email = await storage.read(key: 'user_email');
     final name = await storage.read(key: 'user_name');
     final role = await storage.read(key: 'user_role');
-    final privAdmin =
-        await storage.read(key: 'user_priv_admin');
-    final active =
-        await storage.read(key: 'user_active');
-    final mfa =
-        await storage.read(key: 'user_mfa');
-    final empresa =
-        await storage.read(key: 'user_empresa');
-    final departamento =
-        await storage.read(key: 'user_departamento');
-    final oficina =
-        await storage.read(key: 'user_oficina');
-    final numeroEmpleado =
-        await storage.read(key: 'user_numero_empleado');
+    final privAdmin = await storage.read(key: 'user_priv_admin');
+    final active = await storage.read(key: 'user_active');
+    final mfa = await storage.read(key: 'user_mfa');
+    final empresa = await storage.read(key: 'user_empresa');
+    final departamento = await storage.read(key: 'user_departamento');
+    final oficina = await storage.read(key: 'user_oficina');
+    final numeroEmpleado = await storage.read(key: 'user_numero_empleado');
     final picture = await storage.read(key: 'user_picture');
 
     if (login == null &&
@@ -327,13 +302,9 @@ class ApiService {
   // ============================================================
 
   static Future<bool> isAdmin() async {
-    final role = await storage.read(
-      key: 'user_role',
-    );
+    final role = await storage.read(key: 'user_role');
 
-    final privAdmin = await storage.read(
-      key: 'user_priv_admin',
-    );
+    final privAdmin = await storage.read(key: 'user_priv_admin');
 
     final rolNormalizado = role
         ?.trim()
@@ -345,11 +316,9 @@ class ApiService {
         .replaceAll('ú', 'u');
 
     final bool rolPermitido =
-        rolNormalizado == 'gerente ti' ||
-        rolNormalizado == 'soporte tecnico';
+        rolNormalizado == 'gerente ti' || rolNormalizado == 'soporte tecnico';
 
-    return rolPermitido &&
-        privAdmin?.trim().toUpperCase() == 'Y';
+    return rolPermitido && privAdmin?.trim().toUpperCase() == 'Y';
   }
 
   // ============================================================
@@ -371,57 +340,39 @@ class ApiService {
   // ============================================================
 
   static Future<String?> getLogin() async {
-    return await storage.read(
-      key: 'user_login',
-    );
+    return await storage.read(key: 'user_login');
   }
 
   static Future<String?> getEmail() async {
-    return await storage.read(
-      key: 'user_email',
-    );
+    return await storage.read(key: 'user_email');
   }
 
   static Future<String?> getNombre() async {
-    return await storage.read(
-      key: 'user_name',
-    );
+    return await storage.read(key: 'user_name');
   }
 
   static Future<String?> getRol() async {
-    return await storage.read(
-      key: 'user_role',
-    );
+    return await storage.read(key: 'user_role');
   }
 
   static Future<String?> getPrivAdmin() async {
-    return await storage.read(
-      key: 'user_priv_admin',
-    );
+    return await storage.read(key: 'user_priv_admin');
   }
 
   static Future<String?> getEmpresa() async {
-    return await storage.read(
-      key: 'user_empresa',
-    );
+    return await storage.read(key: 'user_empresa');
   }
 
   static Future<String?> getDepartamento() async {
-    return await storage.read(
-      key: 'user_departamento',
-    );
+    return await storage.read(key: 'user_departamento');
   }
 
   static Future<String?> getOficina() async {
-    return await storage.read(
-      key: 'user_oficina',
-    );
+    return await storage.read(key: 'user_oficina');
   }
 
   static Future<String?> getNumeroEmpleado() async {
-    return await storage.read(
-      key: 'user_numero_empleado',
-    );
+    return await storage.read(key: 'user_numero_empleado');
   }
 
   // ============================================================
@@ -436,10 +387,7 @@ class ApiService {
         'statusCode': 401,
         'success': false,
         'message': 'No hay una sesión activa.',
-        'data': {
-          'success': false,
-          'message': 'No hay una sesión activa.',
-        },
+        'data': {'success': false, 'message': 'No hay una sesión activa.'},
       };
     }
 
@@ -457,8 +405,7 @@ class ApiService {
       if (response.statusCode == 200 &&
           data['success'] == true &&
           data['user'] is Map<String, dynamic>) {
-        final user =
-            data['user'] as Map<String, dynamic>;
+        final user = data['user'] as Map<String, dynamic>;
 
         await _guardarUsuario(user);
       }
@@ -499,10 +446,7 @@ class ApiService {
         'statusCode': 401,
         'success': false,
         'message': 'No hay una sesión activa.',
-        'data': {
-          'success': false,
-          'message': 'No hay una sesión activa.',
-        },
+        'data': {'success': false, 'message': 'No hay una sesión activa.'},
       };
     }
 

@@ -1928,10 +1928,62 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
           ticket['solucion_at'] ??
           ticket['resolved_at'],
     );
-    final String nombreFirmante = _string(
+    final dynamic solucionadoPorUsuario =
+        sMap?['solucionado_por_usuario'] ??
+        ticket['solucionado_por_usuario'] ??
+        ((ticket['solucion'] is Map)
+            ? ticket['solucion']['solucionado_por_usuario']
+            : null);
+
+    String nombreFirmanteReal = '';
+    if (solucionadoPorUsuario is Map &&
+        solucionadoPorUsuario['name'] != null &&
+        solucionadoPorUsuario['name'].toString().trim().isNotEmpty) {
+      nombreFirmanteReal = solucionadoPorUsuario['name'].toString().trim();
+    }
+
+    final dynamic sSolucionadoPor = sMap?['solucionado_por'];
+    if (sSolucionadoPor is Map &&
+        sSolucionadoPor['name'] != null &&
+        sSolucionadoPor['name'].toString().trim().isNotEmpty) {
+      nombreFirmanteReal = sSolucionadoPor['name'].toString().trim();
+    } else if (sSolucionadoPor != null &&
+        sSolucionadoPor.toString().trim().isNotEmpty &&
+        nombreFirmanteReal.isEmpty) {
+      nombreFirmanteReal = sSolucionadoPor.toString().trim();
+    }
+
+    final dynamic tSolucionadoPor = ticket['solucionado_por'];
+    if (tSolucionadoPor is Map &&
+        tSolucionadoPor['name'] != null &&
+        tSolucionadoPor['name'].toString().trim().isNotEmpty) {
+      nombreFirmanteReal = tSolucionadoPor['name'].toString().trim();
+    } else if (tSolucionadoPor != null &&
+        tSolucionadoPor.toString().trim().isNotEmpty &&
+        nombreFirmanteReal.isEmpty) {
+      nombreFirmanteReal = tSolucionadoPor.toString().trim();
+    }
+
+    final dynamic usuarioTicket =
+        ticket['user'] ??
+        ticket['usuario'] ??
+        ticket['levantado_por'] ??
+        ticket['usuario_ticket'];
+
+    final String nombreCreadorTicket = _string(
+      usuarioTicket is Map ? usuarioTicket['name'] : null,
+      usuarioTicket is Map ? usuarioTicket['nombre'] : null,
+      fallback: '',
+    );
+
+    final String nombreFirmanteRaw = _string(
       sMap?['nombre_firmante'],
       ticket['nombre_firmante'],
-      fallback: 'No especificado',
+      fallback: '',
+    );
+    final String nombreFirmante = _normalizarNombreFirmante(
+      nombreFirmanteRaw,
+      nombreCreadorTicket.isNotEmpty ? nombreCreadorTicket : nombreFirmanteReal,
     );
     final String fechaFirma = _formatearFecha(
       sMap?['fecha_firma'] ?? ticket['fecha_firma'],
@@ -2403,7 +2455,6 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _solutionDetailRow('Firmante', nombreFirmante),
           _solutionDetailRow(
             'Fecha de firma',
             fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
@@ -2797,6 +2848,39 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
+  }
+
+  String _normalizarNombreFirmante(String valor, String fallback) {
+    final String limpio = valor.trim();
+    if (limpio.isEmpty) {
+      return fallback.isNotEmpty ? fallback : 'No especificado';
+    }
+
+    final String normalizado = limpio.toLowerCase();
+    final List<String> nombresDeDepartamento = [
+      'administracion',
+      'administración',
+      'departamento',
+      'tecnologias',
+      'tecnología',
+      'ventas',
+      'recursos humanos',
+      'soporte',
+      'atención',
+      'gerencia',
+    ];
+
+    final bool esDepartamento = nombresDeDepartamento.any(
+      (departamento) =>
+          normalizado == departamento ||
+          normalizado.contains(departamento),
+    );
+
+    if (esDepartamento) {
+      return fallback.isNotEmpty ? fallback : 'No especificado';
+    }
+
+    return limpio;
   }
 
   String _string(dynamic value, dynamic secondValue, {String fallback = ''}) {

@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/admin/perfiladmin_service.dart';
 import '../../services/session_service.dart';
 import 'avisosadmin_screen.dart';
 import 'backup_screen.dart';
@@ -22,24 +26,41 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final Color primaryGradientStart = const Color(0xFF2563EB);
   final Color primaryGradientEnd = const Color(0xFF4F46E5);
 
-  final TextEditingController _nombreController =
-      TextEditingController(text: 'Jesus Hinojosa');
-  final TextEditingController _usuarioController =
-      TextEditingController(text: 'jhinojosa');
-  final TextEditingController _correoController =
-      TextEditingController(text: 'jefehi13@gmail.com');
-  final TextEditingController _telefonoController =
-      TextEditingController(text: '8951235410');
-  final TextEditingController _cymezController =
-      TextEditingController(text: 'Cymez');
-  final TextEditingController _departamentoController =
-      TextEditingController(text: 'Tecnologias');
-  final TextEditingController _rolController =
-      TextEditingController(text: 'Gerente Ti');
-  final TextEditingController _oficinaController =
-      TextEditingController(text: 'Reynosa');
-  final TextEditingController _numEmpleadoController =
-      TextEditingController(text: '256070');
+  final TextEditingController _nombreController = TextEditingController(
+    text: 'Jesus Hinojosa',
+  );
+  final TextEditingController _usuarioController = TextEditingController(
+    text: 'jhinojosa',
+  );
+  final TextEditingController _correoController = TextEditingController(
+    text: 'jefehi13@gmail.com',
+  );
+  final TextEditingController _telefonoController = TextEditingController(
+    text: '8951235410',
+  );
+  final TextEditingController _cymezController = TextEditingController(
+    text: 'Cymez',
+  );
+  final TextEditingController _departamentoController = TextEditingController(
+    text: 'Tecnologias',
+  );
+  final TextEditingController _rolController = TextEditingController(
+    text: 'Gerente Ti',
+  );
+  final TextEditingController _oficinaController = TextEditingController(
+    text: 'Reynosa',
+  );
+  final TextEditingController _numEmpleadoController = TextEditingController(
+    text: '256070',
+  );
+  PlatformFile? _fotoNueva;
+  Uint8List? _fotoPreviewBytes;
+  String? _fotoUrl;
+  bool _tieneFoto = false;
+  bool _cargandoPerfil = true;
+  bool _actualizandoFoto = false;
+  bool _eliminandoFoto = false;
+  bool _guardandoPassword = false;
 
   @override
   Widget build(BuildContext context) {
@@ -74,10 +95,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: Colors.grey,
-                ),
+                icon: const Icon(Icons.notifications_none, color: Colors.grey),
                 onPressed: () {},
               ),
               Positioned(
@@ -102,10 +120,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.only(
-              right: 16,
-              left: 8,
-            ),
+            padding: const EdgeInsets.only(right: 16, left: 8),
             child: CircleAvatar(
               radius: 16,
               backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
@@ -122,25 +137,101 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         ],
       ),
       drawer: _buildAppDrawer(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeaderPerfil(),
-            const SizedBox(height: 20),
-            _buildCardFotoPerfil(),
-            const SizedBox(height: 16),
-            _buildCardInformacionPersonalLaboral(),
-            const SizedBox(height: 16),
-            _buildCardInformacionCuenta(),
-            const SizedBox(height: 16),
-            _buildCardSeguridad(),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+      body: _cargandoPerfil
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeaderPerfil(),
+                  const SizedBox(height: 20),
+                  _buildCardFotoPerfil(),
+                  const SizedBox(height: 16),
+                  _buildCardInformacionPersonalLaboral(),
+                  const SizedBox(height: 16),
+                  _buildCardInformacionCuenta(),
+                  const SizedBox(height: 16),
+                  _buildCardSeguridad(),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarPerfil();
+  }
+
+  Future<void> _cargarPerfil() async {
+    try {
+      final respuesta = await PerfiladminService.obtenerPerfil();
+      final usuario = respuesta['usuario'];
+      if (!mounted) return;
+      if (usuario is Map) {
+        setState(() {
+          _nombreController.text = _valor(
+            usuario['name'],
+            _nombreController.text,
+          );
+          _usuarioController.text = _valor(
+            usuario['login'],
+            _usuarioController.text,
+          );
+          _correoController.text = _valor(
+            usuario['email'],
+            _correoController.text,
+          );
+          _telefonoController.text = _valor(
+            usuario['phone'] ?? usuario['telefono'],
+            _telefonoController.text,
+          );
+          _cymezController.text = _valor(
+            usuario['empresa'],
+            _cymezController.text,
+          );
+          _departamentoController.text = _valor(
+            usuario['departamento'],
+            _departamentoController.text,
+          );
+          _rolController.text = _valor(usuario['role'], _rolController.text);
+          _oficinaController.text = _valor(
+            usuario['oficina'],
+            _oficinaController.text,
+          );
+          _numEmpleadoController.text = _valor(
+            usuario['numero_empleado'],
+            _numEmpleadoController.text,
+          );
+          _fotoUrl =
+              respuesta['picture_url']?.toString() ??
+              usuario['picture_url']?.toString() ??
+              usuario['picture']?.toString();
+          _tieneFoto = _esFotoPersonalizada(_fotoUrl);
+          _cargandoPerfil = false;
+        });
+      } else {
+        throw Exception('La respuesta no contiene información del perfil.');
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _cargandoPerfil = false);
+      _mostrarMensaje(error.toString().replaceFirst('Exception: ', ''), true);
+    }
+  }
+
+  String _valor(dynamic value, String fallback) {
+    final texto = value?.toString().trim() ?? '';
+    return texto.isEmpty ? fallback : texto;
+  }
+
+  bool _esFotoPersonalizada(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    return !value.contains('profile-photos/user.png') &&
+        !value.endsWith('/user.png');
   }
 
   Widget _buildHeaderPerfil() {
@@ -158,10 +249,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         SizedBox(height: 4),
         Text(
           'Gestión y actualización directa de tu información administrativa',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Colors.grey, fontSize: 12),
         ),
       ],
     );
@@ -174,9 +262,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -213,16 +299,16 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                   ),
                   color: inputBg,
                 ),
-                child: const Center(
-                  child: Text(
-                    'Jesus Hinojosa',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: ClipOval(
+                  child: _fotoPreviewBytes != null
+                      ? Image.memory(_fotoPreviewBytes!, fit: BoxFit.cover)
+                      : _tieneFoto && _fotoUrl != null
+                      ? Image.network(
+                          _fotoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _avatarInicial(),
+                        )
+                      : _avatarInicial(),
                 ),
               ),
               Positioned(
@@ -234,10 +320,15 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.black,
-                    size: 16,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.black,
+                      size: 16,
+                    ),
+                    onPressed: _seleccionarFoto,
                   ),
                 ),
               ),
@@ -246,28 +337,21 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           const SizedBox(height: 16),
           const Text(
             'Formatos permitidos: JPG, PNG',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 11),
           ),
           const Text(
             'Tamaño máximo: 2 MB',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 11),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.upload,
-                    size: 16,
-                  ),
+                  onPressed: _fotoNueva == null || _actualizandoFoto
+                      ? null
+                      : _actualizarFoto,
+                  icon: const Icon(Icons.upload, size: 16),
                   label: const Text(
                     'Actualizar foto',
                     style: TextStyle(fontSize: 12),
@@ -282,7 +366,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               ),
               const SizedBox(width: 10),
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: !_tieneFoto || _eliminandoFoto
+                    ? null
+                    : _eliminarFoto,
                 icon: const Icon(
                   Icons.delete_outline,
                   size: 16,
@@ -290,15 +376,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 ),
                 label: const Text(
                   'Eliminar foto',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12),
                 ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(
-                    color: Colors.redAccent,
-                  ),
+                  side: const BorderSide(color: Colors.redAccent),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -311,15 +392,34 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     );
   }
 
+  Widget _avatarInicial() {
+    final nombre = _nombreController.text.trim();
+    final iniciales = nombre.isEmpty
+        ? 'U'
+        : nombre
+              .split(RegExp(r'\s+'))
+              .take(2)
+              .map((parte) => parte[0].toUpperCase())
+              .join();
+    return Center(
+      child: Text(
+        iniciales,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardInformacionPersonalLaboral() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,10 +454,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     SizedBox(height: 2),
                     Text(
                       'Como Gerente TI con permisos de administrador puedes modificar tus datos.',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ],
                 ),
@@ -368,10 +465,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 border: Border.all(
                   color: Colors.blueAccent.withValues(alpha: 0.5),
@@ -400,10 +494,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               ),
             ),
           ),
-          const Divider(
-            color: Colors.white10,
-            height: 24,
-          ),
+          const Divider(color: Colors.white10, height: 24),
           _buildSectionTitle(
             Icons.person,
             'Datos personales',
@@ -434,10 +525,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             Icons.phone_outlined,
             isEditable: true,
           ),
-          const Divider(
-            color: Colors.white10,
-            height: 28,
-          ),
+          const Divider(color: Colors.white10, height: 28),
           _buildSectionTitle(
             Icons.business_center,
             'Datos laborales',
@@ -480,16 +568,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             height: 40,
             child: ElevatedButton.icon(
               onPressed: () {},
-              icon: const Icon(
-                Icons.save_outlined,
-                size: 18,
-              ),
+              icon: const Icon(Icons.save_outlined, size: 18),
               label: const Text(
                 'Sin cambios',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: inputBg,
@@ -505,11 +587,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     );
   }
 
-  Widget _buildSectionTitle(
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
+  Widget _buildSectionTitle(IconData icon, String title, String subtitle) {
     return Row(
       children: [
         Container(
@@ -518,11 +596,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(
-            icon,
-            color: Colors.blue,
-            size: 16,
-          ),
+          child: Icon(icon, color: Colors.blue, size: 16),
         ),
         const SizedBox(width: 8),
         Column(
@@ -538,10 +612,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             ),
             Text(
               subtitle,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 10,
-              ),
+              style: const TextStyle(color: Colors.grey, fontSize: 10),
             ),
           ],
         ),
@@ -555,20 +626,14 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: const [
-              Icon(
-                Icons.info_outline,
-                color: Colors.blueAccent,
-                size: 18,
-              ),
+              Icon(Icons.info_outline, color: Colors.blueAccent, size: 18),
               SizedBox(width: 8),
               Text(
                 'Información de la cuenta',
@@ -589,10 +654,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 children: [
                   const Text(
                     'Estado de la cuenta',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -620,10 +682,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 children: const [
                   Text(
                     'Rol en el sistema',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -647,11 +706,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             ),
             child: Row(
               children: const [
-                Icon(
-                  Icons.sync,
-                  color: Colors.blueAccent,
-                  size: 20,
-                ),
+                Icon(Icons.sync, color: Colors.blueAccent, size: 20),
                 SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -668,10 +723,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                       SizedBox(height: 2),
                       Text(
                         'Una información correcta nos ayuda a darte un mejor soporte y atención.',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 10),
                       ),
                     ],
                   ),
@@ -690,9 +742,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       decoration: BoxDecoration(
         color: cardDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,10 +776,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     ),
                     Text(
                       'Administra las credenciales de acceso a tu perfil administrativo',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 10),
                     ),
                   ],
                 ),
@@ -780,11 +827,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: Colors.grey,
-                size: 18,
-              ),
+              Icon(icon, color: Colors.grey, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -800,10 +843,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     ),
                     Text(
                       description,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 10,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
                     ),
                   ],
                 ),
@@ -825,10 +865,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 const SizedBox(width: 6),
                 Text(
                   status,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 11,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 11),
                 ),
               ],
             ),
@@ -838,22 +875,13 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: onPressed,
-              icon: Icon(
-                buttonIcon,
-                size: 14,
-                color: Colors.blueAccent,
-              ),
+              icon: Icon(buttonIcon, size: 14, color: Colors.blueAccent),
               label: Text(
                 buttonText,
-                style: const TextStyle(
-                  color: Colors.blueAccent,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.blueAccent, fontSize: 12),
               ),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(
-                  color: Colors.blueAccent,
-                ),
+                side: const BorderSide(color: Colors.blueAccent),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -866,13 +894,14 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   void _showModalActualizarContrasena() {
+    final actual = TextEditingController();
+    final nueva = TextEditingController();
+    final confirmacion = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: cardDark,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
             Container(
@@ -899,12 +928,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(
-                Icons.close,
-                color: Colors.grey,
-                size: 18,
-              ),
-              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, color: Colors.grey, size: 18),
+              onPressed: () => Navigator.pop(dialogContext),
             ),
           ],
         ),
@@ -914,38 +939,40 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           children: [
             const Text(
               'Cambia tu contraseña de acceso',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 10,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 10),
             ),
             const SizedBox(height: 16),
             _buildLabelModal('Contraseña actual'),
             _buildInputModal(
               'Ingresa tu contraseña actual',
+              controller: actual,
               isPassword: true,
             ),
             const SizedBox(height: 12),
             _buildLabelModal('Nueva contraseña'),
             _buildInputModal(
               'Ingresa tu nueva contraseña',
+              controller: nueva,
               isPassword: true,
             ),
             const SizedBox(height: 12),
             _buildLabelModal('Confirmar nueva contraseña'),
             _buildInputModal(
               'Confirma tu nueva contraseña',
+              controller: confirmacion,
               isPassword: true,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo.',
+              style: TextStyle(color: Colors.grey, fontSize: 10),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: Colors.grey),
-            ),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -954,7 +981,52 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _guardandoPassword
+                ? null
+                : () async {
+                    final valor = nueva.text;
+                    final valida =
+                        valor.length >= 8 &&
+                        RegExp(r'[A-Z]').hasMatch(valor) &&
+                        RegExp(r'[a-z]').hasMatch(valor) &&
+                        RegExp(r'\d').hasMatch(valor) &&
+                        RegExp(r'[^A-Za-z0-9]').hasMatch(valor);
+                    if (!valida) {
+                      _mostrarMensaje(
+                        'La nueva contraseña no cumple los requisitos.',
+                        true,
+                      );
+                      return;
+                    }
+                    if (valor != confirmacion.text) {
+                      _mostrarMensaje(
+                        'La confirmación de contraseña no coincide.',
+                        true,
+                      );
+                      return;
+                    }
+                    setState(() => _guardandoPassword = true);
+                    try {
+                      await PerfiladminService.actualizarPassword(
+                        passwordActual: actual.text,
+                        password: valor,
+                        confirmPassword: confirmacion.text,
+                      );
+                      if (!mounted) return;
+                      Navigator.pop(dialogContext);
+                      _mostrarMensaje(
+                        'Contraseña actualizada correctamente.',
+                        false,
+                      );
+                    } catch (error) {
+                      _mostrarMensaje(
+                        error.toString().replaceFirst('Exception: ', ''),
+                        true,
+                      );
+                    } finally {
+                      if (mounted) setState(() => _guardandoPassword = false);
+                    }
+                  },
             child: const Text(
               'Actualizar contraseña',
               style: TextStyle(fontSize: 12),
@@ -970,9 +1042,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: cardDark,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -997,10 +1067,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildPasoItem(
-                '1.',
-                'Ingresa a tu perfil desde la cuenta web.',
-              ),
+              _buildPasoItem('1.', 'Ingresa a tu perfil desde la cuenta web.'),
               _buildPasoItem(
                 '2.',
                 'Haz clic en "Activar verificación en dos pasos".',
@@ -1035,10 +1102,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: const Text(
                     'Entendido',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               ),
@@ -1057,9 +1121,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 36, 20, 20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF0D1630),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF0D1630)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1099,10 +1161,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                         backgroundColor: Color(0xFF4F46E5),
                         child: Text(
                           'JH',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -1147,9 +1206,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const TicketsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const TicketsScreen()),
               );
             },
           ),
@@ -1160,9 +1217,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const CambiosScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const CambiosScreen()),
               );
             },
           ),
@@ -1173,9 +1228,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const UserScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const UserScreen()),
               );
             },
           ),
@@ -1212,9 +1265,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const BackupScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const BackupScreen()),
               );
             },
           ),
@@ -1226,10 +1277,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
             },
           ),
-          const Divider(
-            color: Colors.white10,
-            height: 24,
-          ),
+          const Divider(color: Colors.white10, height: 24),
           _buildDrawerItem(
             Icons.logout_rounded,
             'Cerrar sesión',
@@ -1241,11 +1289,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 return;
               }
 
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/',
-                (route) => false,
-              );
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },
           ),
           const SizedBox(height: 10),
@@ -1262,14 +1306,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     VoidCallback? onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF4F46E5)
-            : Colors.transparent,
+        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -1278,8 +1317,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           color: isExit
               ? Colors.redAccent
               : selected
-                  ? Colors.white
-                  : const Color(0xFF94A3B8),
+              ? Colors.white
+              : const Color(0xFF94A3B8),
           size: 20,
         ),
         title: Text(
@@ -1288,12 +1327,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             color: isExit
                 ? Colors.redAccent
                 : selected
-                    ? Colors.white
-                    : const Color(0xFF94A3B8),
+                ? Colors.white
+                : const Color(0xFF94A3B8),
             fontSize: 14,
-            fontWeight: selected
-                ? FontWeight.bold
-                : FontWeight.normal,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         onTap: onTap,
@@ -1326,21 +1363,15 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Row(
                 children: [
                   Icon(
-                    isEditable
-                        ? Icons.edit_outlined
-                        : Icons.lock_outline,
-                    color: isEditable
-                        ? Colors.blueAccent
-                        : Colors.grey,
+                    isEditable ? Icons.edit_outlined : Icons.lock_outline,
+                    color: isEditable ? Colors.blueAccent : Colors.grey,
                     size: 12,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     isEditable ? 'Editable' : 'FIJO',
                     style: TextStyle(
-                      color: isEditable
-                          ? Colors.blueAccent
-                          : Colors.grey,
+                      color: isEditable ? Colors.blueAccent : Colors.grey,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1354,17 +1385,11 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             controller: controller,
             readOnly: !isEditable,
             style: TextStyle(
-              color: isEditable
-                  ? Colors.white
-                  : Colors.white54,
+              color: isEditable ? Colors.white : Colors.white54,
               fontSize: 13,
             ),
             decoration: InputDecoration(
-              prefixIcon: Icon(
-                icon,
-                color: Colors.grey,
-                size: 18,
-              ),
+              prefixIcon: Icon(icon, color: Colors.grey, size: 18),
               filled: true,
               fillColor: inputBg,
               contentPadding: const EdgeInsets.symmetric(
@@ -1398,20 +1423,16 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
 
   Widget _buildInputModal(
     String hint, {
+    TextEditingController? controller,
     bool isPassword = false,
   }) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 13,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 13),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Colors.grey,
-          fontSize: 12,
-        ),
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
         filled: true,
         fillColor: inputBg,
         contentPadding: const EdgeInsets.symmetric(
@@ -1426,10 +1447,75 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     );
   }
 
-  Widget _buildPasoItem(
-    String num,
-    String text,
-  ) {
+  Future<void> _seleccionarFoto() async {
+    final resultado = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png'],
+    );
+    if (!mounted || resultado.isEmpty) return;
+    final archivo = resultado.single;
+    final bytes = await archivo.readAsBytes();
+    if (bytes.length > 2 * 1024 * 1024) {
+      _mostrarMensaje('La imagen no debe superar 2 MB.', true);
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _fotoNueva = archivo;
+      _fotoPreviewBytes = bytes;
+    });
+  }
+
+  Future<void> _actualizarFoto() async {
+    final archivo = _fotoNueva;
+    if (archivo == null) return;
+    setState(() => _actualizandoFoto = true);
+    try {
+      final respuesta = await PerfiladminService.actualizarFoto(archivo);
+      if (!mounted) return;
+      setState(() {
+        _fotoUrl = respuesta['picture_url']?.toString();
+        _tieneFoto = true;
+        _fotoNueva = null;
+        _fotoPreviewBytes = null;
+      });
+      _mostrarMensaje('Foto actualizada correctamente.', false);
+    } catch (error) {
+      _mostrarMensaje(error.toString().replaceFirst('Exception: ', ''), true);
+    } finally {
+      if (mounted) setState(() => _actualizandoFoto = false);
+    }
+  }
+
+  Future<void> _eliminarFoto() async {
+    setState(() => _eliminandoFoto = true);
+    try {
+      await PerfiladminService.eliminarFoto();
+      if (!mounted) return;
+      setState(() {
+        _fotoUrl = null;
+        _tieneFoto = false;
+        _fotoNueva = null;
+        _fotoPreviewBytes = null;
+      });
+      _mostrarMensaje('Foto eliminada correctamente.', false);
+    } catch (error) {
+      _mostrarMensaje(error.toString().replaceFirst('Exception: ', ''), true);
+    } finally {
+      if (mounted) setState(() => _eliminandoFoto = false);
+    }
+  }
+
+  void _mostrarMensaje(String mensaje, bool esError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: esError ? Colors.redAccent : Colors.green,
+      ),
+    );
+  }
+
+  Widget _buildPasoItem(String num, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -1446,10 +1532,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ),
         ],

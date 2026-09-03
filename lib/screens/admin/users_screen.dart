@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../services/session_service.dart';
 import 'avisosadmin_screen.dart';
-import 'backup_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -147,13 +146,15 @@ class _UserScreenState extends State<UserScreen> {
 
   List<UsuarioItem> get usuariosFiltrados {
     return usuarios.where((user) {
-      final coincideEstado = selectedFilter == 'Todos' ||
+      final coincideEstado =
+          selectedFilter == 'Todos' ||
           (selectedFilter == 'Activos' && user.estado == 'Activa') ||
           (selectedFilter == 'Inactivos' && user.estado == 'Inactiva');
 
       final query = searchQuery.toLowerCase();
 
-      final coincideBusqueda = query.isEmpty ||
+      final coincideBusqueda =
+          query.isEmpty ||
           user.nombre.toLowerCase().contains(query) ||
           user.email.toLowerCase().contains(query) ||
           user.login.toLowerCase().contains(query) ||
@@ -199,10 +200,7 @@ class _UserScreenState extends State<UserScreen> {
           IconButton(
             icon: Stack(
               children: [
-                const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                ),
+                const Icon(Icons.notifications_outlined, color: Colors.white),
                 Positioned(
                   right: 0,
                   top: 0,
@@ -218,10 +216,7 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                     child: const Text(
                       '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 9),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -236,10 +231,7 @@ class _UserScreenState extends State<UserScreen> {
             backgroundColor: primaryBlue,
             child: Text(
               'JH',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.white, fontSize: 12),
             ),
           ),
           const SizedBox(width: 12),
@@ -262,10 +254,7 @@ class _UserScreenState extends State<UserScreen> {
             const SizedBox(height: 4),
             const Text(
               'Consulta y administra la información de los usuarios del sistema',
-              style: TextStyle(
-                color: textMuted,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: textMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -307,14 +296,8 @@ class _UserScreenState extends State<UserScreen> {
             Row(
               children: [
                 _buildFilterChip('Todos'),
-                _buildFilterChip(
-                  'Activos',
-                  dotColor: greenAccent,
-                ),
-                _buildFilterChip(
-                  'Inactivos',
-                  dotColor: redAccent,
-                ),
+                _buildFilterChip('Activos', dotColor: greenAccent),
+                _buildFilterChip('Inactivos', dotColor: redAccent),
               ],
             ),
             const SizedBox(height: 12),
@@ -328,11 +311,7 @@ class _UserScreenState extends State<UserScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.search,
-                    color: textMuted,
-                    size: 18,
-                  ),
+                  const Icon(Icons.search, color: textMuted, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
@@ -342,16 +321,10 @@ class _UserScreenState extends State<UserScreen> {
                           searchQuery = value;
                         });
                       },
-                      style: const TextStyle(
-                        color: textWhite,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: textWhite, fontSize: 13),
                       decoration: const InputDecoration(
                         hintText: 'Buscar usuario...',
-                        hintStyle: TextStyle(
-                          color: textMuted,
-                          fontSize: 13,
-                        ),
+                        hintStyle: TextStyle(color: textMuted, fontSize: 13),
                         border: InputBorder.none,
                         isDense: true,
                       ),
@@ -365,11 +338,7 @@ class _UserScreenState extends State<UserScreen> {
                           searchQuery = '';
                         });
                       },
-                      icon: const Icon(
-                        Icons.close,
-                        color: textMuted,
-                        size: 18,
-                      ),
+                      icon: const Icon(Icons.close, color: textMuted, size: 18),
                     ),
                 ],
               ),
@@ -386,11 +355,7 @@ class _UserScreenState extends State<UserScreen> {
                 ),
                 child: const Column(
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      color: textMuted,
-                      size: 40,
-                    ),
+                    Icon(Icons.people_outline, color: textMuted, size: 40),
                     SizedBox(height: 10),
                     Text(
                       'No se encontraron usuarios',
@@ -403,10 +368,7 @@ class _UserScreenState extends State<UserScreen> {
                     SizedBox(height: 4),
                     Text(
                       'Intenta cambiar el filtro o la búsqueda.',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -421,18 +383,9 @@ class _UserScreenState extends State<UserScreen> {
 
                   return UserCard(
                     item: user,
-                    onView: () => _mostrarDetalleUsuario(
-                      context,
-                      user,
-                    ),
-                    onEdit: () => _mostrarEditarUsuario(
-                      context,
-                      user,
-                    ),
-                    onDelete: () => _mostrarEliminarUsuario(
-                      context,
-                      user,
-                    ),
+                    onView: () => _mostrarDetalleUsuario(context, user),
+                    onEdit: () => _mostrarEditarUsuario(context, user),
+                    onDelete: () => _mostrarEliminarUsuario(context, user),
                   );
                 },
               ),
@@ -449,28 +402,17 @@ class _UserScreenState extends State<UserScreen> {
                 children: [
                   Text(
                     'Mostrando ${usuariosMostrados.length} de 18 usuarios',
-                    style: const TextStyle(
-                      color: textMuted,
-                      fontSize: 11,
-                    ),
+                    style: const TextStyle(color: textMuted, fontSize: 11),
                   ),
                   Row(
                     children: [
-                      _buildPageBtn(
-                        icon: Icons.chevron_left,
-                        disabled: true,
-                      ),
+                      _buildPageBtn(icon: Icons.chevron_left, disabled: true),
                       const SizedBox(width: 4),
-                      _buildPageBtn(
-                        text: '1',
-                        selected: true,
-                      ),
+                      _buildPageBtn(text: '1', selected: true),
                       const SizedBox(width: 4),
                       _buildPageBtn(text: '2'),
                       const SizedBox(width: 4),
-                      _buildPageBtn(
-                        icon: Icons.chevron_right,
-                      ),
+                      _buildPageBtn(icon: Icons.chevron_right),
                     ],
                   ),
                 ],
@@ -483,10 +425,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildFilterChip(
-    String label, {
-    Color? dotColor,
-  }) {
+  Widget _buildFilterChip(String label, {Color? dotColor}) {
     final bool isSelected = selectedFilter == label;
 
     return GestureDetector(
@@ -497,16 +436,11 @@ class _UserScreenState extends State<UserScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 6,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? primaryBlue : cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? primaryBlue : Colors.white10,
-          ),
+          border: Border.all(color: isSelected ? primaryBlue : Colors.white10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -516,9 +450,7 @@ class _UserScreenState extends State<UserScreen> {
               style: TextStyle(
                 color: isSelected ? textWhite : textMuted,
                 fontSize: 12,
-                fontWeight: isSelected
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
             if (dotColor != null) ...[
@@ -551,46 +483,33 @@ class _UserScreenState extends State<UserScreen> {
         color: selected
             ? primaryBlue
             : disabled
-                ? Colors.white.withValues(alpha: 0.02)
-                : cardBg,
+            ? Colors.white.withValues(alpha: 0.02)
+            : cardBg,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: selected ? primaryBlue : Colors.white10,
-        ),
+        border: Border.all(color: selected ? primaryBlue : Colors.white10),
       ),
       child: Center(
         child: icon != null
-            ? Icon(
-                icon,
-                color: disabled ? Colors.white24 : textWhite,
-                size: 16,
-              )
+            ? Icon(icon, color: disabled ? Colors.white24 : textWhite, size: 16)
             : Text(
                 text!,
                 style: TextStyle(
                   color: selected ? textWhite : textMuted,
                   fontSize: 11,
-                  fontWeight: selected
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
       ),
     );
   }
 
-  void _mostrarDetalleUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) {
+  void _mostrarDetalleUsuario(BuildContext context, UsuarioItem user) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Padding(
@@ -616,26 +535,57 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Información del usuario',
-                      style: TextStyle(
-                        color: textWhite,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF312E81)],
                     ),
-                    _buildStatusBadge(user.estado),
-                  ],
-                ),
-                const Text(
-                  'Detalle completo de la cuenta',
-                  style: TextStyle(
-                    color: textMuted,
-                    fontSize: 11,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Información del usuario',
+                              style: TextStyle(
+                                color: textWhite,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Detalle completo de la cuenta',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildStatusBadge(user.estado),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -648,10 +598,7 @@ class _UserScreenState extends State<UserScreen> {
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: accentBlue,
-                                width: 2,
-                              ),
+                              border: Border.all(color: accentBlue, width: 2),
                             ),
                             child: CircleAvatar(
                               radius: 36,
@@ -677,10 +624,7 @@ class _UserScreenState extends State<UserScreen> {
                                     ? greenAccent
                                     : redAccent,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: background,
-                                  width: 2,
-                                ),
+                                border: Border.all(color: background, width: 2),
                               ),
                             ),
                           ),
@@ -697,10 +641,7 @@ class _UserScreenState extends State<UserScreen> {
                       ),
                       Text(
                         user.email,
-                        style: const TextStyle(
-                          color: textMuted,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(color: textMuted, fontSize: 12),
                       ),
                       const SizedBox(height: 6),
                       _buildRoleBadge(user.rol),
@@ -717,21 +658,13 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                _buildInfoTile(
-                  Icons.alternate_email,
-                  'Login',
-                  user.login,
-                ),
+                _buildInfoTile(Icons.alternate_email, 'Login', user.login),
                 _buildInfoTile(
                   Icons.badge_outlined,
                   'Número de empleado',
                   user.numEmpleado,
                 ),
-                _buildInfoTile(
-                  Icons.domain,
-                  'Empresa',
-                  user.empresa,
-                ),
+                _buildInfoTile(Icons.domain, 'Empresa', user.empresa),
                 _buildInfoTile(
                   Icons.location_on_outlined,
                   'Oficina',
@@ -742,11 +675,7 @@ class _UserScreenState extends State<UserScreen> {
                   'Departamento',
                   user.departamento,
                 ),
-                _buildInfoTile(
-                  Icons.shield_outlined,
-                  'Rol',
-                  user.rol,
-                ),
+                _buildInfoTile(Icons.shield_outlined, 'Rol', user.rol),
                 const SizedBox(height: 16),
                 const Text(
                   'Información de contacto',
@@ -776,8 +705,7 @@ class _UserScreenState extends State<UserScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
                                   'Correo electrónico',
@@ -798,10 +726,7 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                         ],
                       ),
-                      const Divider(
-                        color: Colors.white10,
-                        height: 16,
-                      ),
+                      const Divider(color: Colors.white10, height: 16),
                       Row(
                         children: [
                           const Icon(
@@ -811,8 +736,7 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                           const SizedBox(width: 10),
                           Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
                                 'Teléfono',
@@ -852,10 +776,7 @@ class _UserScreenState extends State<UserScreen> {
                       ? [
                           const Text(
                             'Sin permisos asignados',
-                            style: TextStyle(
-                              color: textMuted,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: textMuted, fontSize: 12),
                           ),
                         ]
                       : user.permisos.map((permission) {
@@ -865,15 +786,10 @@ class _UserScreenState extends State<UserScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: primaryBlue.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius:
-                                  BorderRadius.circular(6),
+                              color: primaryBlue.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: primaryBlue.withValues(
-                                  alpha: 0.4,
-                                ),
+                                color: primaryBlue.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Text(
@@ -895,40 +811,27 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  void _mostrarEditarUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) {
-    final nombreCtrl =
-        TextEditingController(text: user.nombre);
-    final numEmpCtrl =
-        TextEditingController(text: user.numEmpleado);
-    final loginCtrl =
-        TextEditingController(text: user.login);
-    final emailCtrl =
-        TextEditingController(text: user.email);
+  void _mostrarEditarUsuario(BuildContext context, UsuarioItem user) {
+    final nombreCtrl = TextEditingController(text: user.nombre);
+    final numEmpCtrl = TextEditingController(text: user.numEmpleado);
+    final loginCtrl = TextEditingController(text: user.login);
+    final emailCtrl = TextEditingController(text: user.email);
     final telCtrl = TextEditingController(
-      text: user.telefono == 'Sin teléfono'
-          ? ''
-          : user.telefono,
+      text: user.telefono == 'Sin teléfono' ? '' : user.telefono,
     );
-    final deptoCtrl =
-        TextEditingController(text: user.departamento);
+    final deptoCtrl = TextEditingController(text: user.departamento);
 
     String selectedOficina = user.oficina;
     String selectedRol = user.rol;
     String selectedEstado = user.estado;
-    String selectedAdmin =
-        user.permisos.contains('Admin') ? 'Sí' : 'No';
+    String selectedAdmin = user.permisos.contains('Admin') ? 'Sí' : 'No';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -938,13 +841,11 @@ class _UserScreenState extends State<UserScreen> {
                 top: 20,
                 left: 16,
                 right: 16,
-                bottom:
-                    MediaQuery.of(context).viewInsets.bottom + 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Center(
@@ -953,8 +854,7 @@ class _UserScreenState extends State<UserScreen> {
                         height: 4,
                         decoration: BoxDecoration(
                           color: Colors.white24,
-                          borderRadius:
-                              BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
@@ -964,11 +864,8 @@ class _UserScreenState extends State<UserScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius:
-                                BorderRadius.circular(8),
+                            color: Colors.amber.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
                             Icons.edit_outlined,
@@ -978,8 +875,7 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                         const SizedBox(width: 10),
                         const Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Editar usuario',
@@ -991,10 +887,7 @@ class _UserScreenState extends State<UserScreen> {
                             ),
                             Text(
                               'Modifica la información de la cuenta.',
-                              style: TextStyle(
-                                color: textMuted,
-                                fontSize: 11,
-                              ),
+                              style: TextStyle(color: textMuted, fontSize: 11),
                             ),
                           ],
                         ),
@@ -1010,80 +903,46 @@ class _UserScreenState extends State<UserScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Nombre',
-                      nombreCtrl,
-                    ),
+                    _buildInputField('Nombre', nombreCtrl),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Número de empleado',
-                      numEmpCtrl,
-                    ),
+                    _buildInputField('Número de empleado', numEmpCtrl),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Login',
-                      loginCtrl,
-                    ),
+                    _buildInputField('Login', loginCtrl),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Correo electrónico',
-                      emailCtrl,
-                    ),
+                    _buildInputField('Correo electrónico', emailCtrl),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Teléfono',
-                      telCtrl,
-                    ),
+                    _buildInputField('Teléfono', telCtrl),
                     const SizedBox(height: 16),
                     const Text(
                       'Contraseña',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: textMuted, fontSize: 11),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: cardBg,
-                        borderRadius:
-                            BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white10,
-                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white10),
                       ),
                       child: const TextField(
                         obscureText: true,
-                        style: TextStyle(
-                          color: textWhite,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: textWhite, fontSize: 12),
                         decoration: InputDecoration(
                           icon: Icon(
                             Icons.lock_outline,
                             color: textMuted,
                             size: 16,
                           ),
-                          hintText:
-                              'Nueva contraseña',
-                          hintStyle: TextStyle(
-                            color: textMuted,
-                            fontSize: 12,
-                          ),
+                          hintText: 'Nueva contraseña',
+                          hintStyle: TextStyle(color: textMuted, fontSize: 12),
                           border: InputBorder.none,
                         ),
                       ),
                     ),
                     const Text(
                       'Déjala vacía si no deseas cambiarla.',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: textMuted, fontSize: 10),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -1098,11 +957,7 @@ class _UserScreenState extends State<UserScreen> {
                     _buildDropdown(
                       label: 'Ubicación / Oficina',
                       value: selectedOficina,
-                      items: const [
-                        'Reynosa',
-                        'Monterrey',
-                        'CDMX',
-                      ],
+                      items: const ['Reynosa', 'Monterrey', 'CDMX'],
                       onChanged: (value) {
                         if (value != null) {
                           setModalState(() {
@@ -1112,16 +967,10 @@ class _UserScreenState extends State<UserScreen> {
                       },
                     ),
                     const SizedBox(height: 10),
-                    _buildInputField(
-                      'Departamento',
-                      deptoCtrl,
-                    ),
+                    _buildInputField('Departamento', deptoCtrl),
                     const Text(
                       'El departamento se guarda directamente como texto.',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: textMuted, fontSize: 10),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -1154,10 +1003,7 @@ class _UserScreenState extends State<UserScreen> {
                     _buildDropdown(
                       label: 'Estado',
                       value: selectedEstado,
-                      items: const [
-                        'Activa',
-                        'Inactiva',
-                      ],
+                      items: const ['Activa', 'Inactiva'],
                       onChanged: (value) {
                         if (value != null) {
                           setModalState(() {
@@ -1170,10 +1016,7 @@ class _UserScreenState extends State<UserScreen> {
                     _buildDropdown(
                       label: 'Permiso administrador',
                       value: selectedAdmin,
-                      items: const [
-                        'No',
-                        'Sí',
-                      ],
+                      items: const ['No', 'Sí'],
                       onChanged: (value) {
                         if (value != null) {
                           setModalState(() {
@@ -1184,83 +1027,57 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                     const SizedBox(height: 20),
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton(
                           style: TextButton.styleFrom(
                             backgroundColor: cardBg,
-                            padding:
-                                const EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
                             ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: () =>
-                              Navigator.pop(context),
+                          onPressed: () => Navigator.pop(context),
                           child: const Text(
                             'Cancelar',
-                            style: TextStyle(
-                              color: textWhite,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: textWhite, fontSize: 12),
                           ),
                         ),
                         const SizedBox(width: 10),
                         ElevatedButton.icon(
-                          style:
-                              ElevatedButton.styleFrom(
-                            backgroundColor:
-                                accentBlue,
-                            padding:
-                                const EdgeInsets.symmetric(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentBlue,
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
                             ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           onPressed: () {
                             setState(() {
-                              user.nombre =
-                                  nombreCtrl.text;
-                              user.numEmpleado =
-                                  numEmpCtrl.text;
-                              user.login =
-                                  loginCtrl.text;
-                              user.email =
-                                  emailCtrl.text;
-                              user.telefono =
-                                  telCtrl.text.isEmpty
-                                      ? 'Sin teléfono'
-                                      : telCtrl.text;
-                              user.departamento =
-                                  deptoCtrl.text;
-                              user.oficina =
-                                  selectedOficina;
+                              user.nombre = nombreCtrl.text;
+                              user.numEmpleado = numEmpCtrl.text;
+                              user.login = loginCtrl.text;
+                              user.email = emailCtrl.text;
+                              user.telefono = telCtrl.text.isEmpty
+                                  ? 'Sin teléfono'
+                                  : telCtrl.text;
+                              user.departamento = deptoCtrl.text;
+                              user.oficina = selectedOficina;
                               user.rol = selectedRol;
-                              user.estado =
-                                  selectedEstado;
+                              user.estado = selectedEstado;
                             });
 
                             Navigator.pop(context);
 
-                            ScaffoldMessenger.of(
-                              this.context,
-                            ).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Usuario actualizado correctamente',
-                                ),
-                              ),
+                            _mostrarMensaje(
+                              context,
+                              'Usuario actualizado correctamente',
                             );
                           },
                           icon: const Icon(
@@ -1289,10 +1106,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  void _mostrarEliminarUsuario(
-    BuildContext context,
-    UsuarioItem user,
-  ) {
+  void _mostrarEliminarUsuario(BuildContext context, UsuarioItem user) {
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -1300,31 +1114,19 @@ class _UserScreenState extends State<UserScreen> {
           backgroundColor: cardBg,
           title: const Text(
             'Eliminar usuario',
-            style: TextStyle(
-              color: textWhite,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: textWhite, fontWeight: FontWeight.bold),
           ),
           content: Text(
             '¿Seguro que deseas eliminar a ${user.nombre}?',
-            style: const TextStyle(
-              color: textMuted,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: textMuted, fontSize: 13),
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(color: textMuted),
-              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar', style: TextStyle(color: textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: redAccent,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: redAccent),
               onPressed: () {
                 setState(() {
                   usuarios.remove(user);
@@ -1332,13 +1134,7 @@ class _UserScreenState extends State<UserScreen> {
 
                 Navigator.pop(dialogContext);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Usuario eliminado correctamente',
-                    ),
-                  ),
-                );
+                _mostrarMensaje(context, 'Usuario eliminado correctamente');
               },
               child: const Text(
                 'Eliminar',
@@ -1351,26 +1147,14 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildInputField(
-    String label,
-    TextEditingController controller,
-  ) {
+  Widget _buildInputField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: textMuted,
-            fontSize: 11,
-          ),
-        ),
+        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
         const SizedBox(height: 4),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 2,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(8),
@@ -1378,10 +1162,7 @@ class _UserScreenState extends State<UserScreen> {
           ),
           child: TextField(
             controller: controller,
-            style: const TextStyle(
-              color: textWhite,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: textWhite, fontSize: 12),
             decoration: const InputDecoration(
               border: InputBorder.none,
               isDense: true,
@@ -1401,18 +1182,10 @@ class _UserScreenState extends State<UserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: textMuted,
-            fontSize: 11,
-          ),
-        ),
+        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
         const SizedBox(height: 4),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(8),
@@ -1420,20 +1193,12 @@ class _UserScreenState extends State<UserScreen> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: items.contains(value)
-                  ? value
-                  : items.first,
+              value: items.contains(value) ? value : items.first,
               dropdownColor: cardBg,
               isExpanded: true,
-              style: const TextStyle(
-                color: textWhite,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: textWhite, fontSize: 12),
               items: items.map((item) {
-                return DropdownMenuItem(
-                  value: item,
-                  child: Text(item),
-                );
+                return DropdownMenuItem(value: item, child: Text(item));
               }).toList(),
               onChanged: onChanged,
             ),
@@ -1443,11 +1208,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildInfoTile(
-    IconData icon,
-    String title,
-    String value,
-  ) {
+  Widget _buildInfoTile(IconData icon, String title, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
@@ -1458,23 +1219,15 @@ class _UserScreenState extends State<UserScreen> {
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: accentBlue,
-            size: 18,
-          ),
+          Icon(icon, color: accentBlue, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: textMuted,
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: textMuted, fontSize: 10),
                 ),
                 Text(
                   value,
@@ -1492,19 +1245,87 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
+  void _mostrarMensaje(
+    BuildContext context,
+    String mensaje, {
+    bool error = false,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final color = error ? const Color(0xFFEF4444) : const Color(0xFF22C55E);
+        final icon = error
+            ? Icons.error_outline_rounded
+            : Icons.check_circle_rounded;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error ? 'Error' : 'Éxito',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Aceptar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildStatusBadge(String status) {
     final bool isActiva = status == 'Activa';
     final Color bg = isActiva
         ? greenAccent.withValues(alpha: 0.15)
         : redAccent.withValues(alpha: 0.15);
-    final Color text =
-        isActiva ? greenAccent : redAccent;
+    final Color text = isActiva ? greenAccent : redAccent;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
@@ -1515,10 +1336,7 @@ class _UserScreenState extends State<UserScreen> {
           Container(
             width: 5,
             height: 5,
-            decoration: BoxDecoration(
-              color: text,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: text, shape: BoxShape.circle),
           ),
           const SizedBox(width: 4),
           Text(
@@ -1536,16 +1354,11 @@ class _UserScreenState extends State<UserScreen> {
 
   Widget _buildRoleBadge(String role) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: primaryBlue.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: primaryBlue.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: primaryBlue.withValues(alpha: 0.3)),
       ),
       child: Text(
         role,
@@ -1619,9 +1432,7 @@ class UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -1632,17 +1443,13 @@ class UserCard extends StatelessWidget {
                 backgroundColor: const Color(0xFF4F46E5),
                 child: Text(
                   item.getInitials(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.nombre,
@@ -1666,70 +1473,87 @@ class UserCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(
-            color: Colors.white10,
-            height: 1,
-          ),
+          const Divider(color: Colors.white10, height: 1),
           const SizedBox(height: 8),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: _buildRoleBadge(item.rol),
-              ),
-              const SizedBox(width: 8),
+              Expanded(child: _buildRoleBadge(item.rol)),
+              const SizedBox(width: 10),
               Expanded(
                 flex: 2,
                 child: Text(
                   item.departamento,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.left,
                   style: const TextStyle(
                     color: Color(0xFF94A3B8),
                     fontSize: 11,
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Row(
-                children: [
-                  InkWell(
-                    onTap: onView,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.remove_red_eye_outlined,
-                        color: Color(0xFF94A3B8),
-                        size: 18,
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 126,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
-                  ),
-                  InkWell(
-                    onTap: onEdit,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        color: Color(0xFF94A3B8),
-                        size: 18,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: onView,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.remove_red_eye_outlined,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onEdit,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.edit_outlined,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onDelete,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.delete_outline,
+                              color: Color(0xFFE11D48),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  InkWell(
-                    onTap: onDelete,
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: Color(0xFFE11D48),
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -1750,10 +1574,7 @@ class UserCard extends StatelessWidget {
         : const Color(0xFFE11D48);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
@@ -1771,13 +1592,9 @@ class UserCard extends StatelessWidget {
 
   Widget _buildRoleBadge(String role) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF4F46E5)
-            .withValues(alpha: 0.2),
+        color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -1816,15 +1633,11 @@ class KPIStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
@@ -1838,11 +1651,7 @@ class KPIStatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(
-                icon,
-                color: iconColor,
-                size: 16,
-              ),
+              Icon(icon, color: iconColor, size: 16),
             ],
           ),
           Text(
@@ -1862,10 +1671,7 @@ class KPIStatCard extends StatelessWidget {
 class CustomSidebar extends StatelessWidget {
   final String activeMenu;
 
-  const CustomSidebar({
-    super.key,
-    this.activeMenu = 'Inicio',
-  });
+  const CustomSidebar({super.key, this.activeMenu = 'Inicio'});
 
   @override
   Widget build(BuildContext context) {
@@ -1875,14 +1681,10 @@ class CustomSidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF0D1630),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF0D1630)),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 RichText(
                   text: const TextSpan(
@@ -1910,29 +1712,22 @@ class CustomSidebar extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white
-                        .withValues(alpha: 0.04),
-                    borderRadius:
-                        BorderRadius.circular(10),
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor:
-                            Color(0xFF4F46E5),
+                        backgroundColor: Color(0xFF4F46E5),
                         child: Text(
                           'JH',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
                       SizedBox(width: 10),
                       Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Jesus Hinojosa',
@@ -1966,10 +1761,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const AdminScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const AdminScreen()),
               );
             },
           ),
@@ -1982,10 +1774,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const TicketsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const TicketsScreen()),
               );
             },
           ),
@@ -1998,10 +1787,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const CambiosScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const CambiosScreen()),
               );
             },
           ),
@@ -2023,10 +1809,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const DispositivosScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const DispositivosScreen()),
               );
             },
           ),
@@ -2039,25 +1822,7 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const AvisosadminScreen(),
-                ),
-              );
-            },
-          ),
-                    _drawerItem(
-            context,
-            Icons.backup_outlined,
-            'Backups',
-            selected: activeMenu == 'Backups',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BackupScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const AvisosadminScreen()),
               );
             },
           ),
@@ -2070,16 +1835,11 @@ class CustomSidebar extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const PerfiladminScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const PerfiladminScreen()),
               );
             },
           ),
-          const Divider(
-            color: Colors.white10,
-          ),
+          const Divider(color: Colors.white10),
           _drawerItem(
             context,
             Icons.logout,
@@ -2113,14 +1873,9 @@ class CustomSidebar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 4,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF4F46E5)
-            : Colors.transparent,
+        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -2129,8 +1884,8 @@ class CustomSidebar extends StatelessWidget {
           color: isExit
               ? Colors.redAccent
               : selected
-                  ? Colors.white
-                  : const Color(0xFF94A3B8),
+              ? Colors.white
+              : const Color(0xFF94A3B8),
           size: 20,
         ),
         title: Text(
@@ -2139,12 +1894,10 @@ class CustomSidebar extends StatelessWidget {
             color: isExit
                 ? Colors.redAccent
                 : selected
-                    ? Colors.white
-                    : const Color(0xFF94A3B8),
+                ? Colors.white
+                : const Color(0xFF94A3B8),
             fontSize: 14,
-            fontWeight: selected
-                ? FontWeight.bold
-                : FontWeight.normal,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         onTap: onTap,
