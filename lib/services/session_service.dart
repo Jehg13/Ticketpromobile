@@ -33,7 +33,10 @@ class SessionService {
 
     await _storage.write(key: nameKey, value: _toString(user['name']));
 
-    await _storage.write(key: roleKey, value: _toString(user['role']));
+    await _storage.write(
+      key: roleKey,
+      value: _toString(user['role'] ?? user['rol']),
+    );
 
     await _storage.write(
       key: privAdminKey,
@@ -199,6 +202,7 @@ class SessionService {
       'name': name ?? '',
       'phone': phone ?? '',
       'role': role ?? '',
+      'rol': role ?? '',
       'priv_admin': privAdmin ?? '',
       'active': active ?? '',
       'mfa': mfa ?? '',

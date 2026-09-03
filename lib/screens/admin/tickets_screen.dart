@@ -3466,7 +3466,6 @@ class CustomSidebar extends StatelessWidget {
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? {};
                     final name = (user['name'] ?? 'Administrador').toString();
-                    final role = (user['role'] ?? 'Admin').toString();
 
                     return Container(
                       padding: const EdgeInsets.all(8),
@@ -3492,13 +3491,7 @@ class CustomSidebar extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
-                                  role.isNotEmpty ? role : 'Admin',
-                                  style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 11,
-                                  ),
-                                ),
+                                const AdminDrawerRole(),
                               ],
                             ),
                           ),
@@ -3667,10 +3660,10 @@ class TicketsAdminAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
+    return FutureBuilder<String?>(
+      future: SessionService.getPicture(),
       builder: (context, snapshot) {
-        final picture = snapshot.data?['picture']?.toString().trim() ?? '';
+        final picture = snapshot.data?.trim() ?? '';
         final isDefault = SessionService.isDefaultProfilePicture(picture);
         final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
 

@@ -424,7 +424,7 @@ static const String serverUrl = 'http://127.0.0.1:8000';
 
     await storage.write(
       key: 'user_role',
-      value: user['role']?.toString() ?? '',
+      value: (user['role'] ?? user['rol'])?.toString() ?? '',
     );
 
     await storage.write(
