@@ -1449,17 +1449,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     try {
       final actualizado = await DispositivosService.cambiarEstado(id);
 
-      debugPrint('DISPOSITIVO ID: $id');
-      debugPrint('RESPUESTA CAMBIAR ESTADO: $actualizado');
+
+
 
       if (!mounted) return;
-
-      final estadoActual = actualizado['estado']
-          ?.toString()
-          .trim()
-          .toLowerCase();
-
-      debugPrint('ESTADO DEVUELTO POR API: $estadoActual');
 
       setState(() {
         final index = _dispositivos.indexWhere(

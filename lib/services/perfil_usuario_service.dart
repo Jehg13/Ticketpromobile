@@ -24,9 +24,9 @@ class PerfilUsuarioService {
         },
       );
 
-      debugPrint('📡 GET $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -44,7 +44,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error cargando perfil: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -92,9 +92,9 @@ class PerfilUsuarioService {
         }),
       );
 
-      debugPrint('🔐 PUT $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -113,7 +113,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error actualizando contraseña: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -145,9 +145,9 @@ class PerfilUsuarioService {
         }),
       );
 
-      debugPrint('📨 POST $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -166,7 +166,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error enviando solicitud: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -207,9 +207,9 @@ class PerfilUsuarioService {
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
 
-      debugPrint('📷 POST $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -227,7 +227,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error actualizando foto: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -249,9 +249,9 @@ class PerfilUsuarioService {
         },
       );
 
-      debugPrint('🗑️ DELETE $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -269,7 +269,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error eliminando foto: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
