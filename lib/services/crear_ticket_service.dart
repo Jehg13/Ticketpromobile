@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
@@ -17,10 +16,10 @@ class CrearTicketService {
 
     final uri = Uri.parse('${ApiService.baseUrl}/equipos');
 
-    debugPrint('====================================================');
-    debugPrint('CrearTicketService.obtenerEquipos()');
-    debugPrint('====================================================');
-    debugPrint('URL: $uri');
+
+
+
+
 
     try {
       final response = await http.get(
@@ -31,8 +30,8 @@ class CrearTicketService {
         },
       );
 
-      debugPrint('Status: ${response.statusCode}');
-      debugPrint('Body: ${response.body}');
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -91,7 +90,7 @@ class CrearTicketService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('Error obteniendo equipos: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -115,15 +114,15 @@ class CrearTicketService {
 
     final uri = Uri.parse('${ApiService.baseUrl}/ticketscrear');
 
-    debugPrint('====================================================');
-    debugPrint('CrearTicketService.crearTicket()');
-    debugPrint('====================================================');
-    debugPrint('URL: $uri');
-    debugPrint('Título: $titulo');
-    debugPrint('Tipo de falla: $tipoFalla');
-    debugPrint('Equipo: $equipo');
-    debugPrint('Prioridad: $prioridad');
-    debugPrint('Evidencias: ${evidencias?.length ?? 0}');
+
+
+
+
+
+
+
+
+
 
     try {
       final request = http.MultipartRequest(
@@ -159,15 +158,11 @@ class CrearTicketService {
             final bytes = await file.readAsBytes();
 
             if (bytes.isEmpty) {
-              debugPrint(
-                'Archivo vacío: ${file.name}',
-              );
+
               continue;
             }
 
-            debugPrint(
-              'Adjuntando: ${file.name} (${bytes.length} bytes)',
-            );
+
 
             final archivo = http.MultipartFile.fromBytes(
               'evidencia[]',
@@ -177,9 +172,7 @@ class CrearTicketService {
 
             request.files.add(archivo);
           } catch (e) {
-            debugPrint(
-              'Error leyendo ${file.name}: $e',
-            );
+
 
             throw Exception(
               'No se pudo leer el archivo ${file.name}',
@@ -188,11 +181,9 @@ class CrearTicketService {
         }
       }
 
-      debugPrint(
-        'Archivos agregados al request: ${request.files.length}',
-      );
 
-      debugPrint('Enviando ticket...');
+
+
 
       final streamedResponse = await request.send();
 
@@ -200,8 +191,8 @@ class CrearTicketService {
         streamedResponse,
       );
 
-      debugPrint('Status: ${response.statusCode}');
-      debugPrint('Body: ${response.body}');
+
+
 
       final decoded = _decodificarRespuesta(
         response.body,
@@ -210,7 +201,7 @@ class CrearTicketService {
       if (response.statusCode >= 200 &&
           response.statusCode < 300) {
         if (decoded['success'] == true) {
-          debugPrint('Ticket creado correctamente');
+
           return decoded;
         }
 
@@ -286,7 +277,7 @@ class CrearTicketService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('Error de conexión: $e');
+
 
       throw Exception(
         'No se pudo conectar con el servidor',

@@ -7,6 +7,7 @@ import '../../services/admin/users_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -764,7 +765,7 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                         ]
                       : user.permisos.map((permission) {
-                          return Container(
+                          final item = Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 4,
@@ -785,6 +786,7 @@ class _UserScreenState extends State<UserScreen> {
                               ),
                             ),
                           );
+                          return item;
                         }).toList(),
                 ),
               ],
@@ -1700,7 +1702,7 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   Widget _buildInfoTile(IconData icon, String title, String value) {
-    return Container(
+    final item = Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -1734,6 +1736,7 @@ class _UserScreenState extends State<UserScreen> {
         ],
       ),
     );
+    return item;
   }
 
   Future<String?> _mostrarDialogoConfirmacionPassword({
@@ -2385,7 +2388,6 @@ class CustomSidebar extends StatelessWidget {
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? {};
                     final name = (user['name'] ?? 'Administrador').toString();
-                    final role = (user['role'] ?? 'Admin').toString();
 
                     return Container(
                       padding: const EdgeInsets.all(8),
@@ -2411,13 +2413,7 @@ class CustomSidebar extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
-                                  role.isNotEmpty ? role : 'Admin',
-                                  style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 11,
-                                  ),
-                                ),
+                                const AdminDrawerRole(),
                               ],
                             ),
                           ),
@@ -2555,7 +2551,7 @@ class CustomSidebar extends StatelessWidget {
     bool isExit = false,
     required VoidCallback onTap,
   }) {
-    return Container(
+    final item = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
@@ -2586,5 +2582,9 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
     );
+    if (title == 'Cambios' || title == 'Usuarios') {
+      return AdminOnlyDrawerItem(child: item);
+    }
+    return item;
   }
 }

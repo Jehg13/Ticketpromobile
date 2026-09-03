@@ -39,8 +39,8 @@ class _AdminNotificationBellState extends State<AdminNotificationBell> {
         return value != true && value != 1 && value != '1' && value != 'true';
       }).length;
       if (mounted) setState(() => _unread = unread);
-    } catch (error) {
-      debugPrint('No se pudo actualizar el contador de notificaciones: $error');
+    } catch (_) {
+      return;
     }
   }
 
@@ -52,6 +52,8 @@ class _AdminNotificationBellState extends State<AdminNotificationBell> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      padding: EdgeInsets.zero,
       onPressed: widget.onPressed ?? _openNotifications,
       icon: Stack(
         clipBehavior: Clip.none,

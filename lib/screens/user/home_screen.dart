@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
         cargandoUsuario = false;
       });
     } catch (e) {
-      debugPrint('Error cargando usuario: $e');
+
 
       if (!mounted) return;
 
@@ -399,10 +399,10 @@ class _HomeScreenState extends State<HomeScreen> {
         cargandoTickets = false;
         errorTickets = null;
       });
-    } catch (e, stackTrace) {
-      debugPrint('Error cargando dashboard: $e');
+    } catch (e) {
 
-      debugPrint(stackTrace.toString());
+
+
 
       if (!mounted) return;
 

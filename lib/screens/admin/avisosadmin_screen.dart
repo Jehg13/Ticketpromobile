@@ -9,6 +9,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -668,7 +669,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                                   item['id']?.toString() ?? '',
                                 );
 
-                                return Container(
+                                final notificationCard = Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: leida
@@ -742,6 +743,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                                     ),
                                   ),
                                 );
+                                return notificationCard;
                               },
                             ),
                     ),
@@ -1330,13 +1332,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'Administrador',
-                              style: TextStyle(
-                                color: AdminScreen.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
+                            const AdminDrawerRole(color: AdminScreen.textMuted),
                           ],
                         ),
                       ],
@@ -1465,7 +1461,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         ? Colors.white
         : AdminScreen.textMuted;
 
-    return Container(
+    final item = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: selected ? AdminScreen.primaryBlue : Colors.transparent,
@@ -1484,6 +1480,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         ),
       ),
     );
+    if (title == 'Cambios' || title == 'Usuarios') {
+      return AdminOnlyDrawerItem(child: item);
+    }
+    return item;
   }
 
   Future<void> _cerrarSesion() async {
@@ -1562,7 +1562,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   Widget _buildAvisoCardMobile(Map<String, dynamic> item) {
     final isActivo = _isActivo(item);
 
-    return Container(
+    final avisoCard = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: inputBg,
@@ -1702,6 +1702,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         ],
       ),
     );
+    return avisoCard;
   }
 
   Widget _buildEmptyState() {

@@ -41,44 +41,28 @@ class NotificationService {
         _tokenListenerRegistered = true;
         messaging.onTokenRefresh.listen(
           registerDeviceToken,
-          onError: (Object error, StackTrace stackTrace) {
-            debugPrint('FCM token refresh failed: $error');
-            debugPrintStack(stackTrace: stackTrace);
-          },
+          onError: (_, _) {},
         );
       }
 
       for (var attempt = 1; attempt <= 3; attempt++) {
         try {
           final token = await messaging.getToken();
-          debugPrint(
-            'FCM token obtained: ${token == null ? 'null' : 'yes'}',
-          );
+
           final result = await registerDeviceToken(token);
           if (result['success'] == true) {
             return;
           }
-          debugPrint(
-            'FCM token registration attempt $attempt failed: '
-            '${result['message'] ?? 'unknown error'}',
-          );
-        } catch (error, stackTrace) {
-          debugPrint(
-            'FCM token attempt $attempt unavailable; app startup will continue: $error',
-          );
-          debugPrintStack(stackTrace: stackTrace);
+
+        } catch (_) {
         }
 
         if (attempt < 3) {
           await Future<void>.delayed(const Duration(seconds: 2));
         }
       }
-    } on FirebaseException catch (error, stackTrace) {
-      debugPrint('Firebase Messaging initialization failed: ${error.message}');
-      debugPrintStack(stackTrace: stackTrace);
-    } catch (error, stackTrace) {
-      debugPrint('Firebase Messaging initialization failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+    } on FirebaseException catch (_) {
+    } catch (_) {
     }
   }
 
@@ -91,7 +75,7 @@ class NotificationService {
     final cleanToken = token?.trim() ?? '';
 
     if (cleanToken.isEmpty) {
-      debugPrint('FCM token registration skipped: no token was provided.');
+
       return {
         'statusCode': 400,
         'success': false,
@@ -110,7 +94,7 @@ class NotificationService {
     final authToken = await SessionService.getToken();
 
     if (authToken == null || authToken.isEmpty) {
-      debugPrint('FCM token registration skipped: no active session.');
+
       return {
         'statusCode': 401,
         'success': false,
@@ -119,7 +103,7 @@ class NotificationService {
     }
 
     try {
-      debugPrint('Registering FCM token at ${ApiService.baseUrl}/device-tokens');
+
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/device-tokens'),
         headers: {
@@ -138,10 +122,7 @@ class NotificationService {
       );
 
       final data = _decodeBody(response.body);
-      debugPrint(
-        'FCM token registration response: ${response.statusCode} '
-        '${data['message'] ?? ''}',
-      );
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         _registeredToken = cleanToken;
       }
@@ -154,7 +135,7 @@ class NotificationService {
         'data': data,
       };
     } catch (error) {
-      debugPrint('FCM token registration failed: $error');
+
       return {
         'statusCode': 0,
         'success': false,
@@ -208,7 +189,7 @@ class NotificationService {
         'data': data,
       };
     } catch (error) {
-      debugPrint('FCM token removal failed: $error');
+
       return {
         'statusCode': 0,
         'success': false,

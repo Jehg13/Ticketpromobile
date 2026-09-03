@@ -50,6 +50,7 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _dashboard = <String, dynamic>{};
     });
 
     try {
@@ -75,6 +76,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
       setState(() {
         _errorMessage = error.toString();
+        _dashboard = <String, dynamic>{};
         _isLoading = false;
       });
     }
@@ -426,15 +428,7 @@ class _AdminScreenState extends State<AdminScreen> {
       return spots;
     }
 
-    return const [
-      FlSpot(0, 7),
-      FlSpot(1, 2.2),
-      FlSpot(2, 1),
-      FlSpot(3, 1),
-      FlSpot(4, 1),
-      FlSpot(5, 1.8),
-      FlSpot(6, 1),
-    ];
+    return const [FlSpot(0, 0)];
   }
 
   @override
@@ -494,6 +488,7 @@ class _AdminScreenState extends State<AdminScreen> {
         backgroundColor: AdminScreen.sidebarBg,
         foregroundColor: Colors.white,
         elevation: 0,
+        titleSpacing: 8,
         title: RichText(
           text: const TextSpan(
             children: [
@@ -502,7 +497,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 17,
                 ),
               ),
               TextSpan(
@@ -510,18 +505,19 @@ class _AdminScreenState extends State<AdminScreen> {
                 style: TextStyle(
                   color: AdminScreen.accentBlue,
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 17,
                 ),
               ),
             ],
           ),
         ),
-        actions: [
-          const AdminNotificationBell(),
-          const SizedBox(width: 8),
-          const AdminProfileMenu(radius: 16),
-          const SizedBox(width: 12),
-        ],
+        actions: MediaQuery.sizeOf(context).width < 420
+            ? const [AdminProfileMenu(radius: 14), SizedBox(width: 4)]
+            : const [
+                AdminNotificationBell(),
+                AdminProfileMenu(radius: 14),
+                SizedBox(width: 4),
+              ],
       ),
       drawer: const CustomSidebar(),
       body: _isLoading
@@ -1286,13 +1282,7 @@ class CustomSidebar extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Administrador',
-                            style: TextStyle(
-                              color: AdminScreen.textMuted,
-                              fontSize: 11,
-                            ),
-                          ),
+                          const AdminDrawerRole(color: AdminScreen.textMuted),
                         ],
                       ),
                     ],

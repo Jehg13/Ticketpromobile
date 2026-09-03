@@ -7,6 +7,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../services/admin/perfiladmin_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -1279,13 +1280,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Administrador',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
-                            ),
-                          ),
+                          const AdminDrawerRole(),
                         ],
                       ),
                     ],
@@ -1412,7 +1407,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         ? Colors.white
         : const Color(0xFF94A3B8);
 
-    return Padding(
+    final item = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
         tileColor: selected ? const Color(0xFF4F46E5) : null,
@@ -1429,6 +1424,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         onTap: onTap,
       ),
     );
+    if (title == 'Cambios' || title == 'Usuarios') {
+      return AdminOnlyDrawerItem(child: item);
+    }
+    return item;
   }
 
   Widget _buildFieldEditable(

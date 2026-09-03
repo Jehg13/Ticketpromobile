@@ -130,25 +130,17 @@ Future<void> _seleccionarEvidencias() async {
         final bytes = await archivo.readAsBytes();
 
         if (bytes.isEmpty) {
-          debugPrint(
-            'No se pudieron leer los bytes de: ${archivo.name}',
-          );
+
           continue;
         }
 
         nuevasEvidencias.add(archivo);
 
-        debugPrint(
-          'Archivo seleccionado: ${archivo.name}',
-        );
 
-        debugPrint(
-          'Bytes: ${bytes.length}',
-        );
-      } catch (e) {
-        debugPrint(
-          'Error leyendo ${archivo.name}: $e',
-        );
+
+
+      } catch (_) {
+        continue;
       }
     }
 
@@ -168,17 +160,13 @@ Future<void> _seleccionarEvidencias() async {
       evidencias.addAll(nuevasEvidencias);
     });
 
-    debugPrint(
-      'Total de evidencias: ${evidencias.length}',
-    );
+
   } catch (e) {
     if (!mounted) {
       return;
     }
 
-    debugPrint(
-      'Error seleccionando evidencias: $e',
-    );
+
 
     _mostrarMensaje(
       'No se pudieron seleccionar los archivos',

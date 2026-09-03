@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
@@ -8,21 +7,21 @@ import 'session_service.dart';
 
 class TicketService {
   static Future<Map<String, dynamic>> obtenerTickets() async {
-    debugPrint('');
-    debugPrint('====================================================');
-    debugPrint('🎫 TicketService.obtenerTickets()');
-    debugPrint('====================================================');
+
+
+
+
 
     final token = await SessionService.getToken();
 
     if (token == null || token.isEmpty) {
-      debugPrint('❌ NO HAY TOKEN');
+
       throw Exception('Sesión no válida');
     }
 
     final url = '${ApiService.baseUrl}/tickets';
 
-    debugPrint('🌐 URL: $url');
+
 
     try {
       final response = await http.get(
@@ -34,8 +33,8 @@ class TicketService {
         },
       );
 
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
 
       if (response.statusCode == 200) {
         final decoded = _decodificarRespuesta(response.body);
@@ -47,13 +46,11 @@ class TicketService {
           );
         }
 
-        _mostrarInformacionRespuesta(decoded);
-
         return decoded;
       }
 
       if (response.statusCode == 401) {
-        debugPrint('🔴 Sesión expirada');
+
 
         await SessionService.clearSession();
 
@@ -92,7 +89,7 @@ class TicketService {
         rethrow;
       }
 
-      debugPrint('❌ Error de conexión: $e');
+
 
       throw Exception(
         'No se pudo conectar con el servidor',
@@ -103,17 +100,15 @@ class TicketService {
   static Future<Map<String, dynamic>> obtenerTicket(
     int id,
   ) async {
-    debugPrint('');
-    debugPrint('====================================================');
-    debugPrint(
-      '🎫 TicketService.obtenerTicket($id)',
-    );
-    debugPrint('====================================================');
+
+
+
+
 
     final token = await SessionService.getToken();
 
     if (token == null || token.isEmpty) {
-      debugPrint('❌ NO HAY TOKEN');
+
 
       throw Exception(
         'Sesión no válida',
@@ -122,7 +117,7 @@ class TicketService {
 
     final url = '${ApiService.baseUrl}/tickets/$id';
 
-    debugPrint('🌐 URL: $url');
+
 
     try {
       final response = await http.get(
@@ -134,13 +129,9 @@ class TicketService {
         },
       );
 
-      debugPrint(
-        '📥 Status: ${response.statusCode}',
-      );
 
-      debugPrint(
-        '📦 Body: ${response.body}',
-      );
+
+
 
       if (response.statusCode == 200) {
         final decoded = _decodificarRespuesta(
@@ -197,9 +188,7 @@ class TicketService {
         rethrow;
       }
 
-      debugPrint(
-        '❌ Error de conexión: $e',
-      );
+
 
       throw Exception(
         'No se pudo conectar con el servidor',
@@ -209,16 +198,10 @@ class TicketService {
 
   static Future<List<Map<String, dynamic>>>
       obtenerNotificaciones() async {
-    debugPrint('');
-    debugPrint(
-      '====================================================',
-    );
-    debugPrint(
-      '🔔 TicketService.obtenerNotificaciones()',
-    );
-    debugPrint(
-      '====================================================',
-    );
+
+
+
+
 
     final respuesta = await obtenerTickets();
 
@@ -239,9 +222,7 @@ class TicketService {
       }
     }
 
-    debugPrint(
-      '🔔 Notificaciones obtenidas: ${notificaciones.length}',
-    );
+
 
     return notificaciones;
   }
@@ -279,13 +260,11 @@ class TicketService {
         return decoded is Map && decoded['success'] == true;
       }
 
-      debugPrint(
-        '⚠️ Error al marcar notificación como leída: ${response.statusCode} ${response.body}',
-      );
+
 
       return false;
     } catch (e) {
-      debugPrint('❌ Excepción al marcar notificación como leída: $e');
+
       return false;
     }
   }
@@ -315,29 +294,21 @@ class TicketService {
         return decoded is Map && decoded['success'] == true;
       }
 
-      debugPrint(
-        '⚠️ Error al marcar todas las notificaciones como leídas: ${response.statusCode} ${response.body}',
-      );
+
 
       return false;
     } catch (e) {
-      debugPrint('❌ Excepción al marcar todas las notificaciones: $e');
+
       return false;
     }
   }
 
   static Future<int>
       obtenerNotificacionesNoLeidas() async {
-    debugPrint('');
-    debugPrint(
-      '====================================================',
-    );
-    debugPrint(
-      '🔔 TicketService.obtenerNotificacionesNoLeidas()',
-    );
-    debugPrint(
-      '====================================================',
-    );
+
+
+
+
 
     final respuesta = await obtenerTickets();
 
@@ -346,25 +317,17 @@ class TicketService {
 
     final cantidad = _enteroSeguro(valor);
 
-    debugPrint(
-      '🔔 No leídas: $cantidad',
-    );
+
 
     return cantidad;
   }
 
   static Future<List<Map<String, dynamic>>>
       obtenerActividad() async {
-    debugPrint('');
-    debugPrint(
-      '====================================================',
-    );
-    debugPrint(
-      '📋 TicketService.obtenerActividad()',
-    );
-    debugPrint(
-      '====================================================',
-    );
+
+
+
+
 
     final respuesta = await obtenerTickets();
 
@@ -385,25 +348,17 @@ class TicketService {
       }
     }
 
-    debugPrint(
-      '📋 Actividad obtenida: ${actividad.length}',
-    );
+
 
     return actividad;
   }
 
   static Future<List<Map<String, dynamic>>>
       obtenerAvisos() async {
-    debugPrint('');
-    debugPrint(
-      '====================================================',
-    );
-    debugPrint(
-      '📢 TicketService.obtenerAvisos()',
-    );
-    debugPrint(
-      '====================================================',
-    );
+
+
+
+
 
     final respuesta = await obtenerTickets();
 
@@ -424,9 +379,7 @@ class TicketService {
       }
     }
 
-    debugPrint(
-      '📢 Avisos obtenidos: ${avisos.length}',
-    );
+
 
     return avisos;
   }
@@ -446,9 +399,7 @@ class TicketService {
 
       return decoded;
     } on FormatException {
-      debugPrint(
-        '❌ La respuesta no es JSON válido',
-      );
+
 
       throw Exception(
         'Respuesta inválida del servidor',
@@ -505,63 +456,4 @@ class TicketService {
     return 0;
   }
 
-  static void _mostrarInformacionRespuesta(
-    Map<String, dynamic> decoded,
-  ) {
-    final resumen = decoded['resumen'];
-
-    if (resumen is Map) {
-      debugPrint(
-        '📊 Resumen: $resumen',
-      );
-    }
-
-    final ticketsRecientes =
-        decoded['tickets_recientes'];
-
-    if (ticketsRecientes is List) {
-      debugPrint(
-        '🎫 Tickets recientes: ${ticketsRecientes.length}',
-      );
-    }
-
-    final ultimoTicket =
-        decoded['ultimo_ticket'];
-
-    debugPrint(
-      '🏆 Último ticket: $ultimoTicket',
-    );
-
-    final actividad = decoded['actividad'];
-
-    if (actividad is List) {
-      debugPrint(
-        '📋 Actividad: ${actividad.length}',
-      );
-    }
-
-    final avisos = decoded['avisos'];
-
-    if (avisos is List) {
-      debugPrint(
-        '📢 Avisos: ${avisos.length}',
-      );
-    }
-
-    final notificaciones =
-        decoded['notificaciones'];
-
-    if (notificaciones is List) {
-      debugPrint(
-        '🔔 Notificaciones: ${notificaciones.length}',
-      );
-    }
-
-    final noLeidas =
-        decoded['notificaciones_no_leidas'];
-
-    debugPrint(
-      '🔔 Notificaciones no leídas: $noLeidas',
-    );
-  }
 }

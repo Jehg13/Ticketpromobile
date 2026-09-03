@@ -4,6 +4,7 @@ import '../../services/admin/cambios_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -690,7 +691,7 @@ class _CambiosScreenState extends State<CambiosScreen> {
   }
 
   Widget _buildError() {
-    return Container(
+    final item = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
@@ -729,6 +730,7 @@ class _CambiosScreenState extends State<CambiosScreen> {
         ],
       ),
     );
+    return item;
   }
 
   Widget _buildEmpty() {
@@ -1668,12 +1670,8 @@ class CustomSidebar extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Administrador',
-                            style: TextStyle(
-                              color: _CambiosScreenState.textMuted,
-                              fontSize: 11,
-                            ),
+                          const AdminDrawerRole(
+                            color: _CambiosScreenState.textMuted,
                           ),
                         ],
                       ),
@@ -1805,7 +1803,7 @@ class CustomSidebar extends StatelessWidget {
     bool isExit = false,
     VoidCallback? onTap,
   }) {
-    return Container(
+    final item = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: selected ? _CambiosScreenState.primaryBlue : Colors.transparent,
@@ -1836,5 +1834,9 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
     );
+    if (title == 'Cambios' || title == 'Usuarios') {
+      return AdminOnlyDrawerItem(child: item);
+    }
+    return item;
   }
 }

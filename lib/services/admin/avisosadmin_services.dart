@@ -34,9 +34,9 @@ dynamic body;
 try {
   body = jsonDecode(response.body);
 } catch (_) {
-  debugPrint('RESPUESTA NO JSON');
-  debugPrint('STATUS: ${response.statusCode}');
-  debugPrint('BODY: ${response.body}');
+
+
+
 
   throw Exception(
     'El servidor devolvió una respuesta no válida. '
@@ -44,8 +44,8 @@ try {
   );
 }
 
-debugPrint('STATUS: ${response.statusCode}');
-debugPrint('BODY: ${response.body}');
+
+
 
 if (response.statusCode >= 200 && response.statusCode < 300) {
   return body;
@@ -82,7 +82,7 @@ if (body is Map<String, dynamic>) {
 
   if (body['error'] != null &&
       body['error'].toString().trim().isNotEmpty) {
-    debugPrint('ERROR LARAVEL: ${body['error']}');
+
   }
 }
 
@@ -377,12 +377,12 @@ _agregarAfectados(
 
 await _agregarArchivo(request, archivo);
 
-debugPrint('========== CREAR AVISO ==========');
-debugPrint('URL: ${request.url}');
-debugPrint('METHOD: ${request.method}');
-debugPrint('FIELDS: ${request.fields}');
-debugPrint('AFECTA_A: $afectaA');
-debugPrint('=================================');
+
+
+
+
+
+
 
 final streamedResponse = await request.send();
 
@@ -472,12 +472,12 @@ _agregarAfectados(
 
 await _agregarArchivo(request, archivo);
 
-debugPrint('========== ACTUALIZAR AVISO ==========');
-debugPrint('URL: ${request.url}');
-debugPrint('METHOD: ${request.method}');
-debugPrint('FIELDS: ${request.fields}');
-debugPrint('AFECTA_A: $afectaA');
-debugPrint('======================================');
+
+
+
+
+
+
 
 final streamedResponse = await request.send();
 

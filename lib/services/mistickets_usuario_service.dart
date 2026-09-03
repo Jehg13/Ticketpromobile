@@ -12,11 +12,11 @@ class MisTicketsUsuarioService {
     final queryParameters=<String,String>{'page':pagina.toString(),'per_page':perPage.toString(),'estado':estado.trim().toLowerCase()};
     if(buscar.trim().isNotEmpty) queryParameters['buscar']=buscar.trim();
     final uri=Uri.parse('${ApiService.baseUrl}/mis-tickets').replace(queryParameters:queryParameters);
-    debugPrint('🎫 GET $uri');
+
     try {
       final response=await http.get(uri,headers:{'Accept':'application/json','Authorization':'Bearer $token'});
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
       final decoded=_decodificarRespuesta(response.body);
       if(response.statusCode>=200&&response.statusCode<300) {
         if(decoded['success']!=true) throw Exception(decoded['message']?.toString()??'No se pudieron obtener los tickets');
@@ -27,7 +27,7 @@ class MisTicketsUsuarioService {
     } on Exception {
       rethrow;
     } catch(e) {
-      debugPrint('❌ Error obteniendo mis tickets: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -35,11 +35,11 @@ class MisTicketsUsuarioService {
     final token=await SessionService.getToken();
     if(token==null||token.isEmpty) throw Exception('Sesión no válida');
     final uri=Uri.parse('${ApiService.baseUrl}/mis-tickets/$id');
-    debugPrint('🎫 GET $uri');
+
     try {
       final response=await http.get(uri,headers:{'Accept':'application/json','Authorization':'Bearer $token'});
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
       final decoded=_decodificarRespuesta(response.body);
       if(response.statusCode>=200&&response.statusCode<300) {
         if(decoded['success']!=true) throw Exception(decoded['message']?.toString()??'No se pudo obtener el ticket');
@@ -50,7 +50,7 @@ class MisTicketsUsuarioService {
     } on Exception {
       rethrow;
     } catch(e) {
-      debugPrint('❌ Error obteniendo ticket: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -58,11 +58,11 @@ class MisTicketsUsuarioService {
     final token=await SessionService.getToken();
     if(token==null||token.isEmpty) throw Exception('Sesión no válida');
     final uri=Uri.parse('${ApiService.baseUrl}/mis-tickets-resumen');
-    debugPrint('📊 GET $uri');
+
     try {
       final response=await http.get(uri,headers:{'Accept':'application/json','Authorization':'Bearer $token'});
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
       final decoded=_decodificarRespuesta(response.body);
       if(response.statusCode>=200&&response.statusCode<300) {
         if(decoded['success']!=true) throw Exception(decoded['message']?.toString()??'No se pudo obtener el resumen');
@@ -73,7 +73,7 @@ class MisTicketsUsuarioService {
     } on Exception {
       rethrow;
     } catch(e) {
-      debugPrint('❌ Error obteniendo resumen: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -106,9 +106,9 @@ class MisTicketsUsuarioService {
         final streamed=await request.send();
         response = await http.Response.fromStream(streamed);
       }
-      debugPrint('💬 POST $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
       final decoded=_decodificarRespuesta(response.body);
       if(response.statusCode>=200&&response.statusCode<300) {
         if(decoded['success']!=true) throw Exception(decoded['message']?.toString()??'No se pudo enviar el comentario');
@@ -119,7 +119,7 @@ class MisTicketsUsuarioService {
     } on Exception {
       rethrow;
     } catch(e) {
-      debugPrint('❌ Error enviando comentario: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }

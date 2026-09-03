@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/admin/ticketsadmin_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
@@ -50,6 +51,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
   int _pagina = 1;
   int _ultimaPagina = 1;
   int _total = 0;
+  int _totalTickets = 0;
+  int _pendientes = 0;
+  int _enProceso = 0;
+  int _solucionados = 0;
+  int _cancelados = 0;
   final Set<int> _solucionesEnviadas = <int>{};
   final Map<int, Map<String, dynamic>> _solucionesLocales =
       <int, Map<String, dynamic>>{};
@@ -86,12 +92,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 .toList()
           : <TicketItem>[];
       final pag = res['pagination'];
+      final stats = res['estadisticas'];
       if (!mounted) return;
       setState(() {
         tickets = list;
         _pagina = pag is Map ? _toInt(pag['current_page'], pagina) : pagina;
         _ultimaPagina = pag is Map ? _toInt(pag['last_page'], 1) : 1;
         _total = pag is Map ? _toInt(pag['total'], list.length) : list.length;
+        _totalTickets = stats is Map ? _toInt(stats['total'], 0) : 0;
+        _pendientes = stats is Map ? _toInt(stats['pendientes'], 0) : 0;
+        _enProceso = stats is Map ? _toInt(stats['en_proceso'], 0) : 0;
+        _solucionados = stats is Map ? _toInt(stats['solucionados'], 0) : 0;
+        _cancelados = stats is Map ? _toInt(stats['cancelados'], 0) : 0;
         _cargando = false;
       });
     } catch (e) {
@@ -99,6 +111,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
         setState(() {
           _cargando = false;
           _error = e.toString().replaceFirst('Exception: ', '');
+          tickets = [];
+          _total = 0;
+          _totalTickets = 0;
+          _pendientes = 0;
+          _enProceso = 0;
+          _solucionados = 0;
+          _cancelados = 0;
         });
       }
     }
@@ -2630,10 +2649,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
               height: 100,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: const [
+                children: [
                   KPIStatCard(
                     title: 'Total de tickets',
-                    count: '18',
+                    count: _totalTickets.toString(),
                     subtitle: 'Este mes',
                     icon: Icons.confirmation_number_outlined,
                     iconColor: accentBlue,
@@ -2641,7 +2660,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   SizedBox(width: 10),
                   KPIStatCard(
                     title: 'Pendientes',
-                    count: '1',
+                    count: _pendientes.toString(),
                     subtitle: 'Este mes',
                     icon: Icons.access_time_rounded,
                     iconColor: Colors.amber,
@@ -2649,7 +2668,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   SizedBox(width: 10),
                   KPIStatCard(
                     title: 'En proceso',
-                    count: '0',
+                    count: _enProceso.toString(),
                     subtitle: 'Este mes',
                     icon: Icons.sync,
                     iconColor: cyanAccent,
@@ -2657,7 +2676,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   SizedBox(width: 10),
                   KPIStatCard(
                     title: 'Solucionados',
-                    count: '15',
+                    count: _solucionados.toString(),
                     subtitle: 'Este mes',
                     icon: Icons.check_circle_outline,
                     iconColor: greenAccent,
@@ -2665,7 +2684,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   SizedBox(width: 10),
                   KPIStatCard(
                     title: 'Cancelados',
-                    count: '2',
+                    count: _cancelados.toString(),
                     subtitle: 'Este mes',
                     icon: Icons.cancel_outlined,
                     iconColor: Colors.redAccent,
@@ -2770,6 +2789,43 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     _error!,
                     style: const TextStyle(color: Colors.redAccent),
                   ),
+                ),
+              )
+            else if (tickets.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 32,
+                ),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.inbox_outlined,
+                      color: textMuted,
+                      size: 42,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'No hay tickets',
+                      style: TextStyle(
+                        color: textWhite,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'No se encontraron tickets para este filtro.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: textMuted, fontSize: 12),
+                    ),
+                  ],
                 ),
               )
             else
@@ -3460,45 +3516,44 @@ class CustomSidebar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Color(0xFF4F46E5),
-                        child: Text(
-                          'JH',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: SessionService.getUser(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data ?? {};
+                    final name = (user['name'] ?? 'Administrador').toString();
+
+                    return Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Gerente Ti',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
+                          const TicketsAdminAvatar(radius: 16),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name.isNotEmpty ? name : 'Administrador',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const AdminDrawerRole(),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -3650,5 +3705,60 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class TicketsAdminAvatar extends StatelessWidget {
+  const TicketsAdminAvatar({super.key, this.radius = 16});
+
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _loadPicture(),
+      builder: (context, snapshot) {
+        final picture = snapshot.data?.trim() ?? '';
+        final isDefault = SessionService.isDefaultProfilePicture(picture);
+        final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
+
+        return CircleAvatar(
+          radius: radius,
+          backgroundColor: const Color(0xFF4F46E5),
+          child: ClipOval(
+            child: !isDefault && imageUrl.isNotEmpty
+                ? Image.network(
+                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Image.asset(
+                      'assets/images/user.png',
+                      width: radius * 2,
+                      height: radius * 2,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(
+                    'assets/images/user.png',
+                    width: radius * 2,
+                    height: radius * 2,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _loadPicture() async {
+    final response = await ApiService.getUser();
+    if (response['success'] == true && response['user'] is Map) {
+      final user = response['user'] as Map;
+      return (user['picture'] ?? user['foto'] ?? user['foto_perfil'])
+          ?.toString()
+          .trim();
+    }
+    return SessionService.getPicture();
   }
 }

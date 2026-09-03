@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+
 class ApiService {
   // ============================================================
   // URLS
@@ -422,7 +423,7 @@ static const String serverUrl = 'http://127.0.0.1:8000';
 
     await storage.write(
       key: 'user_role',
-      value: user['role']?.toString() ?? '',
+      value: (user['role'] ?? user['rol'])?.toString() ?? '',
     );
 
     await storage.write(
