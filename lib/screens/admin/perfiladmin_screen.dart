@@ -95,7 +95,31 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           ],
         ),
         actions: [
-          const AdminNotificationBell(),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              const AdminNotificationBell(),
+              Positioned(
+                right: 10,
+                top: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.purpleAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    '2',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16, left: 8),
             child: const AdminProfileMenu(radius: 16),
