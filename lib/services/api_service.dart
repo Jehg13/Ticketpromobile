@@ -10,13 +10,13 @@ class ApiService {
   // URLS
   // ============================================================
 
-static const String serverUrl = 'http://127.0.0.1:8000';
+  static const String serverUrl = 'https://tickets.cymezapi.com';
   static const String baseUrl = '$serverUrl/api';
 
   // Todos los archivos que están dentro de storage/app/public
   // serán servidos mediante:
   //
-  // http://127.0.0.1:8000/archivo/ruta/del/archivo
+  // https://tickets.cymezapi.com/archivo/ruta/del/archivo
   //
   static const String fileUrl = '$serverUrl/archivo';
 
@@ -39,7 +39,7 @@ static const String serverUrl = 'http://127.0.0.1:8000';
   ///
   /// Resultado:
   ///
-  /// http://127.0.0.1:8000/archivo/profile-photos/usuario.jpg
+  /// https://tickets.cymezapi.com/archivo/profile-photos/usuario.jpg
   ///
   static String storageFileUrl(String? path) {
     if (path == null || path.trim().isEmpty) {
