@@ -416,9 +416,10 @@ class UsersService {
         (text.startsWith('[') && text.endsWith(']'))) {
       try {
         final decoded = jsonDecode(text);
-        return _normalizarNumeroEmpleadoDesdeJson(decoded);
+        final normalizado = _normalizarNumeroEmpleadoDesdeJson(decoded);
+        return normalizado;
       } catch (_) {
-        return text;
+        return '';
       }
     }
 
@@ -493,7 +494,6 @@ class UsersService {
         'name': nombre.trim(),
         'email': email.trim(),
         'phone': phone?.trim(),
-        'numero_empleado': _normalizarNumeroEmpleado(numeroEmpleado),
         'role': role.trim(),
         'active': _normalizarEstadoApi(active),
         'priv_admin': _normalizarEstadoApi(privAdmin),
@@ -502,6 +502,11 @@ class UsersService {
             ? ''
             : currentPassword.trim(),
       };
+
+      final numeroEmpleadoLimpio = _normalizarNumeroEmpleado(numeroEmpleado);
+      if (numeroEmpleadoLimpio.isNotEmpty) {
+        body['numero_empleado'] = numeroEmpleadoLimpio;
+      }
 
       if (oficinaId != null) {
         body['oficina_id'] = oficinaId;
