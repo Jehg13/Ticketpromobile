@@ -93,6 +93,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   bool _actualizandoFoto = false;
   bool _eliminandoFoto = false;
   bool _hayCambios = false;
+  bool _puedeEditarPerfil = false;
+  String _rolSistema = '';
   bool _guardandoCambios = false;
   final Map<String, String> _valoresOriginales = {};
 
@@ -178,6 +180,15 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   void _evaluarCambios() {
+    if (!_puedeEditarPerfil) {
+      if (_hayCambios) {
+        setState(() {
+          _hayCambios = false;
+        });
+      }
+      return;
+    }
+
     final cambios = _camposEditables
         .map((campo) => _obtenerValorActual(campo))
         .toList();
@@ -202,6 +213,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     if (!mounted) return;
     if (usuarioSesion == null) return;
     final data = Map<String, dynamic>.from(usuarioSesion);
+    final puedeEditarPerfil = SessionService.puedeEditarPerfilAdmin(data);
+    final rolSistema = SessionService.displayRole(data);
     _nombreController.text = data['name']?.toString() ?? '';
     _usuarioController.text = data['login']?.toString() ?? '';
     _correoController.text = data['email']?.toString() ?? '';
@@ -231,6 +244,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
         : pictureApi;
     final esFotoCustom = _esFotoPersonalizada(picture);
     setState(() {
+      _puedeEditarPerfil = puedeEditarPerfil;
+      _rolSistema = rolSistema;
       _fotoUrl = esFotoCustom ? ApiService.storageFileUrl(picture) : null;
       _tieneFoto = esFotoCustom;
       _hayCambios = false;
@@ -287,7 +302,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   Future<void> _guardarCambiosPerfil() async {
-    if (_guardandoCambios || !_hayCambios) return;
+    if (_guardandoCambios || !_hayCambios || !_puedeEditarPerfil) return;
 
     final nombre = _nombreController.text.trim();
     final usuario = _usuarioController.text.trim();
@@ -351,8 +366,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   Widget _buildHeaderPerfil() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
+      children: [
+        const Text(
           'Mi perfil',
           style: TextStyle(
             color: Colors.white,
@@ -360,10 +375,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
-          'Gestión y actualización directa de tu información administrativa',
-          style: TextStyle(color: Colors.grey, fontSize: 12),
+          _puedeEditarPerfil
+              ? 'Gestión y actualización directa de tu información administrativa'
+              : 'Consulta tu información administrativa en modo fijo',
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
         ),
       ],
     );
@@ -545,8 +562,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Información personal y laboral',
                       style: TextStyle(
                         color: Colors.white,
@@ -554,10 +571,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Como Gerente TI con permisos de administrador puedes modificar tus datos.',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
+                      _puedeEditarPerfil
+                          ? 'Como Gerente TI con permisos de administrador puedes modificar tus datos.'
+                          : 'Este perfil está fijo. Solo el Gerente TI puede editar los datos personales y laborales.',
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ],
                 ),
@@ -578,17 +597,19 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(
+                children: [
+                  const Icon(
                     Icons.shield_outlined,
                     color: Colors.blueAccent,
                     size: 14,
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
-                    'Modo Administrador',
+                    _puedeEditarPerfil ? 'Modo Administrador' : 'Modo fijo',
                     style: TextStyle(
-                      color: Colors.blueAccent,
+                      color: _puedeEditarPerfil
+                          ? Colors.blueAccent
+                          : Colors.grey,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -608,25 +629,25 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Nombre completo',
             _nombreController,
             Icons.person_outline,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           _buildFieldEditable(
             'Usuario',
             _usuarioController,
             Icons.alternate_email,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           _buildFieldEditable(
             'Correo electrónico',
             _correoController,
             Icons.email_outlined,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           _buildFieldEditable(
             'Teléfono',
             _telefonoController,
             Icons.phone_outlined,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           const Divider(color: Colors.white10, height: 28),
           _buildSectionTitle(
@@ -645,13 +666,13 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Departamento',
             _departamentoController,
             Icons.work_outline,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           _buildFieldEditable(
             'Rol',
             _rolController,
             Icons.shield_outlined,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
           _buildFieldEditable(
             'Oficina / Sucursal',
@@ -663,42 +684,44 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
             'Número de empleado',
             _numEmpleadoController,
             Icons.badge_outlined,
-            isEditable: true,
+            isEditable: _puedeEditarPerfil,
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 40,
-            child: ElevatedButton.icon(
-              onPressed: _hayCambios && !_guardandoCambios
-                  ? _guardarCambiosPerfil
-                  : null,
-              icon: Icon(
-                _guardandoCambios ? Icons.sync_rounded : Icons.save_outlined,
-                size: 18,
-              ),
-              label: Text(
-                _guardandoCambios
-                    ? 'Guardando...'
-                    : (_hayCambios ? 'Guardar cambios' : 'Sin cambios'),
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
+          if (_puedeEditarPerfil) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: ElevatedButton.icon(
+                onPressed: _hayCambios && !_guardandoCambios
+                    ? _guardarCambiosPerfil
+                    : null,
+                icon: Icon(
+                  _guardandoCambios ? Icons.sync_rounded : Icons.save_outlined,
+                  size: 18,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _hayCambios && !_guardandoCambios
-                    ? primaryGradientStart
-                    : inputBg,
-                foregroundColor: _hayCambios && !_guardandoCambios
-                    ? Colors.white
-                    : Colors.grey,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                label: Text(
+                  _guardandoCambios
+                      ? 'Guardando...'
+                      : (_hayCambios ? 'Guardar cambios' : 'Sin cambios'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _hayCambios && !_guardandoCambios
+                      ? primaryGradientStart
+                      : inputBg,
+                  foregroundColor: _hayCambios && !_guardandoCambios
+                      ? Colors.white
+                      : Colors.grey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -796,15 +819,15 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Rol en el sistema',
                     style: TextStyle(color: Colors.grey, fontSize: 11),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Gerente TI',
-                    style: TextStyle(
+                    _rolSistema.isNotEmpty ? _rolSistema : 'Sin rol',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -822,14 +845,14 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
-              children: const [
-                Icon(Icons.sync, color: Colors.blueAccent, size: 20),
-                SizedBox(width: 10),
+              children: [
+                const Icon(Icons.sync, color: Colors.blueAccent, size: 20),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Mantén tu información actualizada',
                         style: TextStyle(
                           color: Colors.white,
@@ -837,10 +860,15 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Una información correcta nos ayuda a darte un mejor soporte y atención.',
-                        style: TextStyle(color: Colors.grey, fontSize: 10),
+                        _puedeEditarPerfil
+                            ? 'Una información correcta nos ayuda a darte un mejor soporte y atención.'
+                            : 'Tus datos personales y laborales están en modo fijo.',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),
@@ -1199,7 +1227,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                                   password: password,
                                   confirmacion: confirmarCtrl.text,
                                 );
-                                if (!mounted) return;
+                                if (!mounted || !context.mounted) return;
                                 Navigator.pop(context);
                                 _mostrarMensaje(
                                   respuesta['message']?.toString() ??
@@ -1631,46 +1659,6 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     );
   }
 
-  Widget _buildLabelModal(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputModal(
-    String hint, {
-    TextEditingController? controller,
-    bool isPassword = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-        filled: true,
-        fillColor: inputBg,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
   Future<void> _seleccionarFoto() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
@@ -1870,4 +1858,3 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     super.dispose();
   }
 }
-

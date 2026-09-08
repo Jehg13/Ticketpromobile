@@ -224,6 +224,15 @@ class SessionService {
     return fallback;
   }
 
+  static bool puedeEditarPerfilAdmin(Map<String, dynamic>? user) {
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    final privAdmin = _toString(user?['priv_admin']).toUpperCase();
+
+    return role == 'gerente ti' && privAdmin == 'Y';
+  }
+
   static String _firstNonEmpty(
     Map<String, dynamic>? user,
     List<String> keys,
@@ -240,6 +249,18 @@ class SessionService {
     }
 
     return '';
+  }
+
+  static String _normalizeRole(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll(RegExp(r'\s+'), ' ');
   }
 
   static String _normalizePictureValue(String? picture) {
