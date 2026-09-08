@@ -187,7 +187,53 @@ class _UserScreenState extends State<UserScreen> {
         actions: [
           const AdminNotificationBell(),
           const SizedBox(width: 8),
-          const AdminProfileMenu(radius: 16),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: SessionService.getUser(),
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              final name = SessionService.displayName(
+                user,
+                fallback: 'Administrador',
+              );
+              final role = SessionService.displayRole(
+                user,
+                fallback: 'Administrador',
+              );
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        role,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: textMuted,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  const AdminProfileMenu(radius: 16),
+                ],
+              );
+            },
+          ),
           const SizedBox(width: 12),
         ],
       ),
