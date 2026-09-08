@@ -556,6 +556,22 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     );
   }
 
+  static Future<Map<String, String>> authHeaders({
+    Map<String, String>? extraHeaders,
+  }) async {
+    final token = await getToken();
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (extraHeaders != null) ...extraHeaders,
+    };
+
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer \';
+    }
+
+    return headers;
+  }
+
   // ============================================================
   // USUARIO GUARDADO
   // ============================================================
@@ -732,10 +748,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/user'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await authHeaders(),
       );
 
       final data = jsonDecode(response.body);
@@ -795,10 +808,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/logout'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await authHeaders(),
       );
 
       final data = jsonDecode(response.body);

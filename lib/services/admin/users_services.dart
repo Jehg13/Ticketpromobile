@@ -69,10 +69,7 @@ class UsersService {
 
       final response = await http.get(
         uri,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(),
       );
 
       final responseData = _decodeResponse(response);
@@ -268,10 +265,7 @@ class UsersService {
 
       final response = await http.get(
         uri,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(),
       );
 
       final responseData = _decodeResponse(response);
@@ -467,11 +461,11 @@ class UsersService {
 
       final response = await http.put(
         uri,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(
+          extraHeaders: {
+            'Content-Type': 'application/json',
+          },
+        ),
         body: jsonEncode(body),
       );
 
@@ -571,11 +565,11 @@ class UsersService {
 
       final response = await http.delete(
         uri,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(
+          extraHeaders: {
+            'Content-Type': 'application/json',
+          },
+        ),
         body: jsonEncode({'password': password.trim()}),
       );
 
@@ -630,10 +624,7 @@ class UsersService {
     try {
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/usuarios/empresas'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(),
       );
 
       final responseData = _decodeResponse(response);
@@ -705,10 +696,7 @@ class UsersService {
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/empresas/$empresaId/oficinas',
         ),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(),
       );
 
       final responseData = _decodeResponse(response);
@@ -780,10 +768,7 @@ class UsersService {
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/oficinas/$oficinaId/departamentos',
         ),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: await ApiService.authHeaders(),
       );
 
       final responseData = _decodeResponse(response);
