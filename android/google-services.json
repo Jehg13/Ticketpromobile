@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "194396898294",
+    "project_id": "ticketpro-96da5",
+    "storage_bucket": "ticketpro-96da5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:194396898294:android:09498a85e77000d5befdd7",
+        "android_client_info": {
+          "package_name": "com.example.ticketpromobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAC7Cv_Vj9n875OoJMKT_se9cgdItQNa-M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
