@@ -434,20 +434,31 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   child: Row(
                     children: [
                       const AdminAvatar(radius: 16),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const AdminDrawerRole(),
-                        ],
+                      const SizedBox(width: 10),
+                      FutureBuilder<Map<String, dynamic>?>(
+                        future: SessionService.getUser(),
+                        builder: (context, snapshot) {
+                          final user = snapshot.data ?? {};
+                          final name = SessionService.displayName(
+                            user,
+                            fallback: 'Administrador',
+                          );
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const AdminDrawerRole(),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

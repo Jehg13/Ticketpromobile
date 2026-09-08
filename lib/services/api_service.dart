@@ -51,8 +51,8 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     if (cleanPath.startsWith('http://localhost') ||
         cleanPath.startsWith('https://localhost')) {
       cleanPath = cleanPath
-          .replaceFirst('http://localhost', 'https://tickets.cymez.com')
-          .replaceFirst('https://localhost', 'https://tickets.cymez.com');
+          .replaceFirst('http://localhost', 'https://tickets.cymezapi.com')
+          .replaceFirst('https://localhost', 'https://tickets.cymezapi.com');
     }
 
     // Si Laravel ya devuelve una URL completa,
@@ -356,12 +356,18 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final payload = _decodeJsonBody(response.body);
+      final message = _extractApiMessage(
+        payload,
+        fallback: response.statusCode >= 200 && response.statusCode < 300
+            ? ''
+            : 'Error HTTP ${response.statusCode}.',
+      );
 
       if (response.statusCode >= 200 &&
           response.statusCode < 300 &&
-          data['success'] == true) {
-        final String? token = data['token']?.toString();
+          payload['success'] == true) {
+        final String? token = payload['token']?.toString();
 
         if (token != null && token.isNotEmpty) {
           await storage.write(
@@ -370,7 +376,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
           );
         }
 
-        final user = data['user'] ?? data['usuario'];
+        final user = payload['user'] ?? payload['usuario'];
 
         if (user is Map<String, dynamic>) {
           await _guardarUsuario(user);
@@ -379,13 +385,18 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
 
       return {
         'statusCode': response.statusCode,
-        'success': data['success'] == true,
-        'mfa_required': data['mfa_required'] == true,
-        'message': data['message']?.toString() ?? '',
-        'token': data['token'],
-        'user': data['user'] ?? data['usuario'],
-        'login': data['login'],
-        'data': data,
+        'success': payload['success'] == true,
+        'mfa_required': payload['mfa_required'] == true,
+        'message': message,
+        'token': payload['token'],
+        'user': payload['user'] ?? payload['usuario'],
+        'login': payload['login'],
+        'error_details': _extractErrorDetails(
+          payload,
+          rawBody: response.body,
+        ),
+        'raw_body': response.body,
+        'data': payload,
       };
     } catch (e) {
       return {
@@ -393,10 +404,65 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         'success': false,
         'mfa_required': false,
         'message': 'No se pudo conectar con el servidor.',
+        'error_details': e.toString(),
         'error': e.toString(),
         'data': null,
       };
     }
+  }
+
+  static String _extractApiMessage(
+    Map<String, dynamic> payload, {
+    required String fallback,
+  }) {
+    final dynamic rawMessage = payload['message'];
+    if (rawMessage != null) {
+      final message = rawMessage.toString().trim();
+      if (message.isNotEmpty) {
+        return message;
+      }
+    }
+
+    final dynamic rawError = payload['error'];
+    if (rawError != null) {
+      final error = rawError.toString().trim();
+      if (error.isNotEmpty) {
+        return error;
+      }
+    }
+
+    final dynamic rawException = payload['exception'];
+    if (rawException != null) {
+      final exception = rawException.toString().trim();
+      if (exception.isNotEmpty) {
+        return exception;
+      }
+    }
+
+    return fallback;
+  }
+
+  static String _extractErrorDetails(
+    Map<String, dynamic> payload, {
+    required String rawBody,
+  }) {
+    final details = <String>[];
+
+    for (final key in const ['error', 'exception', 'trace']) {
+      final value = payload[key];
+      if (value != null) {
+        final text = value.toString().trim();
+        if (text.isNotEmpty) {
+          details.add('$key: $text');
+        }
+      }
+    }
+
+    if (details.isEmpty && rawBody.trim().isNotEmpty) {
+      details.add(rawBody.trim());
+    }
+
+    return details.join('\n\n');
   }
 
   // ============================================================

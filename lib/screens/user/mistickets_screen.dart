@@ -1257,7 +1257,8 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
   Widget _buildProfileImage(String path, {double radius = 20}) {
     final String cleanPath = path.trim();
-    if (cleanPath.isEmpty) {
+    if (cleanPath.isEmpty ||
+        SessionService.isDefaultProfilePicture(cleanPath)) {
       return CircleAvatar(
         radius: radius,
         backgroundImage: const AssetImage(defaultAvatar),

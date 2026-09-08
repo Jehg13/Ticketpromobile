@@ -1293,15 +1293,24 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   // ============================================================
 
   Widget _buildFotoPerfilCard() {
-    final fotoUrl = ApiService.profileImageUrl(_getPerfilValue('picture'));
-    final nombreUsuario = _getPerfilValue('name', fallback: 'Usuario');
+    final picture = _getPerfilValue('picture');
+    final esFotoDefault = SessionService.isDefaultProfilePicture(picture);
+    final fotoUrl = esFotoDefault ? '' : ApiService.profileImageUrl(picture);
     final tieneFotoPerfil = fotoUrl.isNotEmpty;
     final hayFotoNueva =
         (_fotoNuevaPath != null && _fotoNuevaPath!.isNotEmpty) ||
         (_fotoNuevaBytes != null && _fotoNuevaBytes!.isNotEmpty);
-    final imagenActual = hayFotoNueva && _fotoNuevaBytes == null
-        ? FileImage(File(_fotoNuevaPath!))
-        : null;
+    final ImageProvider<Object>? imagenActual = hayFotoNueva
+        ? (_fotoNuevaBytes != null
+              ? MemoryImage(_fotoNuevaBytes!)
+              : FileImage(File(_fotoNuevaPath!)))
+        : (tieneFotoPerfil
+              ? NetworkImage(
+                  '$fotoUrl?profile_refresh=${fotoUrl.hashCode}',
+                )
+              : null);
+    final ImageProvider<Object> imagenPerfil =
+        imagenActual ?? const AssetImage('assets/images/user.png');
 
     return Container(
       width: double.infinity,
@@ -1374,32 +1383,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   child: CircleAvatar(
                     radius: 63,
                     backgroundColor: const Color(0xFF091326),
-                    backgroundImage: _fotoNuevaBytes != null
-                        ? MemoryImage(_fotoNuevaBytes!)
-                        : imagenActual ??
-                              (tieneFotoPerfil
-                                  ? NetworkImage(
-                                      '$fotoUrl?profile_refresh=${fotoUrl.hashCode}',
-                                    )
-                                  : const AssetImage('assets/images/user.png')),
-                    child: !hayFotoNueva && !tieneFotoPerfil
-                        ? Text(
-                            nombreUsuario.isNotEmpty
-                                ? nombreUsuario
-                                      .trim()
-                                      .split(RegExp(r'\s+'))
-                                      .take(2)
-                                      .map((p) => p[0])
-                                      .join()
-                                      .toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 38,
-                            ),
-                          )
-                        : null,
+                    backgroundImage: imagenPerfil,
                   ),
                 ),
                 Positioned(
@@ -1773,35 +1757,44 @@ class AppNavigationDrawer extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            const Row(
-              children: [
-                home.UserAvatar(radius: 20),
+            FutureBuilder<Map<String, dynamic>?>(
+              future: SessionService.getUser(),
+              builder: (context, snapshot) {
+                final user = snapshot.data;
+                final nombre = SessionService.displayName(user);
+                final rol = SessionService.displayRole(user);
 
-                SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Juan Pérez',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                return Row(
+                  children: [
+                    const home.UserAvatar(radius: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nombre,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            rol,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
-
-                      Text(
-                        'Administración',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 20),

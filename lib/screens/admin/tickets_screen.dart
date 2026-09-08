@@ -3386,7 +3386,7 @@ class TicketCard extends StatelessWidget {
 
   Widget _assignedPhoto() {
     final path = ticket.assignedPhoto.trim();
-    if (path.isEmpty) {
+    if (path.isEmpty || SessionService.isDefaultProfilePicture(path)) {
       return const CircleAvatar(
         radius: 10,
         backgroundColor: Color(0xFF3B82F6),
@@ -3520,7 +3520,10 @@ class CustomSidebar extends StatelessWidget {
                   future: SessionService.getUser(),
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? {};
-                    final name = (user['name'] ?? 'Administrador').toString();
+                    final name = SessionService.displayName(
+                      user,
+                      fallback: 'Administrador',
+                    );
 
                     return Container(
                       padding: const EdgeInsets.all(8),
@@ -3537,7 +3540,7 @@ class CustomSidebar extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  name.isNotEmpty ? name : 'Administrador',
+                                  name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(

@@ -1,7 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'api_service.dart';
+
 class SessionService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static bool _profileRefreshAttempted = false;
 
   static const String tokenKey = 'auth_token';
 
@@ -27,15 +30,23 @@ class SessionService {
   }) async {
     await _storage.write(key: tokenKey, value: _toString(token));
 
+    final storedEmpresa = await _storage.read(key: empresaKey);
+    final storedDepartamento = await _storage.read(key: departamentoKey);
+    final storedOficina = await _storage.read(key: oficinaKey);
+    final storedNumeroEmpleado = await _storage.read(key: numeroEmpleadoKey);
+
     await _storage.write(key: loginKey, value: _toString(user['login']));
 
     await _storage.write(key: emailKey, value: _toString(user['email']));
 
-    await _storage.write(key: nameKey, value: _toString(user['name']));
+    await _storage.write(
+      key: nameKey,
+      value: _toString(user['name'] ?? user['nombre'] ?? user['full_name']),
+    );
 
     await _storage.write(
       key: roleKey,
-      value: _toString(user['role'] ?? user['rol']),
+      value: _toString(user['role'] ?? user['rol'] ?? user['puesto']),
     );
 
     await _storage.write(
@@ -48,13 +59,22 @@ class SessionService {
     await _storage.write(key: mfaKey, value: _toString(user['mfa']));
 
     await _storage.write(key: empresaKey, value: _toString(user['empresa']));
+    if (_toString(user['empresa']).isEmpty && storedEmpresa != null) {
+      await _storage.write(key: empresaKey, value: storedEmpresa);
+    }
 
     await _storage.write(
       key: departamentoKey,
       value: _toString(user['departamento']),
     );
+    if (_toString(user['departamento']).isEmpty && storedDepartamento != null) {
+      await _storage.write(key: departamentoKey, value: storedDepartamento);
+    }
 
     await _storage.write(key: oficinaKey, value: _toString(user['oficina']));
+    if (_toString(user['oficina']).isEmpty && storedOficina != null) {
+      await _storage.write(key: oficinaKey, value: storedOficina);
+    }
 
     await _storage.write(
       key: phoneKey,
@@ -65,6 +85,13 @@ class SessionService {
       key: numeroEmpleadoKey,
       value: _toString(user['numero_empleado']),
     );
+    if (_toString(user['numero_empleado']).isEmpty &&
+        storedNumeroEmpleado != null) {
+      await _storage.write(
+        key: numeroEmpleadoKey,
+        value: storedNumeroEmpleado,
+      );
+    }
     final picture = _toString(
       user['picture'] ?? user['foto'] ?? user['foto_perfil'],
     );
@@ -94,6 +121,64 @@ class SessionService {
     }
 
     return value.toString().trim();
+  }
+
+  static String displayName(
+    Map<String, dynamic>? user, {
+    String fallback = 'Usuario',
+  }) {
+    final name = _firstNonEmpty(user, [
+      'name',
+      'nombre',
+      'full_name',
+      'fullName',
+      'usuario',
+      'login',
+      'email',
+    ]);
+
+    return name.isNotEmpty ? name : fallback;
+  }
+
+  static String displayRole(
+    Map<String, dynamic>? user, {
+    String fallback = 'Sin rol',
+  }) {
+    final role = _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']);
+    if (role.isNotEmpty) {
+      return role;
+    }
+
+    final privAdmin = _toString(user?['priv_admin']).toLowerCase();
+    final isAdmin =
+        privAdmin == 'y' ||
+        privAdmin == 'yes' ||
+        privAdmin == 'true' ||
+        privAdmin == '1';
+
+    if (isAdmin) {
+      return 'Administrador';
+    }
+
+    return fallback;
+  }
+
+  static String _firstNonEmpty(
+    Map<String, dynamic>? user,
+    List<String> keys,
+  ) {
+    if (user == null) {
+      return '';
+    }
+
+    for (final key in keys) {
+      final text = _toString(user[key]);
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+
+    return '';
   }
 
   static Future<String?> getToken() async {
@@ -195,11 +280,34 @@ class SessionService {
     final phone = await getPhone();
     final numeroEmpleado = await getNumeroEmpleado();
     final picture = await getPicture();
+    final needsRefresh =
+        (empresa ?? '').trim().isEmpty ||
+        (departamento ?? '').trim().isEmpty ||
+        (oficina ?? '').trim().isEmpty ||
+        (numeroEmpleado ?? '').trim().isEmpty;
+
+    if (needsRefresh && !_profileRefreshAttempted) {
+      _profileRefreshAttempted = true;
+
+      final apiResponse = await ApiService.getUser();
+      final apiUser = apiResponse['user'];
+
+      if (apiResponse['success'] == true &&
+          apiUser is Map<String, dynamic>) {
+        await saveSession(token: token, user: apiUser);
+
+        final refreshedUser = await getUser();
+        if (refreshedUser != null) {
+          return refreshedUser;
+        }
+      }
+    }
 
     return {
       'login': login ?? '',
       'email': email ?? '',
       'name': name ?? '',
+      'nombre': name ?? '',
       'phone': phone ?? '',
       'role': role ?? '',
       'rol': role ?? '',
@@ -221,6 +329,7 @@ class SessionService {
   }
 
   static Future<void> clearSession() async {
+    _profileRefreshAttempted = false;
     await _storage.deleteAll();
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../services/admin/users_services.dart';
+import '../../services/api_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
@@ -1127,6 +1128,42 @@ class _UserScreenState extends State<UserScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Departamento: ${deptoCtrl.text.isEmpty ? 'Sin departamento' : deptoCtrl.text}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 10,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Número de empleado: ${numEmpCtrl.text.isEmpty ? 'Sin número' : numEmpCtrl.text}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -2002,6 +2039,7 @@ class UsuarioItem {
   String nombre;
   String email;
   String login;
+  String picture;
   String numEmpleado;
   String empresa;
   String oficina;
@@ -2015,6 +2053,7 @@ class UsuarioItem {
     required this.nombre,
     required this.email,
     required this.login,
+    required this.picture,
     required this.numEmpleado,
     required this.empresa,
     required this.oficina,
@@ -2029,6 +2068,7 @@ class UsuarioItem {
     final nombre = (map['name'] ?? map['nombre'] ?? 'Sin nombre').toString();
     final email = (map['email'] ?? '').toString();
     final login = (map['login'] ?? '').toString();
+    final picture = (map['picture'] ?? '').toString();
     final numeroEmpleado = (map['numero_empleado'] ?? map['numEmpleado'] ?? '')
         .toString();
     final empresa = (map['empresa'] ?? map['company'] ?? 'Sin empresa')
@@ -2062,6 +2102,7 @@ class UsuarioItem {
       nombre: nombre,
       email: email,
       login: login,
+      picture: picture,
       numEmpleado: numeroEmpleado,
       empresa: empresa,
       oficina: oficina,
@@ -2098,6 +2139,42 @@ class UserCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  Widget _buildAvatar() {
+    final picture = item.picture.trim();
+    final isDefaultPicture = SessionService.isDefaultProfilePicture(picture);
+    final imageUrl = isDefaultPicture ? '' : ApiService.profileImageUrl(picture);
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: ClipOval(
+        child: imageUrl.isEmpty
+            ? Image.asset(
+                'assets/images/user.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+              )
+            : Image.network(
+                '$imageUrl?profile_refresh=${picture.hashCode}',
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Image.asset(
+                  'assets/images/user.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                ),
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -2112,14 +2189,7 @@ class UserCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFF4F46E5),
-                child: Text(
-                  item.getInitials(),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
-              ),
+              _buildAvatar(),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -2138,6 +2208,16 @@ class UserCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Color(0xFF94A3B8),
                         fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${item.empresa} • ${item.oficina}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 9,
                       ),
                     ),
                   ],
@@ -2387,7 +2467,10 @@ class CustomSidebar extends StatelessWidget {
                   future: SessionService.getUser(),
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? {};
-                    final name = (user['name'] ?? 'Administrador').toString();
+                    final name = SessionService.displayName(
+                      user,
+                      fallback: 'Administrador',
+                    );
 
                     return Container(
                       padding: const EdgeInsets.all(8),
@@ -2404,7 +2487,7 @@ class CustomSidebar extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  name.isNotEmpty ? name : 'Administrador',
+                                  name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(

@@ -16,11 +16,6 @@ class CrearTicketService {
 
     final uri = Uri.parse('${ApiService.baseUrl}/equipos');
 
-
-
-
-
-
     try {
       final response = await http.get(
         uri,
@@ -29,9 +24,6 @@ class CrearTicketService {
           'Authorization': 'Bearer $token',
         },
       );
-
-
-
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -51,9 +43,7 @@ class CrearTicketService {
 
         return equiposData
             .whereType<Map>()
-            .map(
-              (equipo) => Map<String, dynamic>.from(equipo),
-            )
+            .map((equipo) => Map<String, dynamic>.from(equipo))
             .toList();
       }
 
@@ -89,8 +79,7 @@ class CrearTicketService {
       );
     } on Exception {
       rethrow;
-    } catch (e) {
-
+    } catch (_) {
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -114,21 +103,8 @@ class CrearTicketService {
 
     final uri = Uri.parse('${ApiService.baseUrl}/ticketscrear');
 
-
-
-
-
-
-
-
-
-
-
     try {
-      final request = http.MultipartRequest(
-        'POST',
-        uri,
-      );
+      final request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({
         'Accept': 'application/json',
@@ -156,58 +132,34 @@ class CrearTicketService {
         for (final file in evidencias) {
           try {
             final bytes = await file.readAsBytes();
-
             if (bytes.isEmpty) {
-
               continue;
             }
 
-
-
-            final archivo = http.MultipartFile.fromBytes(
-              'evidencia[]',
-              bytes,
-              filename: file.name,
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                'evidencia',
+                bytes,
+                filename: file.name,
+              ),
             );
-
-            request.files.add(archivo);
-          } catch (e) {
-
-
-            throw Exception(
-              'No se pudo leer el archivo ${file.name}',
-            );
+          } catch (_) {
+            throw Exception('No se pudo leer el archivo ${file.name}');
           }
         }
       }
 
-
-
-
-
       final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final decoded = _decodificarRespuesta(response.body);
 
-      final response = await http.Response.fromStream(
-        streamedResponse,
-      );
-
-
-
-
-      final decoded = _decodificarRespuesta(
-        response.body,
-      );
-
-      if (response.statusCode >= 200 &&
-          response.statusCode < 300) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         if (decoded['success'] == true) {
-
           return decoded;
         }
 
         throw Exception(
-          decoded['message']?.toString() ??
-              'No se pudo crear el ticket',
+          decoded['message']?.toString() ?? 'No se pudo crear el ticket',
         );
       }
 
@@ -229,24 +181,18 @@ class CrearTicketService {
         if (errores is Map) {
           final mensajes = <String>[];
 
-          errores.forEach((campo, valor) {
-            if (valor is List) {
-              for (final mensaje in valor) {
-                mensajes.add(
-                  mensaje.toString(),
-                );
+          errores.forEach((_, value) {
+            if (value is List) {
+              for (final mensaje in value) {
+                mensajes.add(mensaje.toString());
               }
             } else {
-              mensajes.add(
-                valor.toString(),
-              );
+              mensajes.add(value.toString());
             }
           });
 
           if (mensajes.isNotEmpty) {
-            throw Exception(
-              mensajes.join('\n'),
-            );
+            throw Exception(mensajes.join('\n'));
           }
         }
 
@@ -277,17 +223,11 @@ class CrearTicketService {
     } on Exception {
       rethrow;
     } catch (e) {
-
-
-      throw Exception(
-        'No se pudo conectar con el servidor',
-      );
+      throw Exception('No se pudo conectar con el servidor');
     }
   }
 
-  static Map<String, dynamic> _decodificarRespuesta(
-    String body,
-  ) {
+  static Map<String, dynamic> _decodificarRespuesta(String body) {
     try {
       final decoded = jsonDecode(body);
 
@@ -299,13 +239,9 @@ class CrearTicketService {
         return Map<String, dynamic>.from(decoded);
       }
 
-      throw Exception(
-        'Respuesta inválida del servidor',
-      );
+      throw Exception('Respuesta inválida del servidor');
     } on FormatException {
-      throw Exception(
-        'Respuesta inválida del servidor',
-      );
+      throw Exception('Respuesta inválida del servidor');
     }
   }
 }

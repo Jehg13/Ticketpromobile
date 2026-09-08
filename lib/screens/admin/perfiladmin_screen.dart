@@ -30,7 +30,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final Color primaryGradientEnd = const Color(0xFF4F46E5);
 
   final TextEditingController _nombreController = TextEditingController(
-    text: 'Jesus Hinojosa',
+    text: '',
   );
   final TextEditingController _usuarioController = TextEditingController(
     text: 'jhinojosa',
@@ -48,7 +48,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     text: 'Tecnologias',
   );
   final TextEditingController _rolController = TextEditingController(
-    text: 'Gerente Ti',
+    text: '',
   );
   final TextEditingController _oficinaController = TextEditingController(
     text: 'Reynosa',
@@ -1244,20 +1244,31 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                   child: Row(
                     children: [
                       const AdminAvatar(radius: 16),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const AdminDrawerRole(),
-                        ],
+                      const SizedBox(width: 10),
+                      FutureBuilder<Map<String, dynamic>?>(
+                        future: SessionService.getUser(),
+                        builder: (context, snapshot) {
+                          final user = snapshot.data ?? {};
+                          final name = SessionService.displayName(
+                            user,
+                            fallback: 'Administrador',
+                          );
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const AdminDrawerRole(),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

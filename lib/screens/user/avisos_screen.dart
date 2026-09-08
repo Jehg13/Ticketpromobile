@@ -1297,7 +1297,45 @@ class AppNavigationDrawer extends StatelessWidget {
             children: [
               const home.AppLogo(fontSize: 26),
               const SizedBox(height: 24),
-              const Row(children: [home.UserAvatar(radius: 20), SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Juan Pérez', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)), Text('Administración', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey))]))]),
+              FutureBuilder<Map<String, dynamic>?>(
+                future: SessionService.getUser(),
+                builder: (context, snapshot) {
+                  final user = snapshot.data;
+                  final nombre = SessionService.displayName(user);
+                  final rol = SessionService.displayRole(user);
+
+                  return Row(
+                    children: [
+                      const home.UserAvatar(radius: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nombre,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              rol,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
               const SizedBox(height: 20),
               const Divider(color: Colors.white12, height: 1),
               const SizedBox(height: 20),

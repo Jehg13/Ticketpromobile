@@ -1320,20 +1320,38 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                     child: Row(
                       children: [
                         const AdminAvatar(radius: 16),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Jesus Hinojosa',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const AdminDrawerRole(color: AdminScreen.textMuted),
-                          ],
+                        const SizedBox(width: 10),
+                        FutureBuilder<Map<String, dynamic>?>(
+                          future: SessionService.getUser(),
+                          builder: (context, snapshot) {
+                            final user = snapshot.data ?? {};
+                            final name = SessionService.displayName(
+                              user,
+                              fallback: 'Administrador',
+                            );
+                            final role = SessionService.displayRole(user);
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  role,
+                                  style: const TextStyle(
+                                    color: AdminScreen.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),

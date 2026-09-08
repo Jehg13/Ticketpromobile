@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class LoadingScreen extends StatefulWidget {
   final String mensaje;
@@ -20,14 +21,34 @@ Future<void> navigateWithLoading(
   String mensaje = 'Cargando sección...',
 }) async {
   final navigator = Navigator.of(context);
-  navigator.pushReplacement(
-    MaterialPageRoute(builder: (_) => LoadingScreen(mensaje: mensaje)),
-  );
-  await Future<void>.delayed(const Duration(milliseconds: 650));
-  if (!navigator.mounted) return;
-  navigator.pushReplacement(
-    MaterialPageRoute(builder: (_) => destination),
-  );
+  final completer = Completer<void>();
+
+  SchedulerBinding.instance.addPostFrameCallback((_) async {
+    if (!navigator.mounted) {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+      return;
+    }
+
+    navigator.pushReplacement(
+      MaterialPageRoute(builder: (_) => LoadingScreen(mensaje: mensaje)),
+    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+
+    if (navigator.mounted) {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    }
+
+    if (!completer.isCompleted) {
+      completer.complete();
+    }
+  });
+
+  return completer.future;
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {

@@ -130,10 +130,37 @@ class IndexAdminService {
       final body = jsonDecode(response.body);
 
       if (body is Map<String, dynamic>) {
-        return body['message']?.toString() ??
-            'Error HTTP ${response.statusCode}.';
+        final errorDetails = body['error_details']?.toString().trim() ?? '';
+        if (errorDetails.isNotEmpty) {
+          return errorDetails;
+        }
+
+        final message = body['message']?.toString().trim() ?? '';
+        if (message.isNotEmpty) {
+          return message;
+        }
+
+        final error = body['error']?.toString().trim() ?? '';
+        if (error.isNotEmpty) {
+          return error;
+        }
+
+        final exception = body['exception']?.toString().trim() ?? '';
+        if (exception.isNotEmpty) {
+          return exception;
+        }
+
+        final trace = body['trace']?.toString().trim() ?? '';
+        if (trace.isNotEmpty) {
+          return trace;
+        }
       }
     } catch (_) {}
+
+    final raw = response.body.trim();
+    if (raw.isNotEmpty) {
+      return raw;
+    }
 
     return 'Error HTTP ${response.statusCode}.';
   }

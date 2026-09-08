@@ -2726,9 +2726,10 @@ class UserAvatar extends StatelessWidget {
       future: SessionService.getUser(),
       builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString();
-        final imageUrl = picture == null || picture.trim().isEmpty
-            ? ''
-            : ApiService.profileImageUrl(picture);
+        final isDefaultPicture =
+            SessionService.isDefaultProfilePicture(picture);
+        final imageUrl =
+            isDefaultPicture ? '' : ApiService.profileImageUrl(picture);
         return CircleAvatar(
           radius: radius,
           backgroundColor: const Color(0xFF2563EB),
@@ -2912,14 +2913,12 @@ class AppNavigationDrawer extends StatelessWidget {
                 const SizedBox(width: 12),
 
                 Expanded(
-                  child: FutureBuilder<Map<String, dynamic>?>(
+                  child:                   FutureBuilder<Map<String, dynamic>?>(
                     future: SessionService.getUser(),
                     builder: (context, snapshot) {
                       final user = snapshot.data;
-
-                      final nombre = _obtenerNombreDrawer(user);
-
-                      final rol = _obtenerCampoDrawer(user, 'role');
+                      final nombre = SessionService.displayName(user);
+                      final rol = SessionService.displayRole(user);
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3033,42 +3032,6 @@ class AppNavigationDrawer extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _obtenerCampoDrawer(Map<String, dynamic>? user, String campo) {
-    if (user == null) {
-      return '';
-    }
-
-    final valor = user[campo];
-
-    if (valor == null) {
-      return '';
-    }
-
-    if (valor is Map) {
-      final resultado = valor['nombre'] ?? valor['name'] ?? valor['value'];
-
-      return resultado?.toString().trim() ?? '';
-    }
-
-    return valor.toString().trim();
-  }
-
-  String _obtenerNombreDrawer(Map<String, dynamic>? user) {
-    final nombre = _obtenerCampoDrawer(user, 'name');
-
-    if (nombre.isNotEmpty) {
-      return nombre;
-    }
-
-    final login = _obtenerCampoDrawer(user, 'login');
-
-    if (login.isNotEmpty) {
-      return login;
-    }
-
-    return 'Usuario';
   }
 
   Widget _drawerItem({

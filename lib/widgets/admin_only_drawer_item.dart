@@ -35,9 +35,9 @@ class AdminDrawerRole extends StatelessWidget {
       future: _loadUser(),
       builder: (context, snapshot) {
         final user = snapshot.data ?? {};
-        final role = (user['role'] ?? user['rol'] ?? '').toString().trim();
+        final role = SessionService.displayRole(user);
         return Text(
-          role.isNotEmpty ? role : 'Sin rol',
+          role,
           style: TextStyle(color: color, fontSize: 11),
         );
       },

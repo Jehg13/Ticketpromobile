@@ -560,102 +560,132 @@ Future<void> _seleccionarEvidencias() async {
           color: Colors.blue.withValues(alpha: 0.12),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
+          final user = snapshot.data;
+          final nombre = SessionService.displayName(user);
+          final rol = SessionService.displayRole(user);
+          final departamento = _userText(user, 'departamento', fallback: 'Sin departamento');
+          final empresa = _userText(user, 'empresa', fallback: 'TicketPro');
+          final oficina = _userText(
+            user,
+            'oficina',
+            fallback: 'Sin oficina',
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.person_outline_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Información del usuario',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= 800) {
-                final cardWidth =
-                    (constraints.maxWidth - 36) / 4;
-
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _userFieldCard(
-                      'Nombre',
-                      'Juan Perez',
-                      Icons.person_outline,
-                      cardWidth,
-                    ),
-                    _userFieldCard(
-                      'Departamento',
-                      'administracion',
-                      Icons.apartment_outlined,
-                      cardWidth,
-                    ),
-                    _userFieldCard(
-                      'Oficina / Sucursal',
-                      'Reynosa',
-                      Icons.location_on_outlined,
-                      cardWidth,
-                    ),
-                    _userFieldCard(
-                      'Empresa',
-                      'Cymez',
-                      Icons.account_balance_outlined,
-                      cardWidth,
-                    ),
-                  ],
-                );
-              }
-
-              return Column(
+              const Row(
                 children: [
-                  _userFieldCard(
-                    'Nombre',
-                    'Juan Perez',
-                    Icons.person_outline,
-                    constraints.maxWidth,
+                  Icon(
+                    Icons.person_outline_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
-                  const SizedBox(height: 12),
-                  _userFieldCard(
-                    'Departamento',
-                    'administracion',
-                    Icons.apartment_outlined,
-                    constraints.maxWidth,
-                  ),
-                  const SizedBox(height: 12),
-                  _userFieldCard(
-                    'Oficina / Sucursal',
-                    'Reynosa',
-                    Icons.location_on_outlined,
-                    constraints.maxWidth,
-                  ),
-                  const SizedBox(height: 12),
-                  _userFieldCard(
-                    'Empresa',
-                    'Cymez',
-                    Icons.account_balance_outlined,
-                    constraints.maxWidth,
+                  SizedBox(width: 8),
+                  Text(
+                    'Información del usuario',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
-              );
-            },
-          ),
-        ],
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth >= 800) {
+                    final cardWidth = (constraints.maxWidth - 48) / 5;
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _userFieldCard(
+                          'Nombre',
+                          nombre,
+                          Icons.person_outline,
+                          cardWidth,
+                        ),
+                        _userFieldCard(
+                          'Rol',
+                          rol,
+                          Icons.verified_user_outlined,
+                          cardWidth,
+                        ),
+                        _userFieldCard(
+                          'Departamento',
+                          departamento,
+                          Icons.apartment_outlined,
+                          cardWidth,
+                        ),
+                        _userFieldCard(
+                          'Empresa',
+                          empresa,
+                          Icons.account_balance_outlined,
+                          cardWidth,
+                        ),
+                        _userFieldCard(
+                          'Oficina / Sucursal',
+                          oficina,
+                          Icons.location_on_outlined,
+                          cardWidth,
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      _userFieldCard(
+                        'Nombre',
+                        nombre,
+                        Icons.person_outline,
+                        constraints.maxWidth,
+                      ),
+                      const SizedBox(height: 12),
+                      _userFieldCard(
+                        'Rol',
+                        rol,
+                        Icons.verified_user_outlined,
+                        constraints.maxWidth,
+                      ),
+                      const SizedBox(height: 12),
+                      _userFieldCard(
+                        'Departamento',
+                        departamento,
+                        Icons.apartment_outlined,
+                        constraints.maxWidth,
+                      ),
+                      const SizedBox(height: 12),
+                      _userFieldCard(
+                        'Oficina / Sucursal',
+                        oficina,
+                        Icons.location_on_outlined,
+                        constraints.maxWidth,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  String _userText(
+    Map<String, dynamic>? user,
+    String key, {
+    required String fallback,
+  }) {
+    final value = user?[key]?.toString().trim() ?? '';
+    return value.isNotEmpty ? value : fallback;
   }
 
   Widget _userFieldCard(
@@ -1619,25 +1649,26 @@ class UserAvatar extends StatelessWidget {
       future: SessionService.getUser(),
       builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString() ?? '';
-        final imageUrl = ApiService.profileImageUrl(picture);
-        return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color(0xFF2563EB),
-          width: 2,
-        ),
-      ),
-      child: CircleAvatar(
-        radius: radius,
-        backgroundColor: const Color(0xFF1E3A8A),
-        backgroundImage: imageUrl.isEmpty
+        final isDefaultPicture = SessionService.isDefaultProfilePicture(picture);
+        final imageUrl = isDefaultPicture ? '' : ApiService.profileImageUrl(picture);
+        final ImageProvider<Object> imageProvider = imageUrl.isEmpty
             ? const AssetImage('assets/images/user.png')
-            : NetworkImage('$imageUrl?profile_refresh=${picture.hashCode}'),
-        child: null,
-      ),
-    );
+            : NetworkImage('$imageUrl?profile_refresh=${picture.hashCode}');
+        return Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFF2563EB),
+              width: 2,
+            ),
+          ),
+          child: CircleAvatar(
+            radius: radius,
+            backgroundColor: const Color(0xFF1E3A8A),
+            backgroundImage: imageProvider,
+          ),
+        );
       },
     );
   }
@@ -1730,40 +1761,46 @@ class AppNavigationDrawer extends StatelessWidget {
           // USUARIO
           // ============================================================
 
-          const Row(
-            children: [
-              UserAvatar(
-                radius: 20,
-              ),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: SessionService.getUser(),
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              final nombre = SessionService.displayName(user);
+              final rol = SessionService.displayRole(user);
 
-              SizedBox(width: 12),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Juan Pérez',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+              return Row(
+                children: [
+                  const UserAvatar(
+                    radius: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          nombre,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          rol,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
-
-                    Text(
-                      'Administración',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
 
           const SizedBox(height: 20),

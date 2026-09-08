@@ -1267,25 +1267,38 @@ class CustomSidebar extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    children: [
-                      const AdminAvatar(radius: 16),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: FutureBuilder<Map<String, dynamic>?>(
+                    future: SessionService.getUser(),
+                    builder: (context, snapshot) {
+                      final user = snapshot.data ?? {};
+                      final name = SessionService.displayName(
+                        user,
+                        fallback: 'Administrador',
+                      );
+
+                      return Row(
                         children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const AdminAvatar(radius: 16),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const AdminDrawerRole(
+                                color: AdminScreen.textMuted,
+                              ),
+                            ],
                           ),
-                          const AdminDrawerRole(color: AdminScreen.textMuted),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],
