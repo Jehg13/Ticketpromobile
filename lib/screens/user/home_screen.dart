@@ -2772,85 +2772,137 @@ class UserHeaderActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final name = SessionService.displayName(user);
+        final role = SessionService.displayRole(user);
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              onPressed: onNotifications,
-              icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-              tooltip: 'Notificaciones',
-            ),
-            if (unreadCount > 0)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Text(
-                    unreadCount > 99 ? '99+' : '$unreadCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                Text(
+                  role,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  onPressed: onNotifications,
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                  ),
+                  tooltip: 'Notificaciones',
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Abrir menú de usuario',
+              offset: const Offset(0, 50),
+              padding: EdgeInsets.zero,
+              color: const Color(0xFF0F172A),
+              elevation: 14,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(color: Colors.blue.withValues(alpha: 0.22)),
               ),
-          ],
-        ),
-        PopupMenuButton<String>(
-          tooltip: 'Abrir menú de usuario',
-          offset: const Offset(0, 50),
-          padding: EdgeInsets.zero,
-          color: const Color(0xFF0F172A),
-          elevation: 14,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.blue.withValues(alpha: 0.22)),
-          ),
-          onSelected: (value) async {
-            if (value == 'perfil') {
-              await navigateWithLoading(
-                context,
-                const MiPerfilScreen(),
-                mensaje: 'Cargando tu perfil...',
-              );
-            } else {
-              await SessionService.clearSession();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: 'perfil',
-              child: Row(
-                children: [
-                  Icon(Icons.person_outline_rounded, color: Color(0xFF93C5FD)),
-                  SizedBox(width: 10),
-                  Text('Mi perfil', style: TextStyle(color: Colors.white)),
-                ],
+              onSelected: (value) async {
+                if (value == 'perfil') {
+                  await navigateWithLoading(
+                    context,
+                    const MiPerfilScreen(),
+                    mensaje: 'Cargando tu perfil...',
+                  );
+                } else {
+                  await SessionService.clearSession();
+                  if (!context.mounted) return;
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/',
+                    (route) => false,
+                  );
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'perfil',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_outline_rounded, color: Color(0xFF93C5FD)),
+                      SizedBox(width: 10),
+                      Text('Mi perfil', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, color: Color(0xFFFCA5A5)),
+                      SizedBox(width: 10),
+                      Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+              ],
+              child: const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: UserAvatar(radius: 16),
               ),
             ),
-            PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: [
-                  Icon(Icons.logout_rounded, color: Color(0xFFFCA5A5)),
-                  SizedBox(width: 10),
-                  Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
-                ],
-              ),
-            ),
           ],
-          child: const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: UserAvatar(radius: 16),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
