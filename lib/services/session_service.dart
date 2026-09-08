@@ -97,13 +97,13 @@ class SessionService {
     );
     final storedPicture = await _storage.read(key: pictureKey);
     final finalPicture = picture.isNotEmpty ? picture : (storedPicture ?? '');
-    final normalizedPicture = finalPicture.toLowerCase();
+    final normalizedPicture = _normalizePictureValue(finalPicture);
     final isDefaultPicture =
         normalizedPicture.isEmpty ||
         normalizedPicture == 'user.png' ||
         normalizedPicture.endsWith('/user.png') ||
         normalizedPicture.contains('profile-photos/user.png');
-    final normalizedStored = finalPicture.trim().toLowerCase();
+    final normalizedStored = _normalizePictureValue(finalPicture);
     final hasStoredCustomPicture =
         normalizedStored.isNotEmpty &&
         normalizedStored != 'user.png' &&
@@ -252,11 +252,20 @@ class SessionService {
   }
 
   static bool isDefaultProfilePicture(String? picture) {
-    final normalized = (picture ?? '').trim().toLowerCase();
+    final normalized = _normalizePictureValue(picture);
     return normalized.isEmpty ||
         normalized == 'user.png' ||
         normalized.endsWith('/user.png') ||
         normalized.contains('profile-photos/user.png');
+  }
+
+  static String _normalizePictureValue(String? picture) {
+    final normalized = (picture ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    return Uri.tryParse(normalized)?.path.toLowerCase() ?? normalized.split('?').first;
   }
 
   static Future<Map<String, dynamic>?> getUser() async {
