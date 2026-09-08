@@ -142,7 +142,10 @@ class CrearTicketService {
       request.fields['afecta_otros'] = afectaOtros ? '1' : '0';
       request.fields['es_recurrente'] = esRecurrente ? '1' : '0';
 
-      if (tipoFalla.trim().toLowerCase() == 'hardware' &&
+      final tipoFallaNormalizado = tipoFalla.trim().toLowerCase();
+
+      if ((tipoFallaNormalizado == 'hardware' ||
+              tipoFallaNormalizado == 'equipo') &&
           equipo != null &&
           equipo.trim().isNotEmpty) {
         request.fields['equipo'] = equipo.trim();

@@ -218,7 +218,7 @@ Future<void> _seleccionarEvidencias() async {
       return;
     }
 
-    if (tipoFalla.toLowerCase() == 'hardware' &&
+    if (_esTipoEquipo(tipoFalla) &&
         (selectedEquipo == null || selectedEquipo!.trim().isEmpty)) {
       _mostrarMensaje(
         'Selecciona el equipo',
@@ -243,7 +243,7 @@ Future<void> _seleccionarEvidencias() async {
       final response = await CrearTicketService.crearTicket(
         titulo: titulo,
         tipoFalla: tipoFalla,
-        equipo: tipoFalla.toLowerCase() == 'hardware'
+        equipo: _esTipoEquipo(tipoFalla)
             ? selectedEquipo
             : null,
         prioridad: selectedPriority,
@@ -728,8 +728,7 @@ Future<void> _seleccionarEvidencias() async {
   }
 
   Widget _buildTicketFormCard() {
-    final isHardware =
-        selectedFailureType?.toLowerCase() == 'hardware';
+    final isHardware = _esTipoEquipo(selectedFailureType);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -943,23 +942,100 @@ Future<void> _seleccionarEvidencias() async {
           ),
           items: const [
             DropdownMenuItem(
-              value: 'hardware',
+              value: 'Equipo',
               child: Text(
-                'Hardware / Equipo',
+                'Equipo',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             DropdownMenuItem(
-              value: 'redes',
+              value: 'Artefactos',
               child: Text(
-                'Redes / Internet',
+                'Artefactos',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             DropdownMenuItem(
-              value: 'software',
+              value: 'Internet',
               child: Text(
-                'Sistemas / Software',
+                'Internet',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Redes',
+              child: Text(
+                'Problemas de red',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Correo electronico',
+              child: Text(
+                'Problemas con el correo electrónico',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Acceso a sistemas',
+              child: Text(
+                'Problemas de acceso a sistemas',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Usuarios y contrasenas',
+              child: Text(
+                'Problemas de usuario o contraseña',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Aplicaciones',
+              child: Text(
+                'Problemas con aplicaciones',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Sistema operativo',
+              child: Text(
+                'Problemas con el sistema operativo',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Configuracion',
+              child: Text(
+                'Problemas de configuración',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Cuenta de usuario',
+              child: Text(
+                'Problemas con la cuenta de usuario',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Permisos',
+              child: Text(
+                'Problemas de permisos',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Mantenimiento',
+              child: Text(
+                'Mantenimiento o actualización',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Otro',
+              child: Text(
+                'Otro',
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -973,7 +1049,7 @@ Future<void> _seleccionarEvidencias() async {
                     equipos = [];
                   });
 
-                  if (value?.toLowerCase() == 'hardware') {
+                  if (_esTipoEquipo(value)) {
                     await _cargarEquipos();
                   }
                 },
@@ -1109,6 +1185,11 @@ Future<void> _seleccionarEvidencias() async {
         ),
       ],
     );
+  }
+
+  bool _esTipoEquipo(String? value) {
+    final normalized = value?.trim().toLowerCase() ?? '';
+    return normalized == 'equipo' || normalized == 'hardware';
   }
 
   Widget _buildYesNoSection(
