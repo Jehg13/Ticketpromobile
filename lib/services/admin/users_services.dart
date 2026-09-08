@@ -11,7 +11,7 @@ class UsersService {
   //
   // GET /api/usuarios
   //
-  // Parámetros:
+  // ParÃƒÆ’Ã‚Â¡metros:
   //   estado
   //   departamento
   //   buscar
@@ -38,7 +38,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -69,7 +69,10 @@ class UsersService {
 
       final response = await http.get(
         uri,
-        headers: await ApiService.authHeaders(),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final responseData = _decodeResponse(response);
@@ -117,7 +120,7 @@ class UsersService {
             : <Map<String, dynamic>>[];
 
         // ------------------------------------------------------
-        // PAGINACIÓN
+        // PAGINACIÃƒÆ’Ã¢â‚¬Å“N
         // ------------------------------------------------------
 
         final paginationData = dataMap['pagination'];
@@ -127,7 +130,7 @@ class UsersService {
             : <String, dynamic>{};
 
         // ------------------------------------------------------
-        // ESTADÍSTICAS
+        // ESTADÃƒÆ’Ã‚ÂSTICAS
         // ------------------------------------------------------
 
         final estadisticasData = dataMap['estadisticas'];
@@ -191,7 +194,6 @@ class UsersService {
           responseData,
           'No se pudieron obtener los usuarios.',
         ),
-        'error_details': _extraerDetallesError(responseData, response.body),
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -206,7 +208,6 @@ class UsersService {
         'success': false,
         'message': 'No se pudo conectar con el servidor.',
         'error': e.toString(),
-        'error_details': e.toString(),
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -238,7 +239,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
         'usuario': null,
         'empresas': <Map<String, dynamic>>[],
         'oficinas': <Map<String, dynamic>>[],
@@ -267,7 +268,10 @@ class UsersService {
 
       final response = await http.get(
         uri,
-        headers: await ApiService.authHeaders(),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final responseData = _decodeResponse(response);
@@ -377,12 +381,12 @@ class UsersService {
   // PUT /api/usuarios/{login}
   //
   // password:
-  //   Es la NUEVA contraseña del usuario.
+  //   Es la NUEVA contraseÃƒÆ’Ã‚Â±a del usuario.
   //
   // IMPORTANTE:
   //   La columna de la base de datos se llama "pswd".
   //
-  //   Flutter envía "password".
+  //   Flutter envÃƒÆ’Ã‚Â­a "password".
   //   La API guarda ese valor MD5 en users.pswd.
   //
   // ============================================================
@@ -398,9 +402,52 @@ class UsersService {
       return 'N';
     }
 
-    return limpio == 'SI' || limpio == 'SÍ' ? 'Y' : 'N';
+    return limpio == 'SI' || limpio == 'SÃƒÆ’Ã‚Â' ? 'Y' : 'N';
   }
 
+  static String _normalizarNumeroEmpleado(String value) {
+    final text = value.trim();
+
+    if (text.isEmpty) {
+      return '';
+    }
+
+    if ((text.startsWith('{') && text.endsWith('}')) ||
+        (text.startsWith('[') && text.endsWith(']'))) {
+      try {
+        final decoded = jsonDecode(text);
+        return _normalizarNumeroEmpleadoDesdeJson(decoded);
+      } catch (_) {
+        return text;
+      }
+    }
+
+    return text;
+  }
+
+  static String _normalizarNumeroEmpleadoDesdeJson(dynamic value) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is Map) {
+      return _normalizarNumeroEmpleadoDesdeJson(
+        value['numero_empleado'] ??
+            value['numEmpleado'] ??
+            value['numeroEmpleado'] ??
+            value['value'],
+      );
+    }
+
+    if (value is List) {
+      if (value.isEmpty) {
+        return '';
+      }
+      return _normalizarNumeroEmpleadoDesdeJson(value.first);
+    }
+
+    return value.toString().trim();
+  }
   static Future<Map<String, dynamic>> actualizarUsuario({
     required String login,
     required String nuevoLogin,
@@ -413,7 +460,7 @@ class UsersService {
     required String role,
     required String active,
     required String privAdmin,
-    required int oficinaId,
+    int? oficinaId,
     String? departamento,
   }) async {
     final token = await ApiService.getToken();
@@ -422,7 +469,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
       };
     }
 
@@ -446,16 +493,19 @@ class UsersService {
         'name': nombre.trim(),
         'email': email.trim(),
         'phone': phone?.trim(),
-        'numero_empleado': numeroEmpleado.trim(),
+        'numero_empleado': _normalizarNumeroEmpleado(numeroEmpleado),
         'role': role.trim(),
         'active': _normalizarEstadoApi(active),
         'priv_admin': _normalizarEstadoApi(privAdmin),
-        'oficina_id': oficinaId,
         'departamento': departamento?.trim() ?? '',
-        'current_password': currentPassword == null
+        'password_actual': currentPassword == null
             ? ''
             : currentPassword.trim(),
       };
+
+      if (oficinaId != null) {
+        body['oficina_id'] = oficinaId;
+      }
 
       if (password != null && password.trim().isNotEmpty) {
         body['password'] = password.trim();
@@ -463,11 +513,11 @@ class UsersService {
 
       final response = await http.put(
         uri,
-        headers: await ApiService.authHeaders(
-          extraHeaders: {
-            'Content-Type': 'application/json',
-          },
-        ),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       );
 
@@ -519,7 +569,7 @@ class UsersService {
   // DELETE /api/usuarios/{login}
   //
   // password:
-  //   Contraseña del administrador actualmente
+  //   ContraseÃƒÆ’Ã‚Â±a del administrador actualmente
   //   autenticado.
   //
   // Laravel la comprueba contra:
@@ -538,7 +588,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
       };
     }
 
@@ -556,7 +606,7 @@ class UsersService {
       return {
         'statusCode': 422,
         'success': false,
-        'message': 'Debes proporcionar tu contraseña.',
+        'message': 'Debes proporcionar tu contraseÃƒÆ’Ã‚Â±a.',
       };
     }
 
@@ -567,11 +617,11 @@ class UsersService {
 
       final response = await http.delete(
         uri,
-        headers: await ApiService.authHeaders(
-          extraHeaders: {
-            'Content-Type': 'application/json',
-          },
-        ),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({'password': password.trim()}),
       );
 
@@ -618,7 +668,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
         'empresas': <Map<String, dynamic>>[],
       };
     }
@@ -626,7 +676,10 @@ class UsersService {
     try {
       final response = await http.get(
         Uri.parse('${ApiService.baseUrl}/usuarios/empresas'),
-        headers: await ApiService.authHeaders(),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final responseData = _decodeResponse(response);
@@ -688,7 +741,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
         'oficinas': <Map<String, dynamic>>[],
       };
     }
@@ -698,7 +751,10 @@ class UsersService {
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/empresas/$empresaId/oficinas',
         ),
-        headers: await ApiService.authHeaders(),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final responseData = _decodeResponse(response);
@@ -760,7 +816,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÆ’Ã‚Â³n activa.',
         'departamentos': <Map<String, dynamic>>[],
       };
     }
@@ -770,7 +826,10 @@ class UsersService {
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/oficinas/$oficinaId/departamentos',
         ),
-        headers: await ApiService.authHeaders(),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final responseData = _decodeResponse(response);
@@ -817,7 +876,7 @@ class UsersService {
   }
 
   // ============================================================
-  // ESTADÍSTICAS
+  // ESTADÃƒÆ’Ã‚ÂSTICAS
   // ============================================================
   //
   // Recibe la respuesta que devuelve obtenerUsuarios().
@@ -856,7 +915,7 @@ class UsersService {
     if (response.body.trim().isEmpty) {
       return {
         'success': false,
-        'message': 'El servidor devolvió una respuesta vacía.',
+        'message': 'El servidor devolviÃƒÆ’Ã‚Â³ una respuesta vacÃƒÆ’Ã‚Â­a.',
       };
     }
 
@@ -869,12 +928,12 @@ class UsersService {
 
       return {
         'success': false,
-        'message': 'La respuesta del servidor no es válida.',
+        'message': 'La respuesta del servidor no es vÃƒÆ’Ã‚Â¡lida.',
       };
     } catch (_) {
       return {
         'success': false,
-        'message': 'El servidor devolvió una respuesta no válida.',
+        'message': 'El servidor devolviÃƒÆ’Ã‚Â³ una respuesta no vÃƒÆ’Ã‚Â¡lida.',
         'raw': response.body,
       };
     }
@@ -892,29 +951,6 @@ class UsersService {
     }
 
     return defecto;
-  }
-
-  static String _extraerDetallesError(
-    Map<String, dynamic> data,
-    String rawBody,
-  ) {
-    final detalles = <String>[];
-
-    for (final key in const ['error', 'exception', 'trace']) {
-      final value = data[key];
-      if (value != null) {
-        final texto = value.toString().trim();
-        if (texto.isNotEmpty) {
-          detalles.add('$key: $texto');
-        }
-      }
-    }
-
-    if (detalles.isEmpty && rawBody.trim().isNotEmpty) {
-      detalles.add(rawBody.trim());
-    }
-
-    return detalles.join('\n\n');
   }
 
   // ============================================================
