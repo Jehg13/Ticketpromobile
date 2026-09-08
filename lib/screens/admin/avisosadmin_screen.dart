@@ -995,6 +995,17 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     return 'Activo';
   }
 
+  String _estadoApiAviso(Map<String, dynamic> item) {
+    final value = _textoSeguro(
+      item['estado'] ?? item['status'] ?? item['activo'],
+    ).toLowerCase();
+    if (value.isEmpty) return 'activo';
+    if (value.contains('inactivo') || value == '0' || value == 'false') {
+      return 'inactivo';
+    }
+    return 'activo';
+  }
+
   bool _isActivo(Map<String, dynamic> item) => _estadoAviso(item) == 'Activo';
 
   String _fechaAviso(Map<String, dynamic> item) {
@@ -1665,6 +1676,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                       if (id == 0) return;
 
                       try {
+                        final estadoNuevo = val ? 'activo' : 'inactivo';
                         await AvisosAdminService.actualizarAviso(
                           id: id,
                           titulo: _tituloAviso(item),
@@ -1681,7 +1693,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                           descripcion: _contenidoAviso(item),
                           mostrarNotificaciones: _mostrarNotificaciones(item),
                           fijado: _fijado(item),
-                          estado: val ? 'activo' : 'inactivo',
+                          estado: estadoNuevo,
                         );
                         if (!mounted) return;
                         await _cargarDatos();
