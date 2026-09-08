@@ -460,57 +460,66 @@ Future<void> _seleccionarEvidencias() async {
   }
 
   Widget _buildHeader(bool isDesktop) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Crear nuevo ticket',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Nuevo ticket / Dashboard',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isDesktop)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D1427),
-                  padding: const EdgeInsets.all(10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final nombre = SessionService.displayName(user);
+        final rol = SessionService.displayRole(user);
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: _mostrarNotificaciones,
+                  const SizedBox(height: 4),
+                  Text(
+                    rol,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              UserHeaderActions(onNotifications: () => showUserNotifications(context)),
-            ],
-          ),
-      ],
+            ),
+            if (isDesktop)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D1427),
+                      padding: const EdgeInsets.all(10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: _mostrarNotificaciones,
+                  ),
+                  const SizedBox(width: 16),
+                  UserHeaderActions(onNotifications: () => showUserNotifications(context)),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 
