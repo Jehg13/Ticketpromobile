@@ -791,41 +791,21 @@ class _AvisosScreenState extends State<AvisosScreen> {
     );
   }
   Widget _buildHeader(bool isDesktop) {
-    if (!isDesktop) {
-      return const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Avisos',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          SizedBox(height: 4),
-          Text('Mantente informado sobre mantenimientos, fallas y actualizaciones', style: TextStyle(color: Colors.grey, fontSize: 13)),
-        ],
-      );
-    }
-    return Row(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Avisos',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              SizedBox(height: 4),
-              Text('Mantente informado sobre mantenimientos, fallas y actualizaciones', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ],
+        Text(
+          'Avisos',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
-        const SizedBox(width: 20),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
-          ],
+        SizedBox(height: 4),
+        Text(
+          'Mantente informado sobre mantenimientos, fallas y actualizaciones',
+          style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
       ],
     );
@@ -962,7 +942,12 @@ class _AvisosScreenState extends State<AvisosScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.blue.withValues(alpha: 0.12)),
         ),
-        child: const LoadingScreen(mensaje: 'Cargando avisos...'),
+        child: const SizedBox(
+          height: 220,
+          child: Center(
+            child: CircularProgressIndicator(color: Color(0xFF60A5FA)),
+          ),
+        ),
       );
     }
     return Container(
@@ -1297,7 +1282,15 @@ class AppNavigationDrawer extends StatelessWidget {
             children: [
               const home.AppLogo(fontSize: 26),
               const SizedBox(height: 24),
-              const Row(children: [home.UserAvatar(radius: 20), SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Juan Pérez', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)), Text('Administración', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey))]))]),
+              FutureBuilder<Map<String, dynamic>?>(
+                future: SessionService.getUser(),
+                builder: (context, snapshot) {
+                  final user = snapshot.data;
+                  final nombre = SessionService.displayName(user);
+                  final rol = SessionService.displayRole(user);
+                  return Row(children: [const home.UserAvatar(radius: 20), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(nombre, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)), Text(rol, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.grey))]))]);
+                },
+              ),
               const SizedBox(height: 20),
               const Divider(color: Colors.white12, height: 1),
               const SizedBox(height: 20),

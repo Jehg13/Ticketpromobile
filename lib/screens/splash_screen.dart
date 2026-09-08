@@ -142,26 +142,15 @@ Future<void> _verificarSesion() async {
 
       if (!mounted) return;
 
-      final role = (await SessionService.getRole() ?? '')
-          .toLowerCase()
-          .replaceAll('á', 'a')
-          .replaceAll('é', 'e')
-          .replaceAll('í', 'i')
-          .replaceAll('ó', 'o')
-          .replaceAll('ú', 'u')
-          .trim();
-
       final privAdmin = (await SessionService.getPrivAdmin() ?? '')
           .trim()
           .toUpperCase();
 
       if (!mounted) return;
 
-      final destino =
-          privAdmin == 'Y' &&
-                  (role == 'gerente ti' || role == 'soporte tecnico')
-              ? const AdminScreen()
-              : const HomeScreen();
+      final destino = privAdmin == 'Y'
+          ? const AdminScreen()
+          : const HomeScreen();
 
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(

@@ -116,33 +116,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      final String role =
-          usuarioDatos['role']
-                  ?.toString()
-                  .trim() ??
-              '';
-
       final String privAdmin =
           usuarioDatos['priv_admin']
                   ?.toString()
                   .trim()
                   .toUpperCase() ??
               'N';
-
-      final String rolNormalizado = role
-          .toLowerCase()
-          .replaceAll('á', 'a')
-          .replaceAll('é', 'e')
-          .replaceAll('í', 'i')
-          .replaceAll('ó', 'o')
-          .replaceAll('ú', 'u');
-
-      final bool rolPermitido =
-          rolNormalizado == 'gerente ti' ||
-          rolNormalizado == 'soporte tecnico';
-
-      final bool accesoAdministrativo =
-          rolPermitido && privAdmin == 'Y';
+      final bool accesoAdministrativo = privAdmin == 'Y';
 
       if (accesoAdministrativo) {
         Navigator.pushReplacement(

@@ -164,6 +164,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       ticket['nombre_equipo'],
       fallback: 'No especificado',
     );
+    final String estadoTicket = estado.toLowerCase().trim();
     final bool problemaSolucionado = _esProblemaSolucionado(
       ticket['problema_solucionado'] ?? ticket['solucionado'],
     );
@@ -290,6 +291,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                         _buildTechnicianSection(nombreTecnico, correoTecnico),
                         const SizedBox(height: 18),
                         _buildTicketClosureSummary(
+                          estadoTicket,
                           problemaSolucionado,
                           nombreFirmante,
                           fechaFirma,
@@ -312,6 +314,13 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                               ticketId: ticketId,
                               enviando: enviandoComentario,
                               archivoNombre: _archivoComentarioNombre,
+                              onRemoveAttachment: () {
+                                setDialogState(() {
+                                  _archivoComentarioPath = null;
+                                  _archivoComentarioNombre = null;
+                                  _archivoComentarioBytes = null;
+                                });
+                              },
                               onAttach: () async {
                                 final file = await FilePicker.pickFile();
                                 if (file == null) return;
@@ -902,6 +911,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     required Future<void> Function() onSend,
     required bool enviando,
     required VoidCallback onAttach,
+    required VoidCallback onRemoveAttachment,
     String? archivoNombre,
   }) {
     return Column(
@@ -954,6 +964,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                 onSend: onSend,
                 enviando: enviando,
                 onAttach: onAttach,
+                onRemoveAttachment: onRemoveAttachment,
                 archivoNombre: archivoNombre,
               ),
             ],
@@ -1168,6 +1179,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
     required Future<void> Function() onSend,
     required bool enviando,
     required VoidCallback onAttach,
+    required VoidCallback onRemoveAttachment,
     String? archivoNombre,
   }) {
     return Container(
@@ -1175,81 +1187,129 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Colors.white10)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: enviando ? null : onAttach,
-            icon: const Icon(
-              Icons.attach_file_rounded,
-              color: Colors.grey,
-              size: 20,
-            ),
-            tooltip: 'Adjuntar archivo',
-          ),
-          if (archivoNombre != null)
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12, right: 6),
-                child: Text(
-                  archivoNombre,
-                  style: const TextStyle(color: Colors.white54, fontSize: 9),
-                  overflow: TextOverflow.ellipsis,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              IconButton(
+                onPressed: enviando ? null : onAttach,
+                icon: const Icon(
+                  Icons.attach_file_rounded,
+                  color: Colors.grey,
+                  size: 20,
                 ),
+                tooltip: 'Adjuntar archivo',
               ),
-            ),
-          Expanded(
-            child: TextField(
-              controller: _mensajeController,
-              enabled: !enviando,
-              minLines: 1,
-              maxLines: 4,
-              style: const TextStyle(color: Colors.white, fontSize: 11),
-              decoration: const InputDecoration(
-                hintText: 'Escribe un mensaje...',
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
-                filled: true,
-                fillColor: Color(0xFF0B1021),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 7),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: enviando ? Colors.white10 : const Color(0xFF2563EB),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              onPressed: enviando || ticketId == 0
-                  ? null
-                  : () async => onSend(),
-              icon: enviando
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 18,
+              Expanded(
+                child: TextField(
+                  controller: _mensajeController,
+                  enabled: !enviando,
+                  minLines: 1,
+                  maxLines: 4,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  decoration: const InputDecoration(
+                    hintText: 'Escribe un mensaje...',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
+                    filled: true,
+                    fillColor: Color(0xFF0B1021),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 10,
                     ),
-              tooltip: enviando ? 'Enviando...' : 'Enviar',
-            ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: enviando ? Colors.white10 : const Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: enviando || ticketId == 0
+                      ? null
+                      : () async => onSend(),
+                  icon: enviando
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                  tooltip: enviando ? 'Enviando...' : 'Enviar',
+                ),
+              ),
+            ],
           ),
+          if (archivoNombre != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F1535),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0x403B82F6)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.attach_file_rounded,
+                          color: Color(0xFF60A5FA),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            archivoNombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: enviando
+                              ? null
+                              : onRemoveAttachment,
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white54,
+                            size: 16,
+                          ),
+                          tooltip: 'Quitar archivo',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1257,7 +1317,9 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
   Widget _buildProfileImage(String path, {double radius = 20}) {
     final String cleanPath = path.trim();
-    if (cleanPath.isEmpty) {
+    if (cleanPath.isEmpty ||
+        cleanPath.toLowerCase() == 'user.png' ||
+        cleanPath.toLowerCase().endsWith('/user.png')) {
       return CircleAvatar(
         radius: radius,
         backgroundImage: const AssetImage(defaultAvatar),
@@ -2292,6 +2354,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
       null,
       fallback: 'Solucionado',
     );
+    final String estadoTicket = estado.toLowerCase().trim();
     if (!mounted) return;
     await showDialog<void>(
       context: context,
@@ -2356,6 +2419,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                         ),
                         const SizedBox(height: 20),
                         _buildTicketClosureSummary(
+                          estadoTicket,
                           problemaSolucionado,
                           nombreFirmante,
                           fechaFirma,
@@ -2828,11 +2892,14 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
   }
 
   Widget _buildTicketClosureSummary(
+    String estadoTicket,
     bool problemaSolucionado,
     String nombreFirmante,
     String fechaFirma,
   ) {
-    final String estadoRespuesta = problemaSolucionado ? 'Sí' : 'No';
+    final String estadoRespuesta = estadoTicket == 'pendiente'
+        ? 'Pendiente'
+        : (problemaSolucionado ? 'Sí' : 'No');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

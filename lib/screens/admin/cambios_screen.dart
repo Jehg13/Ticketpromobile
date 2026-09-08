@@ -858,12 +858,12 @@ class _CambiosScreenState extends State<CambiosScreen> {
     );
   }
 
-  void _mostrarDetalleSolicitud(SolicitudCambio item) {
+  Future<void> _mostrarDetalleSolicitud(SolicitudCambio item) async {
     final comentarioAprobacionController = TextEditingController();
 
     final comentarioRechazoController = TextEditingController();
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: background,
@@ -1185,16 +1185,16 @@ class _CambiosScreenState extends State<CambiosScreen> {
           },
         );
       },
-    ).whenComplete(() {
-      comentarioAprobacionController.dispose();
-      comentarioRechazoController.dispose();
+    );
 
-      if (mounted) {
-        setState(() {
-          operando = false;
-        });
-      }
-    });
+    comentarioAprobacionController.dispose();
+    comentarioRechazoController.dispose();
+
+    if (mounted) {
+      setState(() {
+        operando = false;
+      });
+    }
   }
 
   String _iniciales(String nombre) {

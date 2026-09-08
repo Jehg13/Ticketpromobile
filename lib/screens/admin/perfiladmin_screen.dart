@@ -22,6 +22,36 @@ class PerfiladminScreen extends StatefulWidget {
   State<PerfiladminScreen> createState() => _PerfiladminScreenState();
 }
 
+class _PasswordHintChip extends StatelessWidget {
+  const _PasswordHintChip({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1324),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFF93C5FD), size: 14),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+}
+
 class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final Color bgDark = const Color(0xFF0B0F19);
   final Color cardDark = const Color(0xFF121826);
@@ -987,139 +1017,246 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     var actualizando = false;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: cardDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.shield_outlined,
-                color: Colors.blue,
-                size: 18,
-              ),
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 460),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0F172A), Color(0xFF111C33)],
             ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Actualizar contraseña',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 30,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.lock_reset_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Actualizar contraseña',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Define una nueva contraseña segura para tu cuenta.',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _PasswordHintChip(icon: Icons.verified_rounded, text: '8+ caracteres'),
+                        _PasswordHintChip(icon: Icons.lock_outline_rounded, text: 'Mayúscula'),
+                        _PasswordHintChip(icon: Icons.pin_outlined, text: 'Número'),
+                        _PasswordHintChip(icon: Icons.auto_awesome_outlined, text: 'Símbolo'),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.shield_outlined,
+                            color: Color(0xFF93C5FD),
+                            size: 18,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Usa 8 caracteres o más, con mayúscula, minúscula, número y símbolo.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11.5,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildPasswordField('Contraseña actual', actualCtrl),
+                    const SizedBox(height: 12),
+                    _buildPasswordField('Nueva contraseña', nuevaCtrl),
+                    const SizedBox(height: 12),
+                    _buildPasswordField('Confirmar contraseña', confirmarCtrl),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: actualizando ? null : () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.white24),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () async {
+                              if (actualizando) return;
+                              final password = nuevaCtrl.text;
+                              final cumple =
+                                  password.length >= 8 &&
+                                  RegExp(r'[A-Z]').hasMatch(password) &&
+                                  RegExp(r'[a-z]').hasMatch(password) &&
+                                  RegExp(r'[0-9]').hasMatch(password) &&
+                                  RegExp(r'[^A-Za-z0-9]').hasMatch(password);
+                              if (!cumple) {
+                                _mostrarMensaje(
+                                  'La contraseña no cumple los requisitos.',
+                                  true,
+                                );
+                                return;
+                              }
+                              if (password != confirmarCtrl.text) {
+                                _mostrarMensaje(
+                                  'Las contraseñas no coinciden.',
+                                  true,
+                                );
+                                return;
+                              }
+                              setStateDialog(() => actualizando = true);
+                              try {
+                                final respuesta =
+                                    await PerfiladminService.actualizarPassword(
+                                  passwordActual: actualCtrl.text,
+                                  password: password,
+                                  confirmacion: confirmarCtrl.text,
+                                );
+                                if (!mounted) return;
+                                Navigator.pop(context);
+                                _mostrarMensaje(
+                                  respuesta['message']?.toString() ??
+                                      'Solicitud completada.',
+                                  respuesta['success'] != true,
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  _mostrarMensaje(e.toString(), true);
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setStateDialog(() => actualizando = false);
+                                }
+                              }
+                            },
+                            child: actualizando
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Actualizar'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.grey, size: 18),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Cambia tu contraseña de acceso',
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-            const SizedBox(height: 16),
-            _buildLabelModal('Contraseña actual'),
-            _buildInputModal(
-              'Ingresa tu contraseña actual',
-              controller: actualCtrl,
-              isPassword: true,
-            ),
-            const SizedBox(height: 12),
-            _buildLabelModal('Nueva contraseña'),
-            _buildInputModal(
-              'Ingresa tu nueva contraseña',
-              controller: nuevaCtrl,
-              isPassword: true,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo.',
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-            const SizedBox(height: 12),
-            _buildLabelModal('Confirmar nueva contraseña'),
-            _buildInputModal(
-              'Confirma tu nueva contraseña',
-              controller: confirmarCtrl,
-              isPassword: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGradientStart,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              if (actualizando) return;
-              actualizando = true;
-              final password = nuevaCtrl.text;
-              final cumple =
-                  password.length >= 8 &&
-                  RegExp(r'[A-Z]').hasMatch(password) &&
-                  RegExp(r'[a-z]').hasMatch(password) &&
-                  RegExp(r'[0-9]').hasMatch(password) &&
-                  RegExp(r'[^A-Za-z0-9]').hasMatch(password);
-              if (!cumple) {
-                _mostrarMensaje(
-                  'La contraseña no cumple los requisitos.',
-                  true,
-                );
-                actualizando = false;
-                return;
-              }
-              if (password != confirmarCtrl.text) {
-                _mostrarMensaje('Las contraseñas no coinciden.', true);
-                actualizando = false;
-                return;
-              }
-              Navigator.pop(context);
-              try {
-                final respuesta = await PerfiladminService.actualizarPassword(
-                  passwordActual: actualCtrl.text,
-                  password: password,
-                  confirmacion: confirmarCtrl.text,
-                );
-                if (!mounted) return;
-                _mostrarMensaje(
-                  respuesta['message']?.toString() ?? 'Solicitud completada.',
-                  respuesta['success'] != true,
-                );
-              } catch (e) {
-                if (mounted) {
-                  _mostrarMensaje(e.toString(), true);
-                }
-              } finally {
-                actualCtrl.dispose();
-                nuevaCtrl.dispose();
-                confirmarCtrl.dispose();
-              }
+              );
             },
-            child: const Text(
-              'Actualizar contraseña',
-              style: TextStyle(fontSize: 12),
-            ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(
+    String label,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      obscureText: true,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.grey),
+        filled: true,
+        fillColor: inputBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
@@ -1733,3 +1870,4 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     super.dispose();
   }
 }
+

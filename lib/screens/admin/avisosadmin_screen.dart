@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -38,6 +40,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   final TextEditingController _aplicarAController = TextEditingController();
 
   String _selectedFiltroEstado = 'Todos';
+  String _selectedFiltroTipo = 'Todos';
   String _prioridadSeleccionada = 'Alta';
   String _tipoAvisoSeleccionado = 'informativo';
   String _aplicarASeleccionado = 'todos';
@@ -91,6 +94,39 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     }
   }
 
+  Color _tipoAvisoColor(String value) {
+    switch (value.trim().toLowerCase()) {
+      case 'mantenimiento':
+        return Colors.orangeAccent;
+      case 'incidente':
+        return Colors.redAccent;
+      case 'informativo':
+        return Colors.blueAccent;
+      case 'general':
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildTipoBadge(String tipo) {
+    final color = _tipoAvisoColor(tipo);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        _tipoAvisoLabel(tipo),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   String _tipoAvisoApi(String value) {
     switch (value) {
       case 'mantenimiento':
@@ -136,18 +172,27 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     return name.split('?').first;
   }
 
-  Future<void> _seleccionarArchivo() async {
+  Future<void> _seleccionarArchivo({StateSetter? modalSetState}) async {
     try {
-      final archivo = await FilePicker.pickFile(type: FileType.any);
-      if (archivo == null) return;
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.isEmpty) return;
 
-      final bytes = await archivo.readAsBytes();
+      final archivo = result.first;
+      Uint8List? bytes;
+      if (archivo.path != null && archivo.path!.isNotEmpty) {
+        bytes = await File(archivo.path!).readAsBytes();
+      }
 
       if (!mounted) return;
       setState(() {
         _archivoAdjunto = archivo;
         _archivoPreviewBytes = bytes;
       });
+      modalSetState?.call(() {});
     } catch (_) {
       _mostrarMensaje('No se pudo adjuntar el archivo.', isError: true);
     }
@@ -379,7 +424,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     final contenido = _contenidoController.text.trim();
 
     if (titulo.isEmpty) {
-      _mostrarMensaje('Debes ingresar un título para el aviso.', isError: true);
+      _mostrarMensaje(
+        'No se pudo publicar el aviso.\n\nCampo requerido: Título.',
+        isError: true,
+      );
       return;
     }
 
@@ -461,7 +509,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   ) async {
     final titulo = editTitulo.text.trim();
     if (titulo.isEmpty) {
-      _mostrarMensaje('El título del aviso es obligatorio.', isError: true);
+      _mostrarMensaje(
+        'No se pudo actualizar el aviso.\n\nCampo requerido: Título.',
+        isError: true,
+      );
       return;
     }
 
@@ -781,51 +832,58 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 30),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  isError ? 'Error' : 'Éxito',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: color,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440, maxHeight: 520),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
                     ),
-                    child: const Text('Aceptar'),
+                    child: Icon(icon, color: color, size: 30),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    isError ? 'Error' : 'Éxito',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Aceptar'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -834,8 +892,57 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   }
 
   String _limpiarError(Object error) {
-    final text = error.toString();
-    return text.replaceFirst('Exception: ', '').trim();
+    final text = error.toString()
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('Bad state: ', '')
+        .trim();
+
+    if (text.isEmpty) {
+      return 'Ocurrió un error inesperado.';
+    }
+
+    if ((text.startsWith('{') && text.endsWith('}')) ||
+        (text.startsWith('[') && text.endsWith(']'))) {
+      try {
+        final decoded = jsonDecode(text);
+        if (decoded is Map) {
+          final parts = <String>[];
+          for (final key in const ['message', 'error', 'exception']) {
+            final value = decoded[key];
+            if (value != null && value.toString().trim().isNotEmpty) {
+              parts.add(value.toString().trim());
+            }
+          }
+          if (decoded['errors'] is Map) {
+            final errors = decoded['errors'] as Map;
+            for (final entry in errors.entries) {
+              final field = entry.key.toString();
+              final value = entry.value;
+              if (value is List) {
+                for (final item in value) {
+                  final itemText = item.toString().trim();
+                  if (itemText.isNotEmpty) {
+                    parts.add('$field: $itemText');
+                  }
+                }
+              } else {
+                final itemText = value.toString().trim();
+                if (itemText.isNotEmpty) {
+                  parts.add('$field: $itemText');
+                }
+              }
+            }
+          }
+          if (parts.isNotEmpty) {
+            return parts.join('\n\n');
+          }
+        }
+      } catch (_) {
+        // Si no es JSON válido, conservamos el texto original.
+      }
+    }
+
+    return text;
   }
 
   String _textoSeguro(dynamic value) {
@@ -1066,9 +1173,14 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     return avisos.where((item) {
       final titulo = _tituloAviso(item).toLowerCase();
       final contenido = _contenidoAviso(item).toLowerCase();
+      final tipo = _tipoAvisoLabel(_textoSeguro(item['tipo'])).toLowerCase();
       final matchesQuery =
           query.isEmpty || titulo.contains(query) || contenido.contains(query);
       if (!matchesQuery) return false;
+      if (_selectedFiltroTipo != 'Todos' &&
+          tipo != _selectedFiltroTipo.toLowerCase()) {
+        return false;
+      }
       if (_selectedFiltroEstado == 'Activos') return _isActivo(item);
       if (_selectedFiltroEstado == 'Inactivos') return !_isActivo(item);
       return true;
@@ -1249,6 +1361,46 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                             onChanged: (val) {
                               if (val == null) return;
                               setState(() => _selectedFiltroEstado = val);
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedFiltroTipo,
+                            dropdownColor: cardDark,
+                            isExpanded: true,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                            decoration: _inputDecoration(
+                              Icons.label_outline,
+                              '',
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Todos',
+                                child: Text('Todos los tipos'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Informativo',
+                                child: Text('Informativo'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Mantenimiento',
+                                child: Text('Mantenimiento'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Falla/Incidente',
+                                child: Text('Falla/Incidente'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Normal',
+                                child: Text('Normal'),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val == null) return;
+                              setState(() => _selectedFiltroTipo = val);
                             },
                           ),
                           const SizedBox(height: 16),
@@ -1575,7 +1727,16 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildPrioridadBadge(_prioridadAviso(item)),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildPrioridadBadge(_prioridadAviso(item)),
+                    _buildTipoBadge(_textoSeguro(item['tipo'])),
+                  ],
+                ),
+              ),
               Row(
                 children: [
                   Switch(
@@ -2173,7 +2334,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                       'Adjuntar archivo',
                       children: [
                         GestureDetector(
-                          onTap: _seleccionarArchivo,
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _seleccionarArchivo(
+                            modalSetState: setStateModal,
+                          ),
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -2225,13 +2389,40 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Vista previa',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Archivo adjunto',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        setStateModal(() {
+                                          _archivoAdjunto = null;
+                                          _archivoPreviewBytes = null;
+                                        });
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.redAccent,
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 16,
+                                      ),
+                                      label: const Text('Quitar'),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 8),
                                 if (_archivoAdjunto != null &&
@@ -2267,6 +2458,16 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                                       ),
                                     ],
                                   ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _archivoAdjunto!.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),
@@ -3014,7 +3215,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                       'Adjuntar archivo',
                       children: [
                         GestureDetector(
-                          onTap: _seleccionarArchivo,
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _seleccionarArchivo(
+                            modalSetState: setStateModal,
+                          ),
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(

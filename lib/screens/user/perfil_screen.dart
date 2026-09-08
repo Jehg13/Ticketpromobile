@@ -17,6 +17,39 @@ class MiPerfilScreen extends StatefulWidget {
   State<MiPerfilScreen> createState() => _MiPerfilScreenState();
 }
 
+class _PasswordHintChip extends StatelessWidget {
+  const _PasswordHintChip({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1324),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFF93C5FD), size: 14),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MiPerfilScreenState extends State<MiPerfilScreen> {
   final Map<String, dynamic> _perfil = {};
   bool _cargandoPerfil = true;
@@ -38,22 +71,19 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
 
   Future<void> _cargarPerfil() async {
     try {
-      final response = await PerfilUsuarioService.obtenerPerfil();
-      final usuario = response['usuario'] ?? response['user'];
-      final perfilData = response['data'];
-      final usuarioNormalizado =
-          usuario ??
-          (perfilData is Map
-              ? (perfilData['usuario'] ?? perfilData['user'])
-              : null);
+      final usuarioNormalizado = await SessionService.getUser();
 
       if (!mounted) return;
 
       setState(() {
         _perfil.clear();
-        if (usuarioNormalizado is Map) {
+        if (usuarioNormalizado != null) {
           _perfil.addAll(Map<String, dynamic>.from(usuarioNormalizado));
         }
+        _perfil['empresa'] = _getLocalOrProfileValue('empresa');
+        _perfil['departamento'] = _getLocalOrProfileValue('departamento');
+        _perfil['oficina'] = _getLocalOrProfileValue('oficina');
+        _perfil['numero_empleado'] = _getLocalOrProfileValue('numero_empleado');
         _cargandoPerfil = false;
       });
     } catch (e) {
@@ -61,6 +91,12 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
       setState(() => _cargandoPerfil = false);
       _mostrarMensaje(_limpiarError(e), isError: true);
     }
+  }
+
+  String _getLocalOrProfileValue(String key) {
+    final value = _perfil[key];
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? '' : text;
   }
 
   String _getPerfilValue(String key, {String fallback = ''}) {
@@ -83,11 +119,36 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
     home.showUserMessage(context, mensaje, isError: isError);
   }
 
+
   Future<void> _mostrarDialogoSolicitarCambio() async {
     final campoController = ValueNotifier<String>('nombre');
     final nuevoValorController = TextEditingController();
     final motivoController = TextEditingController();
     var enviando = false;
+    nuevoValorController.text = _getPerfilValue('name');
+
+    String valorActualPara(String campo) {
+      switch (campo) {
+        case 'nombre':
+          return _getPerfilValue('name');
+        case 'correo':
+          return _getPerfilValue('email');
+        case 'oficina':
+          return _getPerfilValue('oficina');
+        case 'departamento':
+          return _getPerfilValue('departamento');
+        case 'telefono':
+          return _getPerfilValue('phone');
+        case 'usuario':
+          return _getPerfilValue('login');
+        case 'numeroempleado':
+          return _getPerfilValue('numero_empleado');
+        case 'role':
+          return _getPerfilValue('role');
+        default:
+          return '';
+      }
+    }
 
     await showDialog<void>(
       context: context,
@@ -151,8 +212,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                         ),
                         DropdownMenuItem(value: 'role', child: Text('Rol')),
                       ],
-                      onChanged: (value) =>
-                          campoController.value = value ?? 'nombre',
+                      onChanged: (value) {
+                        final seleccionado = value ?? 'nombre';
+                        campoController.value = seleccionado;
+                        nuevoValorController.text = valorActualPara(seleccionado);
+                      },
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -243,140 +307,228 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
 
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: cardColor,
-          title: const Text(
-            'Actualizar contraseña',
-            style: TextStyle(color: Colors.white),
-          ),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: actualController,
-                  obscureText: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña actual',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: backgroundColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: nuevaController,
-                  obscureText: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Nueva contraseña',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: backgroundColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: confirmarController,
-                  obscureText: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Confirmar contraseña',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: backgroundColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Debe contener al menos 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.',
-                    style: TextStyle(color: Colors.grey, fontSize: 11),
-                  ),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 460),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0F172A), Color(0xFF111C33)],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 30,
+                  offset: const Offset(0, 16),
                 ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (actualizando) return;
-                final actual = actualController.text;
-                final nueva = nuevaController.text;
-                final confirmar = confirmarController.text;
+            child: StatefulBuilder(
+              builder: (context, setStateDialog) {
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(Icons.lock_reset_rounded, color: Colors.white, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Actualizar contraseña',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Define una nueva contraseña segura para tu cuenta.',
+                                  style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.35),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: const [
+                          _PasswordHintChip(
+                            icon: Icons.verified_rounded,
+                            text: '8+ caracteres',
+                          ),
+                          _PasswordHintChip(
+                            icon: Icons.lock_outline_rounded,
+                            text: 'Mayúscula',
+                          ),
+                          _PasswordHintChip(
+                            icon: Icons.pin_outlined,
+                            text: 'Número',
+                          ),
+                          _PasswordHintChip(
+                            icon: Icons.auto_awesome_outlined,
+                            text: 'Símbolo',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.shield_outlined, color: Color(0xFF93C5FD), size: 18),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Usa 8 caracteres o más, con mayúscula, minúscula, número y símbolo.',
+                                style: TextStyle(color: Colors.grey, fontSize: 11.5, height: 1.35),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPasswordField('Contraseña actual', actualController),
+                      const SizedBox(height: 12),
+                      _buildPasswordField('Nueva contraseña', nuevaController),
+                      const SizedBox(height: 12),
+                      _buildPasswordField('Confirmar contraseña', confirmarController),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: actualizando ? null : () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.white24),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: () async {
+                                if (actualizando) return;
+                                final actual = actualController.text;
+                                final nueva = nuevaController.text;
+                                final confirmar = confirmarController.text;
 
-                if (actual.trim().isEmpty ||
-                    nueva.trim().isEmpty ||
-                    confirmar.trim().isEmpty) {
-                  _mostrarMensaje(
-                    'Todos los campos de contraseña son obligatorios.',
-                    isError: true,
-                  );
-                  return;
-                }
+                                if (actual.trim().isEmpty ||
+                                    nueva.trim().isEmpty ||
+                                    confirmar.trim().isEmpty) {
+                                  _mostrarMensaje('Todos los campos de contraseña son obligatorios.', isError: true);
+                                  return;
+                                }
 
-                final regex = RegExp(
-                  r'^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+                                final regex = RegExp(r'^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$');
+                                if (!regex.hasMatch(nueva)) {
+                                  _mostrarMensaje('La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.', isError: true);
+                                  return;
+                                }
+
+                                if (nueva != confirmar) {
+                                  _mostrarMensaje('La confirmación de contraseña no coincide.', isError: true);
+                                  return;
+                                }
+
+                                setStateDialog(() => actualizando = true);
+                                try {
+                                  final response = await PerfilUsuarioService.actualizarPassword(
+                                    passwordActual: actual,
+                                    password: nueva,
+                                    confirmPassword: confirmar,
+                                  );
+                                  if (!dialogContext.mounted) return;
+                                  Navigator.pop(dialogContext);
+                                  _mostrarMensaje(
+                                    response['message']?.toString() ?? 'Contraseña actualizada correctamente.',
+                                  );
+                                } catch (e) {
+                                  _mostrarMensaje(_limpiarError(e), isError: true);
+                                } finally {
+                                  if (mounted) {
+                                    setStateDialog(() => actualizando = false);
+                                  }
+                                }
+                              },
+                              child: actualizando
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Text('Actualizar'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
-                if (!regex.hasMatch(nueva)) {
-                  _mostrarMensaje(
-                    'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
-                    isError: true,
-                  );
-                  return;
-                }
-
-                if (nueva != confirmar) {
-                  _mostrarMensaje(
-                    'La confirmación de contraseña no coincide.',
-                    isError: true,
-                  );
-                  return;
-                }
-
-                actualizando = true;
-                Navigator.pop(dialogContext);
-
-                try {
-                  final response =
-                      await PerfilUsuarioService.actualizarPassword(
-                        passwordActual: actual,
-                        password: nueva,
-                        confirmPassword: confirmar,
-                      );
-                  _mostrarMensaje(
-                    response['message']?.toString() ??
-                        'Contraseña actualizada correctamente.',
-                  );
-                } catch (e) {
-                  _mostrarMensaje(_limpiarError(e), isError: true);
-                }
               },
-              child: const Text('Actualizar'),
             ),
-          ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildPasswordField(
+    String label,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      obscureText: true,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.grey),
+        filled: true,
+        fillColor: backgroundColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
     );
   }
 
@@ -408,7 +560,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 Text(
-                  '2. Haz clic en “Activar verificación en dos pasos”.',
+                  '2. Haz clic en "Activar verificación en dos pasos".',
                   style: TextStyle(color: Colors.white70),
                 ),
                 Text(
@@ -827,7 +979,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Datos principales de la cuenta y la información del usuario.',
+            'Datos principales de la cuenta y la información del usuario. Los cambios posteriores se solicitan con tecnologías.',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 20),
@@ -884,11 +1036,26 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   Icons.badge_outlined,
                   double.infinity,
                 ),
-                _infoTile(
-                  'Rol',
-                  rol,
-                  Icons.verified_user_outlined,
-                  double.infinity,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _infoTile(
+                        'Estado de la cuenta',
+                        _getPerfilValue('active', fallback: 'Activo'),
+                        Icons.toggle_on_outlined,
+                        double.infinity,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _infoTile(
+                        'Rol',
+                        rol,
+                        Icons.verified_user_outlined,
+                        double.infinity,
+                      ),
+                    ),
+                  ],
                 ),
               ];
               if (constraints.maxWidth <= 760) {
@@ -1088,8 +1255,12 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -1116,28 +1287,33 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
               style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.3),
             ),
           ),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              backgroundColor: secondaryColor,
-              side: const BorderSide(color: Colors.white12),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                backgroundColor: secondaryColor,
+                side: const BorderSide(color: Colors.white12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
-            onPressed: _mostrarDialogoSolicitarCambio,
-            icon: const Icon(
-              Icons.edit_note_rounded,
-              color: Colors.white,
-              size: 16,
-            ),
-            label: const Text(
-              'Solicitar cambio',
-              style: TextStyle(
+              onPressed: _mostrarDialogoSolicitarCambio,
+              icon: const Icon(
+                Icons.edit_note_rounded,
                 color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                size: 16,
+              ),
+              label: const Text(
+                'Solicitar cambio',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -1193,95 +1369,123 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0B1220), Color(0xFF101A2C)],
+          Column(
+            children: [
+              _securityActionCard(
+                icon: Icons.lock_outline_rounded,
+                title: 'Contraseña de acceso',
+                description: 'Última actualización: No registrada',
+                buttonIcon: Icons.shield_outlined,
+                buttonText: 'Actualizar contraseña',
+                onPressed: _mostrarDialogoPassword,
               ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF1F4D9B), Color(0xFF1D4ED8)],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+              const SizedBox(height: 12),
+              _securityActionCard(
+                icon: Icons.verified_user_outlined,
+                title: 'Verificación en dos pasos',
+                description: 'Agrega una capa adicional de seguridad a tu cuenta.',
+                buttonIcon: Icons.add_circle_outline,
+                buttonText: 'Activar',
+                onPressed: _mostrarDialogoMfa,
+                status: 'Desactivada',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _securityActionCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required IconData buttonIcon,
+    required String buttonText,
+    required VoidCallback onPressed,
+    String? status,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0B1220), Color(0xFF101A2C)],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1F4D9B), Color(0xFF1D4ED8)],
                   ),
-                  child: const Icon(
-                    Icons.lock_outline_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 14),
-                const Column(
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Contraseña',
-                      style: TextStyle(
+                      title,
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
                         fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
-                      'Última actualización: No registrada',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
+                      description,
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
                     ),
+                    if (status != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        status,
+                        style: const TextStyle(
+                          color: Color(0xFF93C5FD),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            children: [
-              TextButton.icon(
-                onPressed: _mostrarDialogoPassword,
-                icon: const Icon(Icons.password_rounded),
-                label: const Text('Actualizar contraseña'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  backgroundColor: secondaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _mostrarDialogoMfa,
-                icon: const Icon(Icons.verified_user_outlined),
-                label: const Text('Autenticación en dos pasos'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  backgroundColor: secondaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(buttonIcon, size: 14, color: Colors.blueAccent),
+              label: Text(
+                buttonText,
+                style: const TextStyle(color: Colors.blueAccent, fontSize: 12),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.blueAccent),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -1293,9 +1497,13 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   // ============================================================
 
   Widget _buildFotoPerfilCard() {
-    final fotoUrl = ApiService.profileImageUrl(_getPerfilValue('picture'));
+    final picture = _getPerfilValue('picture');
+    final fotoUrl = ApiService.profileImageUrl(picture);
+    final esFotoDefault = picture.isEmpty ||
+        SessionService.isDefaultProfilePicture(picture) ||
+        picture.toLowerCase() == 'user.png';
     final nombreUsuario = _getPerfilValue('name', fallback: 'Usuario');
-    final tieneFotoPerfil = fotoUrl.isNotEmpty;
+    final tieneFotoPerfil = fotoUrl.isNotEmpty && !esFotoDefault;
     final hayFotoNueva =
         (_fotoNuevaPath != null && _fotoNuevaPath!.isNotEmpty) ||
         (_fotoNuevaBytes != null && _fotoNuevaBytes!.isNotEmpty);
@@ -1379,10 +1587,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                         : imagenActual ??
                               (tieneFotoPerfil
                                   ? NetworkImage(
-                                      '$fotoUrl?profile_refresh=${fotoUrl.hashCode}',
+                                      '$fotoUrl?profile_refresh=${picture.hashCode}',
                                     )
                                   : const AssetImage('assets/images/user.png')),
-                    child: !hayFotoNueva && !tieneFotoPerfil
+                    child: !hayFotoNueva && !tieneFotoPerfil && !esFotoDefault
                         ? Text(
                             nombreUsuario.isNotEmpty
                                 ? nombreUsuario
@@ -1541,74 +1749,24 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Fecha de creación',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'No disponible',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: _accountInfoItem(
+                  'Estado de la cuenta',
+                  'Activa',
+                  Colors.greenAccent,
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Rol en el sistema',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      rol,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                child: _accountInfoItem(
+                  'Rol en el sistema',
+                  rol,
+                  const Color(0xFF93C5FD),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Estado de la cuenta',
-            style: TextStyle(color: Colors.grey, fontSize: 11),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF064E3B).withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF10B981).withValues(alpha: 0.4),
-              ),
-            ),
-            child: const Text(
-              'Activa',
-              style: TextStyle(
-                color: Color(0xFF10B981),
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -1649,6 +1807,37 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _accountInfoItem(String label, String value, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF091326),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 11),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: accentColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
           ),
         ],

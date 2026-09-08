@@ -96,10 +96,19 @@ class _DetallesScreenState extends State<DetallesScreen> {
         value['title'],
         value['nombre'],
         value['name'],
+        value['full_name'],
+        value['fullName'],
         value['email'],
         value['correo'],
+        value['correo_electronico'],
+        value['correoElectronico'],
         value['telefono'],
+        value['phone_number'],
+        value['phoneNumber'],
         value['phone'],
+        value['user'],
+        value['reportado_por'],
+        value['solicitante'],
         value['solucion'],
         value['resultado'],
         value['comentario'],
@@ -149,6 +158,16 @@ class _DetallesScreenState extends State<DetallesScreen> {
     }
 
     return fallback;
+  }
+
+  Map<String, dynamic> _mapFrom(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value is Map) {
+        return Map<String, dynamic>.from(value);
+      }
+    }
+    return const {};
   }
 
   String _date(dynamic value) {
@@ -272,9 +291,43 @@ class _DetallesScreenState extends State<DetallesScreen> {
     final fechaActualizacion = _date(ticket['updated_at'] ?? ticket['fecha_actualizacion'] ?? ticket['fecha_ultimo_cambio']);
     final tecnico = _field(ticket, ['tecnico', 'tecnico_nombre', 'nombre_tecnico', 'asignado_a', 'asignado_a_usuario'], fallback: 'No asignado');
     final solucion = _field(ticket, ['solucion', 'resultado', 'comentario_solucion', 'seguimiento', 'respuesta', 'detalle_solucion'], fallback: 'Pendiente');
-    final nombreUsuario = _field(ticket, ['nombre_usuario', 'usuario_nombre', 'nombre', 'user_name', 'login', 'usuario'], fallback: 'No disponible');
-    final emailUsuario = _field(ticket, ['email', 'correo', 'email_usuario', 'correo_usuario'], fallback: 'No disponible');
-    final telefonoUsuario = _field(ticket, ['telefono', 'phone', 'telefono_usuario', 'celular'], fallback: 'No disponible');
+    final reportante = _mapFrom(ticket, ['reportado_por', 'usuario_reportante', 'contacto_reportante', 'user', 'usuario']);
+    final nombreUsuario = _field(ticket, [
+      'nombre_usuario',
+      'usuario_nombre',
+      'nombre',
+      'name',
+      'user_name',
+      'full_name',
+      'fullName',
+      'login',
+      'usuario',
+      'user',
+      'reportado_por',
+      'solicitante',
+    ], fallback: _field(reportante, ['nombre', 'name', 'full_name', 'fullName', 'login', 'email', 'correo'], fallback: 'No disponible'));
+    final emailUsuario = _field(ticket, [
+      'email',
+      'correo',
+      'correo_electronico',
+      'correoElectronico',
+      'email_usuario',
+      'correo_usuario',
+      'user_email',
+    ], fallback: 'No disponible');
+    final telefonoUsuario = _field(ticket, [
+      'telefono',
+      'teléfono',
+      'phone',
+      'phone_number',
+      'phoneNumber',
+      'telefono_usuario',
+      'telefonoUsuario',
+      'celular',
+      'movil',
+      'móvil',
+      'user_phone',
+    ], fallback: _field(reportante, ['phone', 'telefono', 'phone_number', 'phoneNumber'], fallback: 'No disponible'));
     final firmaUrl = _signatureUrl(ticket);
     final mostrarEquipo = tipoFalla.toLowerCase().contains('equipo') || equipo.toLowerCase() != 'no especificado';
 

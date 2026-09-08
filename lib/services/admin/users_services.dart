@@ -11,7 +11,7 @@ class UsersService {
   //
   // GET /api/usuarios
   //
-  // Parámetros:
+  // ParÃƒÂ¡metros:
   //   estado
   //   departamento
   //   buscar
@@ -38,7 +38,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -120,7 +120,7 @@ class UsersService {
             : <Map<String, dynamic>>[];
 
         // ------------------------------------------------------
-        // PAGINACIÓN
+        // PAGINACIÃƒâ€œN
         // ------------------------------------------------------
 
         final paginationData = dataMap['pagination'];
@@ -130,7 +130,7 @@ class UsersService {
             : <String, dynamic>{};
 
         // ------------------------------------------------------
-        // ESTADÍSTICAS
+        // ESTADÃƒÂSTICAS
         // ------------------------------------------------------
 
         final estadisticasData = dataMap['estadisticas'];
@@ -239,7 +239,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
         'usuario': null,
         'empresas': <Map<String, dynamic>>[],
         'oficinas': <Map<String, dynamic>>[],
@@ -381,12 +381,12 @@ class UsersService {
   // PUT /api/usuarios/{login}
   //
   // password:
-  //   Es la NUEVA contraseña del usuario.
+  //   Es la NUEVA contraseÃƒÂ±a del usuario.
   //
   // IMPORTANTE:
   //   La columna de la base de datos se llama "pswd".
   //
-  //   Flutter envía "password".
+  //   Flutter envÃƒÂ­a "password".
   //   La API guarda ese valor MD5 en users.pswd.
   //
   // ============================================================
@@ -402,7 +402,52 @@ class UsersService {
       return 'N';
     }
 
-    return limpio == 'SI' || limpio == 'SÍ' ? 'Y' : 'N';
+    return limpio == 'SI' || limpio == 'SÃƒÂ' ? 'Y' : 'N';
+  }
+
+  static String _normalizarNumeroEmpleado(String value) {
+    final text = value.trim();
+
+    if (text.isEmpty) {
+      return '';
+    }
+
+    if ((text.startsWith('{') && text.endsWith('}')) ||
+        (text.startsWith('[') && text.endsWith(']'))) {
+      try {
+        final decoded = jsonDecode(text);
+        final normalizado = _normalizarNumeroEmpleadoDesdeJson(decoded);
+        return normalizado.trim();
+      } catch (_) {
+        return '';
+      }
+    }
+
+    return text;
+  }
+
+  static String _normalizarNumeroEmpleadoDesdeJson(dynamic value) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is Map) {
+      return _normalizarNumeroEmpleadoDesdeJson(
+        value['numero_empleado'] ??
+            value['numEmpleado'] ??
+            value['numeroEmpleado'] ??
+            value['value'],
+      );
+    }
+
+    if (value is List) {
+      if (value.isEmpty) {
+        return '';
+      }
+      return _normalizarNumeroEmpleadoDesdeJson(value.first);
+    }
+
+    return value.toString().trim();
   }
 
   static Future<Map<String, dynamic>> actualizarUsuario({
@@ -417,7 +462,7 @@ class UsersService {
     required String role,
     required String active,
     required String privAdmin,
-    required int oficinaId,
+    int? oficinaId,
     String? departamento,
   }) async {
     final token = await ApiService.getToken();
@@ -426,7 +471,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
       };
     }
 
@@ -450,16 +495,23 @@ class UsersService {
         'name': nombre.trim(),
         'email': email.trim(),
         'phone': phone?.trim(),
-        'numero_empleado': numeroEmpleado.trim(),
         'role': role.trim(),
         'active': _normalizarEstadoApi(active),
         'priv_admin': _normalizarEstadoApi(privAdmin),
-        'oficina_id': oficinaId,
         'departamento': departamento?.trim() ?? '',
-        'current_password': currentPassword == null
+        'password_actual': currentPassword == null
             ? ''
             : currentPassword.trim(),
       };
+
+      final numeroEmpleadoLimpio = _normalizarNumeroEmpleado(numeroEmpleado);
+      if (numeroEmpleadoLimpio.isNotEmpty) {
+        body['numero_empleado'] = numeroEmpleadoLimpio;
+      }
+
+      if (oficinaId != null) {
+        body['oficina_id'] = oficinaId;
+      }
 
       if (password != null && password.trim().isNotEmpty) {
         body['password'] = password.trim();
@@ -499,9 +551,11 @@ class UsersService {
             response.statusCode >= 200 &&
             response.statusCode < 300 &&
             responseData['success'] == true,
-        'message':
+        'message': _errorFromResponse(responseData) ??
             responseData['message']?.toString() ??
             'No se pudo actualizar el usuario.',
+        'error': responseData['error']?.toString() ?? responseData['exception']?.toString() ?? '',
+        'raw': responseData['raw']?.toString() ?? '',
         'usuario': usuario,
         'errors': responseData['errors'],
         'data': responseData,
@@ -523,7 +577,7 @@ class UsersService {
   // DELETE /api/usuarios/{login}
   //
   // password:
-  //   Contraseña del administrador actualmente
+  //   ContraseÃƒÂ±a del administrador actualmente
   //   autenticado.
   //
   // Laravel la comprueba contra:
@@ -542,7 +596,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
       };
     }
 
@@ -560,7 +614,7 @@ class UsersService {
       return {
         'statusCode': 422,
         'success': false,
-        'message': 'Debes proporcionar tu contraseña.',
+        'message': 'Debes proporcionar tu contraseÃƒÂ±a.',
       };
     }
 
@@ -591,7 +645,7 @@ class UsersService {
             response.statusCode >= 200 &&
             response.statusCode < 300 &&
             responseData['success'] == true,
-        'message':
+        'message': _errorFromResponse(responseData) ??
             responseData['message']?.toString() ??
             'No se pudo eliminar el usuario.',
         'errors': responseData['errors'],
@@ -622,7 +676,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
         'empresas': <Map<String, dynamic>>[],
       };
     }
@@ -695,7 +749,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
         'oficinas': <Map<String, dynamic>>[],
       };
     }
@@ -770,7 +824,7 @@ class UsersService {
       return {
         'statusCode': 401,
         'success': false,
-        'message': 'No hay una sesión activa.',
+        'message': 'No hay una sesiÃƒÂ³n activa.',
         'departamentos': <Map<String, dynamic>>[],
       };
     }
@@ -830,7 +884,7 @@ class UsersService {
   }
 
   // ============================================================
-  // ESTADÍSTICAS
+  // ESTADÃƒÂSTICAS
   // ============================================================
   //
   // Recibe la respuesta que devuelve obtenerUsuarios().
@@ -869,7 +923,7 @@ class UsersService {
     if (response.body.trim().isEmpty) {
       return {
         'success': false,
-        'message': 'El servidor devolvió una respuesta vacía.',
+        'message': 'El servidor devolviÃƒÂ³ una respuesta vacÃƒÂ­a.',
       };
     }
 
@@ -882,12 +936,12 @@ class UsersService {
 
       return {
         'success': false,
-        'message': 'La respuesta del servidor no es válida.',
+        'message': 'La respuesta del servidor no es vÃƒÂ¡lida.',
       };
     } catch (_) {
       return {
         'success': false,
-        'message': 'El servidor devolvió una respuesta no válida.',
+        'message': 'El servidor devolviÃƒÂ³ una respuesta no vÃƒÂ¡lida.',
         'raw': response.body,
       };
     }
@@ -896,6 +950,38 @@ class UsersService {
   // ============================================================
   // MENSAJE DE ERROR
   // ============================================================
+
+  static String? _errorFromResponse(Map<String, dynamic> data) {
+    final parts = <String>[];
+
+    for (final key in const ['message', 'error', 'exception']) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        parts.add(value.toString().trim());
+      }
+    }
+
+    final errors = data['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      parts.add(
+        errors.entries.map((entry) {
+          final value = entry.value;
+          if (value is List) {
+            return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+          }
+          return '${entry.key}: $value';
+        }).join('\n'),
+      );
+    }
+
+    final raw = data['raw'];
+    if (raw != null && raw.toString().trim().isNotEmpty) {
+      parts.add(raw.toString().trim());
+    }
+
+    final joined = parts.join('\n\n').trim();
+    return joined.isEmpty ? null : joined;
+  }
 
   static String _mensajeError(Map<String, dynamic> data, String defecto) {
     final message = data['message'];

@@ -21,7 +21,7 @@ if (token == null || token.isEmpty) {
 
 return {
   'Accept': 'application/json',
-  'Authorization': 'Bearer $token',
+  'Authorization': 'Bearer TOKENHERE',
 };
 
 
@@ -51,21 +51,16 @@ if (response.statusCode >= 200 && response.statusCode < 300) {
   return body;
 }
 
-if (body is Map<String, dynamic>) {
-  final parts = <String>[];
+String mensaje = 'OcurriÃ³ un error en el servidor.';
 
-  for (final key in const ['message', 'error', 'exception']) {
-    final value = body[key];
-    if (value != null) {
-      final text = value.toString().trim();
-      if (text.isNotEmpty) {
-        parts.add(text);
-      }
-    }
+if (body is Map<String, dynamic>) {
+  if (body['message'] != null) {
+    mensaje = body['message'].toString();
   }
 
   if (body['errors'] is Map) {
     final errors = body['errors'] as Map;
+    final mensajes = <String>[];
 
     for (final entry in errors.entries) {
       final campo = entry.key.toString();
@@ -73,33 +68,25 @@ if (body is Map<String, dynamic>) {
 
       if (value is List) {
         for (final error in value) {
-          final text = error.toString().trim();
-          if (text.isNotEmpty) {
-            parts.add('$campo: $text');
-          }
+          mensajes.add('$campo: ${error.toString()}');
         }
       } else {
-        final text = value.toString().trim();
-        if (text.isNotEmpty) {
-          parts.add('$campo: $text');
-        }
+        mensajes.add('$campo: ${value.toString()}');
       }
+    }
+
+    if (mensajes.isNotEmpty) {
+      mensaje = mensajes.join('\n');
     }
   }
 
-  final trace = body['trace'];
-  if (trace is List && trace.isNotEmpty) {
-    parts.add(trace.map((item) => item.toString()).join('\n'));
-  }
+  if (body['error'] != null &&
+      body['error'].toString().trim().isNotEmpty) {
 
-  if (parts.isNotEmpty) {
-    throw Exception(parts.join('\n\n'));
   }
 }
 
-throw Exception(
-  'Ocurrió un error en el servidor. Código: ${response.statusCode}',
-);
+throw Exception(mensaje);
 }
 
 static String _errorFromResponse(http.Response response, dynamic decoded) {
@@ -114,32 +101,6 @@ if (decoded is Map<String, dynamic>) {
         parts.add(text);
       }
     }
-  }
-
-  if (decoded['errors'] is Map) {
-    final errors = decoded['errors'] as Map;
-    for (final entry in errors.entries) {
-      final field = entry.key.toString();
-      final value = entry.value;
-      if (value is List) {
-        for (final error in value) {
-          final text = error.toString().trim();
-          if (text.isNotEmpty) {
-            parts.add('$field: $text');
-          }
-        }
-      } else {
-        final text = value.toString().trim();
-        if (text.isNotEmpty) {
-          parts.add('$field: $text');
-        }
-      }
-    }
-  }
-
-  final trace = decoded['trace'];
-  if (trace is List && trace.isNotEmpty) {
-    parts.add(trace.map((item) => item.toString()).join('\n'));
   }
 
   if (parts.isNotEmpty) {
@@ -317,7 +278,7 @@ final response = await http.patch(
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-  'Authorization': 'Bearer $token',
+  'Authorization': 'Bearer TOKENHERE',
   },
 );
 
@@ -341,7 +302,7 @@ final response = await http.patch(
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-  'Authorization': 'Bearer $token',
+  'Authorization': 'Bearer TOKENHERE',
   },
 );
 
@@ -418,7 +379,7 @@ final request = http.MultipartRequest(
 
 request.headers.addAll({
   'Accept': 'application/json',
-  'Authorization': 'Bearer $token',
+  'Authorization': 'Bearer TOKENHERE',
 });
 
 request.fields['titulo'] = titulo.trim();
@@ -516,7 +477,7 @@ final request = http.MultipartRequest(
 
 request.headers.addAll({
   'Accept': 'application/json',
-  'Authorization': 'Bearer $token',
+  'Authorization': 'Bearer TOKENHERE',
 });
 
 request.fields['_method'] = 'PUT';
@@ -665,28 +626,19 @@ if (aplicaA == 'todos') {
 return;
 }
 
-final valores = <dynamic>[];
 
-if (afectaA is List) {
-  valores.addAll(afectaA);
-} else if (afectaA is Map) {
-  final ids = afectaA['ids'];
-  final logins = afectaA['logins'];
-  if (ids is List) {
-    valores.addAll(ids);
-  } else if (logins is List) {
-    valores.addAll(logins);
-  }
-}
-
-if (valores.isEmpty) {
+if (afectaA is! List || afectaA.isEmpty) {
   return;
 }
 
-for (int i = 0; i < valores.length; i++) {
-  final valor = valores[i];
+for (int i = 0; i < afectaA.length; i++) {
+  final valor = afectaA[i];
 
-  final texto = valor?.toString().trim() ?? '';
+  if (valor == null) {
+    continue;
+  }
+
+  final texto = valor.toString().trim();
 
   if (texto.isEmpty) {
     continue;
@@ -719,3 +671,5 @@ return '$hour:$minute';
 
 }
 }
+
+

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -40,6 +41,8 @@ class _UserScreenState extends State<UserScreen> {
   int _ultimaPagina = 1;
   int _totalUsuarios = 0;
   Map<String, dynamic> _estadisticas = {};
+  String? _errorCargaUsuarios;
+  String? _detalleErrorCargaUsuarios;
 
   final TextEditingController searchController = TextEditingController();
   List<UsuarioItem> usuarios = [];
@@ -85,6 +88,8 @@ class _UserScreenState extends State<UserScreen> {
 
     setState(() {
       _isLoading = true;
+      _errorCargaUsuarios = null;
+      _detalleErrorCargaUsuarios = null;
     });
 
     try {
@@ -122,6 +127,14 @@ class _UserScreenState extends State<UserScreen> {
         );
         _ultimaPagina = _toInt(pagination['last_page'] ?? 1);
         _estadisticas = estadisticas;
+        _errorCargaUsuarios = respuesta['success'] == true
+            ? null
+            : (_textoSeguro(respuesta['message']).trim().isNotEmpty
+                  ? _textoSeguro(respuesta['message']).trim()
+                  : 'No se pudieron cargar los usuarios.');
+        _detalleErrorCargaUsuarios = respuesta['success'] == true
+            ? null
+            : _detalleErrorUsuarios(respuesta);
       });
     } catch (_) {
       if (!mounted) return;
@@ -129,6 +142,8 @@ class _UserScreenState extends State<UserScreen> {
         usuarios = [];
         _totalUsuarios = 0;
         _ultimaPagina = 1;
+        _errorCargaUsuarios = 'No se pudo cargar la lista de usuarios.';
+        _detalleErrorCargaUsuarios = 'Ocurrió un error inesperado al consultar la API.';
       });
     } finally {
       if (mounted) {
@@ -143,6 +158,120 @@ class _UserScreenState extends State<UserScreen> {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _textoSeguro(dynamic value) {
+    return value?.toString() ?? '';
+  }
+
+  String _detalleErrorUsuarios(Map<String, dynamic> respuesta) {
+    final detalles = <String>[];
+    final data = respuesta['data'];
+    final dataMap = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+
+    for (final key in const ['message', 'error', 'exception']) {
+      final value = dataMap[key] ?? respuesta[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        detalles.add(value.toString().trim());
+      }
+    }
+
+    final errors = dataMap['errors'] ?? respuesta['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final partes = errors.entries.map((entry) {
+        final value = entry.value;
+        if (value is List) {
+          return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+        }
+        return '${entry.key}: $value';
+      }).join('\n');
+      if (partes.trim().isNotEmpty) {
+        detalles.add(partes);
+      }
+    }
+
+    final trace = dataMap['trace'] ?? respuesta['trace'];
+    if (trace != null && trace.toString().trim().isNotEmpty) {
+      detalles.add(trace.toString().trim());
+    }
+
+    final raw = dataMap['raw'] ?? respuesta['raw'];
+    if (raw != null && raw.toString().trim().isNotEmpty) {
+      detalles.add(raw.toString().trim());
+    }
+
+    final statusCode = respuesta['statusCode'];
+    if (statusCode != null) {
+      detalles.add('HTTP $statusCode');
+    }
+
+    return detalles.where((item) => item.trim().isNotEmpty).join('\n\n');
+  }
+
+  Widget _buildErrorCargaUsuarios() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F1320),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _errorCargaUsuarios ?? 'Error al cargar usuarios',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if ((_detalleErrorCargaUsuarios ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Detalle técnico:',
+              style: TextStyle(
+                color: Color(0xFFFCA5A5),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            SelectableText(
+              _detalleErrorCargaUsuarios!,
+              style: const TextStyle(
+                color: Color(0xFFFDE68A),
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () => _cargarUsuarios(resetPage: true),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Reintentar'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF2B1730),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _irAPagina(int pagina) async {
@@ -307,6 +436,8 @@ class _UserScreenState extends State<UserScreen> {
                   child: CircularProgressIndicator(),
                 ),
               )
+            else if (_errorCargaUsuarios != null)
+              _buildErrorCargaUsuarios()
             else if (usuariosMostrados.isEmpty)
               Container(
                 width: double.infinity,
@@ -812,7 +943,7 @@ class _UserScreenState extends State<UserScreen> {
     final passwordCtrl = TextEditingController();
     bool passwordVisible = false;
 
-    String selectedOficina = user.oficina;
+    String selectedOficina = 'Sin cambios';
     String selectedEstado = user.estado;
     String selectedAdmin = user.permisos.contains('Admin') ? 'Sí' : 'No';
 
@@ -1132,10 +1263,15 @@ class _UserScreenState extends State<UserScreen> {
                         children: [
                           Expanded(
                             child: _buildDropdown(
-                              label: 'Oficina',
+                              label: 'Oficina (opcional)',
                               value: selectedOficina,
                               icon: Icons.location_on_outlined,
-                              items: const ['Reynosa', 'Monterrey', 'CDMX'],
+                              items: const [
+                                'Sin cambios',
+                                'Reynosa',
+                                'Monterrey',
+                                'CDMX',
+                              ],
                               onChanged: (value) {
                                 if (value != null) {
                                   setModalState(() {
@@ -1232,17 +1368,6 @@ class _UserScreenState extends State<UserScreen> {
                                 final officeId = _resolveOficinaId(
                                   selectedOficina,
                                 );
-                                if (officeId == null) {
-                                  if (currentContext.mounted) {
-                                    _mostrarMensaje(
-                                      currentContext,
-                                      'Selecciona una oficina válida antes de guardar.',
-                                      error: true,
-                                    );
-                                  }
-                                  return;
-                                }
-
                                 final loginNuevo = loginCtrl.text.trim();
                                 if (loginNuevo.isEmpty) {
                                   _mostrarMensaje(
@@ -1321,7 +1446,9 @@ class _UserScreenState extends State<UserScreen> {
                                         ? 'Sin teléfono'
                                         : telefonoLimpio;
                                     user.departamento = deptoCtrl.text.trim();
-                                    user.oficina = selectedOficina;
+                                    if (officeId != null) {
+                                      user.oficina = selectedOficina;
+                                    }
                                     user.rol = roleCtrl.text.trim();
                                     user.estado = selectedEstado;
                                     user.permisos = List<String>.from(
@@ -1347,8 +1474,7 @@ class _UserScreenState extends State<UserScreen> {
 
                                 _mostrarMensaje(
                                   currentContext,
-                                  result['message']?.toString() ??
-                                      'No se pudo actualizar el usuario.',
+                                  _mensajeErrorFormulario(result),
                                   error: true,
                                 );
                               },
@@ -1696,9 +1822,51 @@ class _UserScreenState extends State<UserScreen> {
 
   int? _resolveOficinaId(String oficina) {
     final normalized = oficina.trim();
+    if (normalized == 'Sin cambios') {
+      return null;
+    }
     const offices = {'Reynosa': 1, 'Monterrey': 2, 'CDMX': 3};
 
     return offices[normalized];
+  }
+
+  String _mensajeErrorFormulario(Map<String, dynamic> result) {
+    final parts = <String>[];
+
+    final statusCode = result['statusCode'];
+    if (statusCode != null) {
+      parts.add('Error HTTP $statusCode');
+    }
+
+    final message = result['message']?.toString().trim() ?? '';
+    if (message.isNotEmpty) {
+      parts.add(message);
+    }
+
+    final errors = result['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      parts.add(
+        errors.entries.map((entry) {
+          final value = entry.value;
+          if (value is List) {
+            return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+          }
+          return '${entry.key}: $value';
+        }).join('\n'),
+      );
+    }
+
+    final detail = result['error']?.toString().trim() ?? '';
+    if (detail.isNotEmpty) {
+      parts.add(detail);
+    }
+
+    final raw = result['raw']?.toString().trim() ?? '';
+    if (raw.isNotEmpty) {
+      parts.add(raw);
+    }
+
+    return parts.where((part) => part.trim().isNotEmpty).join('\n\n');
   }
 
   Widget _buildInfoTile(IconData icon, String title, String value) {
@@ -2029,8 +2197,9 @@ class UsuarioItem {
     final nombre = (map['name'] ?? map['nombre'] ?? 'Sin nombre').toString();
     final email = (map['email'] ?? '').toString();
     final login = (map['login'] ?? '').toString();
-    final numeroEmpleado = (map['numero_empleado'] ?? map['numEmpleado'] ?? '')
-        .toString();
+    final numeroEmpleado = _extraerNumeroEmpleado(
+      map['numero_empleado'] ?? map['numEmpleado'] ?? map['numeroEmpleado'],
+    );
     final empresa = (map['empresa'] ?? map['company'] ?? 'Sin empresa')
         .toString();
     final oficina = (map['oficina'] ?? map['office'] ?? 'Sin oficina')
@@ -2071,6 +2240,56 @@ class UsuarioItem {
       telefono: telefonoRaw.isEmpty ? 'Sin teléfono' : telefonoRaw,
       permisos: permisos.isEmpty ? ['Tickets'] : permisos,
     );
+  }
+
+  static String _extraerNumeroEmpleado(dynamic value) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is Map) {
+      return _extraerNumeroEmpleado(
+        value['numero_empleado'] ??
+            value['numEmpleado'] ??
+            value['numeroEmpleado'] ??
+            value['value'],
+      );
+    }
+
+    if (value is List) {
+      if (value.isEmpty) {
+        return '';
+      }
+      return _extraerNumeroEmpleado(value.first);
+    }
+
+    final text = value.toString().trim();
+    if (text.isEmpty) {
+      return '';
+    }
+
+    if ((text.startsWith('{') && text.endsWith('}')) ||
+        (text.startsWith('[') && text.endsWith(']'))) {
+      try {
+        final decoded = jsonDecode(text);
+        return _extraerNumeroEmpleado(decoded);
+      } catch (_) {
+        return '';
+      }
+    }
+
+    final match = RegExp(
+      r'"numero_empleado"\s*:\s*"?(.*?)"?(,|})',
+    ).firstMatch(text);
+    if (match != null) {
+      return match.group(1)?.trim() ?? text;
+    }
+
+    if (text.startsWith('{') || text.startsWith('[')) {
+      return '';
+    }
+
+    return text;
   }
 
   String getInitials() {

@@ -70,13 +70,13 @@ class SessionService {
     );
     final storedPicture = await _storage.read(key: pictureKey);
     final finalPicture = picture.isNotEmpty ? picture : (storedPicture ?? '');
-    final normalizedPicture = finalPicture.toLowerCase();
+    final normalizedPicture = _normalizePictureValue(finalPicture);
     final isDefaultPicture =
         normalizedPicture.isEmpty ||
         normalizedPicture == 'user.png' ||
         normalizedPicture.endsWith('/user.png') ||
         normalizedPicture.contains('profile-photos/user.png');
-    final normalizedStored = finalPicture.trim().toLowerCase();
+    final normalizedStored = _normalizePictureValue(finalPicture);
     final hasStoredCustomPicture =
         normalizedStored.isNotEmpty &&
         normalizedStored != 'user.png' &&
@@ -153,25 +153,107 @@ class SessionService {
   }
 
   static Future<bool> canManageUsersAndChanges() async {
-    final role = (await getRole() ?? '').trim().toLowerCase();
     final privAdmin = (await getPrivAdmin() ?? '').trim().toLowerCase();
     final hasAdminPermission =
         privAdmin == 'y' || privAdmin == 'yes' || privAdmin == 'true' ||
         privAdmin == '1';
 
-    return role == 'gerente ti' && hasAdminPermission;
+    return hasAdminPermission;
   }
 
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
   }
 
+  static Future<void> updateInitialData({
+    required String empresa,
+    required String departamento,
+    required String oficina,
+    required String numeroEmpleado,
+  }) async {
+    await _storage.write(key: empresaKey, value: empresa.trim());
+    await _storage.write(key: departamentoKey, value: departamento.trim());
+    await _storage.write(key: oficinaKey, value: oficina.trim());
+    await _storage.write(
+      key: numeroEmpleadoKey,
+      value: numeroEmpleado.trim(),
+    );
+  }
+
   static bool isDefaultProfilePicture(String? picture) {
-    final normalized = (picture ?? '').trim().toLowerCase();
+    final normalized = _normalizePictureValue(picture);
     return normalized.isEmpty ||
         normalized == 'user.png' ||
         normalized.endsWith('/user.png') ||
         normalized.contains('profile-photos/user.png');
+  }
+
+  static String displayName(
+    Map<String, dynamic>? user, {
+    String fallback = 'Usuario',
+  }) {
+    final name = _firstNonEmpty(user, [
+      'name',
+      'nombre',
+      'full_name',
+      'fullName',
+      'usuario',
+      'login',
+      'email',
+    ]);
+    return name.isNotEmpty ? name : fallback;
+  }
+
+  static String displayRole(
+    Map<String, dynamic>? user, {
+    String fallback = 'Sin rol',
+  }) {
+    final role = _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']);
+    if (role.isNotEmpty) {
+      return role;
+    }
+
+    final privAdmin = _toString(user?['priv_admin']).toLowerCase();
+    if (privAdmin == 'y' ||
+        privAdmin == 'yes' ||
+        privAdmin == 'true' ||
+        privAdmin == '1') {
+      return 'Administrador';
+    }
+
+    return fallback;
+  }
+
+  static String _firstNonEmpty(
+    Map<String, dynamic>? user,
+    List<String> keys,
+  ) {
+    if (user == null) {
+      return '';
+    }
+
+    for (final key in keys) {
+      final value = _toString(user[key]);
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
+  static String _normalizePictureValue(String? picture) {
+    final normalized = (picture ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) {
+      return normalized.split('?').first;
+    }
+
+    return uri.path.toLowerCase();
   }
 
   static Future<Map<String, dynamic>?> getUser() async {

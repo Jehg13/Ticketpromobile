@@ -13,14 +13,14 @@ class PerfilUsuarioService {
       throw Exception('Sesión no válida');
     }
 
-    final uri = Uri.parse('${ApiService.baseUrl}/perfil');
+    final uri = Uri.parse('${ApiService.baseUrl}/perfil/inicial');
 
     try {
       final response = await http.get(
         uri,
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $token'
         },
       );
 
@@ -45,6 +45,58 @@ class PerfilUsuarioService {
       rethrow;
     } catch (e) {
 
+      throw Exception('No se pudo conectar con el servidor');
+    }
+  }
+
+  static Future<Map<String, dynamic>> actualizarDatosIniciales({
+    required String numeroEmpleado,
+    required String empresa,
+    required String oficina,
+    required String departamento,
+  }) async {
+    final token = await SessionService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Sesión no válida');
+    }
+
+    final cleanDepartamento = _capitalizarCadaPalabra(departamento.trim());
+    final uri = Uri.parse('${ApiService.baseUrl}/perfil/inicial');
+
+    try {
+      final response = await http.put(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'numero_empleado': numeroEmpleado.trim(),
+          'empresa': empresa.trim(),
+          'oficina': oficina.trim(),
+          'departamento': cleanDepartamento,
+        }),
+      );
+
+      final decoded = _decodificarRespuesta(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (decoded['success'] != true) {
+          throw Exception(
+            decoded['message']?.toString() ??
+                'No se pudieron guardar los datos iniciales',
+          );
+        }
+        return decoded;
+      }
+
+      throw Exception(
+        'HTTP ${response.statusCode}: ${decoded['message']?.toString() ?? response.body}',
+      );
+    } on Exception {
+      rethrow;
+    } catch (e) {
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -158,6 +210,7 @@ class PerfilUsuarioService {
                 'No se pudo enviar la solicitud de cambio',
           );
         }
+
         return decoded;
       }
 
@@ -316,5 +369,13 @@ class PerfilUsuarioService {
     } on FormatException {
       throw Exception('Respuesta inválida del servidor');
     }
+  }
+
+  static String _capitalizarCadaPalabra(String value) {
+    return value
+        .split(RegExp(r'\s+'))
+        .where((part) => part.trim().isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+        .join(' ');
   }
 }
