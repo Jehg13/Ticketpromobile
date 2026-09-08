@@ -7,6 +7,7 @@ import '../../services/admin/users_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -2385,7 +2386,6 @@ class CustomSidebar extends StatelessWidget {
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? {};
                     final name = (user['name'] ?? 'Administrador').toString();
-                    final role = (user['role'] ?? 'Admin').toString();
 
                     return Container(
                       padding: const EdgeInsets.all(8),
@@ -2411,13 +2411,7 @@ class CustomSidebar extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
-                                  role.isNotEmpty ? role : 'Admin',
-                                  style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 11,
-                                  ),
-                                ),
+                                const AdminDrawerRole(),
                               ],
                             ),
                           ),

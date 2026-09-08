@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
 import 'session_service.dart';
+import '../utils/password_hasher.dart';
 
 class PerfilUsuarioService {
   static Future<Map<String, dynamic>> obtenerPerfil() async {
@@ -24,9 +25,9 @@ class PerfilUsuarioService {
         },
       );
 
-      debugPrint('📡 GET $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -44,7 +45,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error cargando perfil: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -86,15 +87,15 @@ class PerfilUsuarioService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'password_actual': passwordActual,
-          'password': nuevaPassword,
-          'password_confirmation': confirmPassword.trim(),
+          'password_actual': PasswordHasher.md5(passwordActual),
+          'password': PasswordHasher.md5(nuevaPassword),
+          'password_confirmation': PasswordHasher.md5(confirmPassword.trim()),
         }),
       );
 
-      debugPrint('🔐 PUT $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -113,7 +114,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error actualizando contraseña: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -145,9 +146,9 @@ class PerfilUsuarioService {
         }),
       );
 
-      debugPrint('📨 POST $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -166,7 +167,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error enviando solicitud: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -207,9 +208,9 @@ class PerfilUsuarioService {
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
 
-      debugPrint('📷 POST $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -227,7 +228,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error actualizando foto: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }
@@ -249,9 +250,9 @@ class PerfilUsuarioService {
         },
       );
 
-      debugPrint('🗑️ DELETE $uri');
-      debugPrint('📥 Status: ${response.statusCode}');
-      debugPrint('📦 Body: ${response.body}');
+
+
+
 
       final decoded = _decodificarRespuesta(response.body);
 
@@ -269,7 +270,7 @@ class PerfilUsuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint('❌ Error eliminando foto: $e');
+
       throw Exception('No se pudo conectar con el servidor');
     }
   }

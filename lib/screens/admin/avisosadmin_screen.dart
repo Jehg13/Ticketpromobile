@@ -9,6 +9,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -1330,13 +1331,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'Administrador',
-                              style: TextStyle(
-                                color: AdminScreen.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
+                            const AdminDrawerRole(color: AdminScreen.textMuted),
                           ],
                         ),
                       ],

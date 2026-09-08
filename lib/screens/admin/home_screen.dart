@@ -1286,13 +1286,7 @@ class CustomSidebar extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Administrador',
-                            style: TextStyle(
-                              color: AdminScreen.textMuted,
-                              fontSize: 11,
-                            ),
-                          ),
+                          const AdminDrawerRole(color: AdminScreen.textMuted),
                         ],
                       ),
                     ],

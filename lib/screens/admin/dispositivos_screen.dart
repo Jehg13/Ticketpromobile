@@ -4,6 +4,7 @@ import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
 import '../../widgets/admin_notification_bell.dart';
+import '../../widgets/admin_only_drawer_item.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'home_screen.dart';
@@ -445,13 +446,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Administrador',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
-                            ),
-                          ),
+                          const AdminDrawerRole(),
                         ],
                       ),
                     ],
@@ -1449,17 +1444,10 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     try {
       final actualizado = await DispositivosService.cambiarEstado(id);
 
-      debugPrint('DISPOSITIVO ID: $id');
-      debugPrint('RESPUESTA CAMBIAR ESTADO: $actualizado');
+
+
 
       if (!mounted) return;
-
-      final estadoActual = actualizado['estado']
-          ?.toString()
-          .trim()
-          .toLowerCase();
-
-      debugPrint('ESTADO DEVUELTO POR API: $estadoActual');
 
       setState(() {
         final index = _dispositivos.indexWhere(

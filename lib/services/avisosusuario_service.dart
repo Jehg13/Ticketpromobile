@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
@@ -55,27 +54,17 @@ class AvisosusuarioService {
         final avisos = decoded['avisos'];
 
         if (avisos is List) {
-          debugPrint(
-            '📢 Avisos recibidos: ${avisos.length}',
-          );
+
 
           for (final item in avisos) {
             if (item is Map) {
-              debugPrint(
-                '📎 Archivo: ${item['archivo']}',
-              );
 
-              debugPrint(
-                '🌐 Archivo URL: ${item['archivo_url']}',
-              );
 
-              debugPrint(
-                '📄 Archivo nombre: ${item['archivo_nombre']}',
-              );
 
-              debugPrint(
-                '📦 Archivo tipo: ${item['archivo_tipo']}',
-              );
+
+
+
+
             }
           }
         }
@@ -114,9 +103,7 @@ class AvisosusuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint(
-        '❌ Error de conexión: $e',
-      );
+
 
       throw Exception(
         'No se pudo conectar con el servidor',
@@ -161,25 +148,15 @@ class AvisosusuarioService {
         final aviso = decoded['aviso'];
 
         if (aviso is Map) {
-          debugPrint(
-            '📢 Aviso: ${aviso['titulo']}',
-          );
 
-          debugPrint(
-            '📎 Archivo: ${aviso['archivo']}',
-          );
 
-          debugPrint(
-            '🌐 Archivo URL: ${aviso['archivo_url']}',
-          );
 
-          debugPrint(
-            '📄 Archivo nombre: ${aviso['archivo_nombre']}',
-          );
 
-          debugPrint(
-            '📦 Archivo tipo: ${aviso['archivo_tipo']}',
-          );
+
+
+
+
+
         }
 
         return decoded;
@@ -216,9 +193,7 @@ class AvisosusuarioService {
     } on Exception {
       rethrow;
     } catch (e) {
-      debugPrint(
-        '❌ Error de conexión: $e',
-      );
+
 
       throw Exception(
         'No se pudo conectar con el servidor',

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../api_service.dart';
+import '../../utils/password_hasher.dart';
 
 class PerfilAdminService {
   static const String _baseUrl = ApiService.baseUrl;
@@ -207,14 +208,14 @@ class PerfilAdminService {
           'name': nombre.trim(),
           'email': email.trim(),
           'phone': phone.trim(),
-          'password': password,
+          'password': PasswordHasher.md5(password),
           'numero_empleado': numeroEmpleado.trim(),
           'role': role,
           'active': active,
           'priv_admin': privAdmin,
           'oficina_id': oficinaId,
           'departamento': departamento.trim(),
-          'password_confirmation': passwordConfirmacion,
+          'password_confirmation': PasswordHasher.md5(passwordConfirmacion),
         }),
       );
 
@@ -269,9 +270,9 @@ class PerfilAdminService {
           'Authorization': 'Bearer ${token ?? ''}',
         },
         body: jsonEncode({
-          'password_actual': passwordActual,
-          'password': password,
-          'password_confirmation': passwordConfirmacion,
+          'password_actual': PasswordHasher.md5(passwordActual),
+          'password': PasswordHasher.md5(password),
+          'password_confirmation': PasswordHasher.md5(passwordConfirmacion),
         }),
       );
 
