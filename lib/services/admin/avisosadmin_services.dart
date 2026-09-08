@@ -82,7 +82,17 @@ if (body is Map<String, dynamic>) {
 
   if (body['error'] != null &&
       body['error'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\nerror: ${body['error']}';
+  }
 
+  if (body['exception'] != null &&
+      body['exception'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\nexception: ${body['exception']}';
+  }
+
+  if (body['trace'] != null &&
+      body['trace'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\ntrace: ${body['trace']}';
   }
 }
 
@@ -634,3 +644,4 @@ return '$hour:$minute';
 
 }
 }
+
