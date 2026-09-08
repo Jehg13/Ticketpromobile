@@ -191,6 +191,7 @@ class UsersService {
           responseData,
           'No se pudieron obtener los usuarios.',
         ),
+        'error_details': _extraerDetallesError(responseData, response.body),
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -205,6 +206,7 @@ class UsersService {
         'success': false,
         'message': 'No se pudo conectar con el servidor.',
         'error': e.toString(),
+        'error_details': e.toString(),
         'usuarios': <Map<String, dynamic>>[],
         'pagination': <String, dynamic>{},
         'estadisticas': <String, dynamic>{},
@@ -890,6 +892,29 @@ class UsersService {
     }
 
     return defecto;
+  }
+
+  static String _extraerDetallesError(
+    Map<String, dynamic> data,
+    String rawBody,
+  ) {
+    final detalles = <String>[];
+
+    for (final key in const ['error', 'exception', 'trace']) {
+      final value = data[key];
+      if (value != null) {
+        final texto = value.toString().trim();
+        if (texto.isNotEmpty) {
+          detalles.add('$key: $texto');
+        }
+      }
+    }
+
+    if (detalles.isEmpty && rawBody.trim().isNotEmpty) {
+      detalles.add(rawBody.trim());
+    }
+
+    return detalles.join('\n\n');
   }
 
   // ============================================================

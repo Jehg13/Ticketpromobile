@@ -361,6 +361,11 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      await _mostrarErrorApi(
+        'No se pudieron cargar los avisos',
+        'Ocurrió un error al consultar la API.',
+        detalles: e.toString(),
+      );
       setState(() {
         avisos = [];
         notificaciones = [];
@@ -372,6 +377,62 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         _error = _limpiarError(e);
       });
     }
+  }
+
+  Future<void> _mostrarErrorApi(
+    String titulo,
+    String mensaje, {
+    String? detalles,
+  }) async {
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: cardDark,
+        title: Text(
+          titulo,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                mensaje,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              if (detalles != null && detalles.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Detalle técnico:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  detalles.trim(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _crearAviso() async {
