@@ -435,7 +435,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           },
                         ),
                         if (estado.toLowerCase().trim() == 'pendiente' &&
-                            ticketItem != null) ...[
+                            ticketItem != null &&
+                            !ticketItem.bloqueado) ...[
                           const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
@@ -2904,6 +2905,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   VoidCallback? _accionTicket(TicketItem ticket) {
     final estado = ticket.status.toLowerCase().trim();
+    if (ticket.bloqueado) return null;
     if (estado == 'en proceso' && selectedFilter != 'Mis tickets') return null;
     if (selectedFilter == 'Mis tickets' && estado == 'en proceso') {
       return () => _mostrarSolucion(ticket);
@@ -3024,6 +3026,7 @@ class _SignaturePainter extends CustomPainter {
 
 class TicketItem {
   final int? id;
+  final bool bloqueado;
   final String folio;
   final String title;
   final String type;
@@ -3039,6 +3042,7 @@ class TicketItem {
 
   TicketItem({
     this.id,
+    this.bloqueado = false,
     required this.folio,
     required this.title,
     required this.type,
@@ -3101,6 +3105,7 @@ class TicketItem {
     );
     return TicketItem(
       id: int.tryParse((map['id'] ?? '').toString()),
+      bloqueado: map['bloqueado'] == true || map['bloqueado_admin'] == true,
       folio: textValue(map['folio'], fallback: 'Sin folio'),
       title: textValue(map['titulo'] ?? map['title'], fallback: 'Sin título'),
       type: textValue(
