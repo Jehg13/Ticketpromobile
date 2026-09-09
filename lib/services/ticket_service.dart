@@ -41,8 +41,10 @@ class TicketService {
 
         if (decoded['success'] != true) {
           throw Exception(
-            decoded['message']?.toString() ??
-                'No se pudieron obtener los tickets',
+            ApiService.sanitizeUserFacingMessage(
+              decoded['message'],
+              fallback: 'No se pudieron obtener los tickets',
+            ),
           );
         }
 
@@ -140,8 +142,10 @@ class TicketService {
 
         if (decoded['success'] != true) {
           throw Exception(
-            decoded['message']?.toString() ??
-                'No se pudo obtener el ticket',
+            ApiService.sanitizeUserFacingMessage(
+              decoded['message'],
+              fallback: 'No se pudo obtener el ticket',
+            ),
           );
         }
 
@@ -417,13 +421,15 @@ class TicketService {
         final mensaje = decoded['message'];
 
         if (mensaje != null) {
-          return mensaje.toString().trim();
+          return ApiService.sanitizeUserFacingMessage(mensaje, fallback: '')
+              .trim();
         }
 
         final error = decoded['error'];
 
         if (error != null) {
-          return error.toString().trim();
+          return ApiService.sanitizeUserFacingMessage(error, fallback: '')
+              .trim();
         }
       }
     } catch (_) {}

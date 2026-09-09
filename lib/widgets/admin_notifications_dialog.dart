@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import '../services/admin/avisosadmin_services.dart';
 
 IconData _notificationIcon(Map<String, dynamic> item) {
@@ -237,7 +238,14 @@ Future<void> showAdminNotificationsDialog(BuildContext context) async {
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      SnackBar(
+        content: Text(
+          ApiService.sanitizeUserFacingMessage(
+            error,
+            fallback: 'No se pudieron cargar las notificaciones.',
+          ),
+        ),
+      ),
     );
   }
 }

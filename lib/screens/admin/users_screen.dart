@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../services/api_service.dart';
 import '../../services/admin/users_services.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
@@ -161,7 +162,7 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   String _textoSeguro(dynamic value) {
-    return value?.toString() ?? '';
+    return ApiService.sanitizeUserFacingMessage(value, fallback: '');
   }
 
   String _detalleErrorUsuarios(Map<String, dynamic> respuesta) {
@@ -169,10 +170,21 @@ class _UserScreenState extends State<UserScreen> {
     final data = respuesta['data'];
     final dataMap = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
 
-    for (final key in const ['message', 'error', 'exception']) {
-      final value = dataMap[key] ?? respuesta[key];
-      if (value != null && value.toString().trim().isNotEmpty) {
-        detalles.add(value.toString().trim());
+    final mensaje = ApiService.sanitizeUserFacingMessage(
+      dataMap['message'] ?? respuesta['message'],
+      fallback: '',
+    );
+    if (mensaje.trim().isNotEmpty) {
+      detalles.add(mensaje.trim());
+    }
+
+    for (final key in const ['error', 'exception']) {
+      final value = ApiService.sanitizeUserFacingMessage(
+        dataMap[key] ?? respuesta[key],
+        fallback: '',
+      );
+      if (value.trim().isNotEmpty) {
+        detalles.add(value.trim());
       }
     }
 
@@ -181,23 +193,18 @@ class _UserScreenState extends State<UserScreen> {
       final partes = errors.entries.map((entry) {
         final value = entry.value;
         if (value is List) {
-          return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+          final mensajes = value
+              .map((e) => ApiService.sanitizeUserFacingMessage(e, fallback: ''))
+              .where((item) => item.trim().isNotEmpty)
+              .join(' | ');
+          return mensajes.isEmpty ? '' : '${entry.key}: $mensajes';
         }
-        return '${entry.key}: $value';
+        final texto = ApiService.sanitizeUserFacingMessage(value, fallback: '');
+        return texto.isEmpty ? '' : '${entry.key}: $texto';
       }).join('\n');
       if (partes.trim().isNotEmpty) {
         detalles.add(partes);
       }
-    }
-
-    final trace = dataMap['trace'] ?? respuesta['trace'];
-    if (trace != null && trace.toString().trim().isNotEmpty) {
-      detalles.add(trace.toString().trim());
-    }
-
-    final raw = dataMap['raw'] ?? respuesta['raw'];
-    if (raw != null && raw.toString().trim().isNotEmpty) {
-      detalles.add(raw.toString().trim());
     }
 
     final statusCode = respuesta['statusCode'];
@@ -238,15 +245,6 @@ class _UserScreenState extends State<UserScreen> {
           ),
           if ((_detalleErrorCargaUsuarios ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
-            const Text(
-              'Detalle técnico:',
-              style: TextStyle(
-                color: Color(0xFFFCA5A5),
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
             SelectableText(
               _detalleErrorCargaUsuarios!,
               style: const TextStyle(
@@ -321,7 +319,12 @@ class _UserScreenState extends State<UserScreen> {
       ),
       drawer: const CustomSidebar(activeMenu: 'Usuarios'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 96,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1840,7 +1843,9 @@ class _UserScreenState extends State<UserScreen> {
 
     final message = result['message']?.toString().trim() ?? '';
     if (message.isNotEmpty) {
-      parts.add(message);
+      parts.add(
+        ApiService.sanitizeUserFacingMessage(message, fallback: ''),
+      );
     }
 
     final errors = result['errors'];
@@ -1849,21 +1854,16 @@ class _UserScreenState extends State<UserScreen> {
         errors.entries.map((entry) {
           final value = entry.value;
           if (value is List) {
-            return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+            final mensajes = value
+                .map((e) => ApiService.sanitizeUserFacingMessage(e, fallback: ''))
+                .where((item) => item.trim().isNotEmpty)
+                .join(' | ');
+            return mensajes.isEmpty ? '' : '${entry.key}: $mensajes';
           }
-          return '${entry.key}: $value';
+          final texto = ApiService.sanitizeUserFacingMessage(value, fallback: '');
+          return texto.isEmpty ? '' : '${entry.key}: $texto';
         }).join('\n'),
       );
-    }
-
-    final detail = result['error']?.toString().trim() ?? '';
-    if (detail.isNotEmpty) {
-      parts.add(detail);
-    }
-
-    final raw = result['raw']?.toString().trim() ?? '';
-    if (raw.isNotEmpty) {
-      parts.add(raw);
     }
 
     return parts.where((part) => part.trim().isNotEmpty).join('\n\n');

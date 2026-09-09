@@ -161,6 +161,14 @@ class SessionService {
     return hasAdminPermission;
   }
 
+  static Future<bool> canViewGerenteTiSections() async {
+    final user = await getUser();
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    return role == 'gerente ti' || role == 'programador';
+  }
+
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
   }
@@ -231,6 +239,14 @@ class SessionService {
     final privAdmin = _toString(user?['priv_admin']).toUpperCase();
 
     return role == 'gerente ti' && privAdmin == 'Y';
+  }
+
+  static bool esGerenteTi(Map<String, dynamic>? user) {
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+
+    return role == 'gerente ti';
   }
 
   static String _firstNonEmpty(

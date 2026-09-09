@@ -56,7 +56,10 @@ class _DetallesScreenState extends State<DetallesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = ApiService.sanitizeUserFacingMessage(
+          e,
+          fallback: 'No se pudo cargar el detalle.',
+        );
         _cargando = false;
       });
     }
@@ -359,7 +362,12 @@ class _DetallesScreenState extends State<DetallesScreen> {
           Expanded(
             child: SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.only(
+                  left: 16,
+                  top: 16,
+                  right: 16,
+                  bottom: MediaQuery.of(context).padding.bottom + 96,
+                ),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1100),

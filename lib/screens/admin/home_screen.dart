@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/admin/indexadmin_services.dart';
 import '../../services/api_service.dart';
+import '../../services/perfil_usuario_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
@@ -39,6 +40,8 @@ class _AdminScreenState extends State<AdminScreen> {
   DateTimeRange? _selectedDateRange;
   String _dateFilterLabel = 'Sin filtro';
   String _token = '';
+  bool _modalDatosInicialesMostrado = false;
+  bool _esGerenteTi = false;
 
   @override
   void initState() {
@@ -56,6 +59,8 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       final token = await SessionService.getToken();
       _token = token ?? '';
+      final usuarioSesion = await SessionService.getUser();
+      _esGerenteTi = SessionService.esGerenteTi(usuarioSesion);
       final data = await _service.obtenerDashboard(
         periodo: 'semana',
         fechaInicio: _selectedDateRange?.start,
@@ -69,6 +74,28 @@ class _AdminScreenState extends State<AdminScreen> {
         _dashboard = _dashboardMap(data);
         _isLoading = false;
       });
+
+      final faltanDatosLocales = await _faltanDatosIniciales();
+      final debeMostrarModal =
+          !_esGerenteTi &&
+          (data.perfilInicialPendiente || faltanDatosLocales);
+
+      if (debeMostrarModal && !_modalDatosInicialesMostrado) {
+        _modalDatosInicialesMostrado = true;
+        await Future<void>.delayed(Duration.zero);
+        if (mounted) {
+          await _mostrarModalDatosIniciales(
+            data.perfilPendienteCampos.isNotEmpty
+                ? data.perfilPendienteCampos
+                : const <String>[
+                    'Número de empleado',
+                    'Departamento',
+                    'Oficina',
+                    'Empresa',
+                  ],
+          );
+        }
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -196,6 +223,433 @@ class _AdminScreenState extends State<AdminScreen> {
     await _loadDashboard();
   }
 
+  Future<void> _mostrarModalDatosIniciales(List<String> camposPendientes) async {
+    final empresa = (await SessionService.getEmpresa() ?? '').trim();
+    final departamento = (await SessionService.getDepartamento() ?? '').trim();
+    final oficina = (await SessionService.getOficina() ?? '').trim();
+    final numeroEmpleado =
+        (await SessionService.getNumeroEmpleado() ?? '').trim();
+
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final numeroController = TextEditingController(text: numeroEmpleado);
+        final departamentoController = TextEditingController(text: departamento);
+        final empresas = const ['AyM', 'Seneca', 'Cermez', 'Cymez'];
+        final oficinas = const [
+          'Reynosa',
+          'Matamoros',
+          'Apodaca',
+          'International',
+          'Tijuana',
+          'Nogales',
+          'Nuevo Laredo',
+        ];
+        String empresaActual = empresa.isNotEmpty ? empresa : empresas.first;
+        String oficinaActual = oficina.isNotEmpty ? oficina : oficinas.first;
+        var guardando = false;
+
+        String capitalizarPalabras(String value) {
+          return value
+              .split(RegExp(r'\s+'))
+              .where((part) => part.trim().isNotEmpty)
+              .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+              .join(' ');
+        }
+
+        Future<void> guardar(StateSetter setStateDialog) async {
+          final numero = numeroController.text.trim();
+          final depto = capitalizarPalabras(departamentoController.text.trim());
+
+          if (numero.isEmpty || depto.isEmpty) {
+            await _mostrarMensaje(
+              'Completa número de empleado y departamento.',
+              isError: true,
+            );
+            return;
+          }
+
+          setStateDialog(() => guardando = true);
+
+          try {
+            await PerfilUsuarioService.actualizarDatosIniciales(
+              numeroEmpleado: numero,
+              empresa: empresaActual,
+              oficina: oficinaActual,
+              departamento: depto,
+            );
+            await SessionService.updateInitialData(
+              empresa: empresaActual,
+              departamento: depto,
+              oficina: oficinaActual,
+              numeroEmpleado: numero,
+            );
+
+            if (!dialogContext.mounted) {
+              return;
+            }
+
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              await _loadDashboard();
+            }
+          } catch (e) {
+            if (mounted) {
+              await _mostrarMensaje(
+                'No se pudieron guardar los datos.\n${_limpiarError(e)}',
+                isError: true,
+              );
+            }
+          } finally {
+            if (mounted) {
+              setStateDialog(() => guardando = false);
+            }
+          }
+        }
+
+        return MediaQuery(
+          data: MediaQuery.of(dialogContext).copyWith(viewInsets: EdgeInsets.zero),
+          child: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return Dialog(
+                backgroundColor: Colors.transparent,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 540),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF0B1324), Color(0xFF101C33)],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        blurRadius: 34,
+                        offset: const Offset(0, 18),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.badge_outlined,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Completa tus datos iniciales',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Solo la primera vez. Después quedará en modo lectura y cualquier ajuste posterior irá por solicitud de cambio con el encargado de Gerente TI.',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.only(
+                              left: 16,
+                              top: 16,
+                              right: 16,
+                              bottom: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF0A1220), Color(0xFF0E1930)],
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.lock_outline_rounded, color: Color(0xFF93C5FD), size: 18),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Estos datos se guardan una sola vez. Si más adelante necesitas modificarlos, se deberá solicitar el cambio con el encargado de Gerente TI.',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          if (camposPendientes.isNotEmpty) ...[
+                            _modalFieldLabel('Campos pendientes detectados'),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: camposPendientes
+                                  .map(
+                                    (campo) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.05),
+                                        borderRadius: BorderRadius.circular(999),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.08),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        campo,
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          _modalFieldLabel('Número de empleado'),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: numeroController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: _modalInputDecoration('Número de empleado'),
+                          ),
+                          const SizedBox(height: 14),
+                          _modalFieldLabel('Empresa'),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            initialValue: empresaActual,
+                            dropdownColor: const Color(0xFF111C33),
+                            isExpanded: true,
+                            decoration: _modalInputDecoration('Empresa'),
+                            items: empresas
+                                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                .toList(),
+                            onChanged: (v) => setStateDialog(() => empresaActual = v ?? empresas.first),
+                          ),
+                          const SizedBox(height: 14),
+                          _modalFieldLabel('Oficina'),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            initialValue: oficinaActual,
+                            dropdownColor: const Color(0xFF111C33),
+                            isExpanded: true,
+                            decoration: _modalInputDecoration('Oficina'),
+                            items: oficinas
+                                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                .toList(),
+                            onChanged: (v) => setStateDialog(() => oficinaActual = v ?? oficinas.first),
+                          ),
+                          const SizedBox(height: 14),
+                          _modalFieldLabel('Departamento'),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: departamentoController,
+                            style: const TextStyle(color: Colors.white),
+                            textCapitalization: TextCapitalization.words,
+                            decoration: _modalInputDecoration('Departamento'),
+                          ),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _modalPill(icon: Icons.shield_outlined, text: 'Solo una vez'),
+                              _modalPill(icon: Icons.admin_panel_settings_outlined, text: 'Luego por solicitud'),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: guardando ? null : () => guardar(setStateDialog),
+                              icon: guardando
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.save_rounded),
+                              label: Text(guardando ? 'Guardando...' : 'Actualizar datos'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: const Color(0xFF2563EB),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _mostrarMensaje(String mensaje, {bool isError = false}) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF0D1427),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Icon(
+          isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+          color: isError ? Colors.redAccent : Colors.greenAccent,
+          size: 42,
+        ),
+        title: Text(
+          isError ? 'Ocurrió un problema' : '¡Listo!',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          mensaje,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _limpiarError(Object e) {
+    return ApiService.sanitizeUserFacingMessage(
+      e,
+      fallback: 'Ocurrió un error inesperado.',
+    );
+  }
+
+  Future<bool> _faltanDatosIniciales() async {
+    final empresa = (await SessionService.getEmpresa() ?? '').trim();
+    final departamento = (await SessionService.getDepartamento() ?? '').trim();
+    final oficina = (await SessionService.getOficina() ?? '').trim();
+    final numeroEmpleado =
+        (await SessionService.getNumeroEmpleado() ?? '').trim();
+
+    return empresa.isEmpty ||
+        departamento.isEmpty ||
+        oficina.isEmpty ||
+        numeroEmpleado.isEmpty;
+  }
+
+  Widget _modalFieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
+      ),
+    );
+  }
+
+  InputDecoration _modalInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white38),
+      filled: true,
+      fillColor: const Color(0xFF08101D),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(color: Color(0xFF3B82F6)),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    );
+  }
+
+  Widget _modalPill({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFF93C5FD), size: 14),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -211,6 +665,8 @@ class _AdminScreenState extends State<AdminScreen> {
         'tiempo_promedio': data.tiempoPromedio,
         'tiempo_promedio_minutos': _minutesFromText(data.tiempoPromedio),
       },
+      'perfilInicialPendiente': data.perfilInicialPendiente,
+      'perfilPendienteCampos': data.perfilPendienteCampos,
       'notificacionesNoLeidas': data.notificacionesNoLeidas,
       'textoMes': data.textoMes,
       'subtextoMes': data.subtextoMes,
@@ -528,7 +984,12 @@ class _AdminScreenState extends State<AdminScreen> {
               onRefresh: _loadDashboard,
               color: AdminScreen.accentBlue,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.only(
+                  left: 16,
+                  top: 16,
+                  right: 16,
+                  bottom: MediaQuery.of(context).padding.bottom + 180,
+                ),
                 children: [
                   if (_errorMessage != null)
                     Container(
@@ -1270,20 +1731,34 @@ class CustomSidebar extends StatelessWidget {
                   child: Row(
                     children: [
                       const AdminAvatar(radius: 16),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const AdminDrawerRole(color: AdminScreen.textMuted),
-                        ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FutureBuilder<Map<String, dynamic>?>(
+                          future: SessionService.getUser(),
+                          builder: (context, snapshot) {
+                            final nombre = SessionService.displayName(
+                              snapshot.data,
+                              fallback: 'Usuario',
+                            );
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  nombre,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const AdminDrawerRole(color: AdminScreen.textMuted),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),

@@ -19,6 +19,8 @@ import 'home_screen.dart';
 import 'perfiladmin_screen.dart';
 import 'users_screen.dart';
 
+const String kDefaultAvatarAsset = 'assets/images/user.png';
+
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
 
@@ -28,7 +30,7 @@ class TicketsScreen extends StatefulWidget {
 
 class _TicketsScreenState extends State<TicketsScreen> {
   final TicketsAdminServices _ticketsService = TicketsAdminServices();
-  static const String defaultAvatar = 'assets/images/user.png';
+  static const String defaultAvatar = kDefaultAvatarAsset;
   static const Color background = Color(0xFF070B18);
   static const Color cardBg = Color(0xFF0F172A);
   static const Color sidebarBg = Color(0xFF0D1630);
@@ -53,6 +55,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
   int _total = 0;
   int _totalTickets = 0;
   int _pendientes = 0;
+  int _bloqueados = 0;
   int _enProceso = 0;
   int _solucionados = 0;
   int _cancelados = 0;
@@ -101,6 +104,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
         _total = pag is Map ? _toInt(pag['total'], list.length) : list.length;
         _totalTickets = stats is Map ? _toInt(stats['total'], 0) : 0;
         _pendientes = stats is Map ? _toInt(stats['pendientes'], 0) : 0;
+        _bloqueados = stats is Map ? _toInt(stats['bloqueados'], 0) : 0;
         _enProceso = stats is Map ? _toInt(stats['en_proceso'], 0) : 0;
         _solucionados = stats is Map ? _toInt(stats['solucionados'], 0) : 0;
         _cancelados = stats is Map ? _toInt(stats['cancelados'], 0) : 0;
@@ -110,11 +114,15 @@ class _TicketsScreenState extends State<TicketsScreen> {
       if (mounted) {
         setState(() {
           _cargando = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = ApiService.sanitizeUserFacingMessage(
+            e,
+            fallback: 'No se pudieron cargar los tickets.',
+          );
           tickets = [];
           _total = 0;
           _totalTickets = 0;
           _pendientes = 0;
+          _bloqueados = 0;
           _enProceso = 0;
           _solucionados = 0;
           _cancelados = 0;
@@ -203,6 +211,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ticket['status'],
       fallback: 'No especificado',
     );
+    final bool ticketBloqueado = estado.toLowerCase().trim() == 'bloqueado';
     final String fechaCreacion = _formatearFecha(
       ticket['created_at'] ?? ticket['fecha'],
     );
@@ -371,6 +380,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               ticketId: ticketId,
                               enviando: enviandoComentario,
                               archivoNombre: _archivoComentarioNombre,
+                              onRemoveAttachment: () {
+                                setDialogState(() {
+                                  _archivoComentarioPath = null;
+                                  _archivoComentarioNombre = null;
+                                  _archivoComentarioBytes = null;
+                                });
+                              },
                               onAttach: () async {
                                 final file = await FilePicker.pickFile();
                                 if (file == null) return;
@@ -434,7 +450,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             );
                           },
                         ),
-                        if (estado.toLowerCase().trim() == 'pendiente' &&
+                        if (!ticketBloqueado &&
+                            estado.toLowerCase().trim() == 'pendiente' &&
                             ticketItem != null) ...[
                           const SizedBox(height: 24),
                           SizedBox(
@@ -738,7 +755,15 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 } catch (e) {
                                   if (!mounted) return;
                                   messenger?.showSnackBar(
-                                    SnackBar(content: Text(e.toString())),
+                                    SnackBar(
+                                      content: Text(
+                                        ApiService.sanitizeUserFacingMessage(
+                                          e,
+                                          fallback:
+                                              'No se pudo guardar la solución.',
+                                        ),
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
@@ -1786,6 +1811,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     required Future<void> Function() onSend,
     required bool enviando,
     required VoidCallback onAttach,
+    required VoidCallback onRemoveAttachment,
     String? archivoNombre,
   }) {
     return Column(
@@ -1838,6 +1864,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 onSend: onSend,
                 enviando: enviando,
                 onAttach: onAttach,
+                onRemoveAttachment: onRemoveAttachment,
                 archivoNombre: archivoNombre,
               ),
             ],
@@ -2052,6 +2079,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     required Future<void> Function() onSend,
     required bool enviando,
     required VoidCallback onAttach,
+    required VoidCallback onRemoveAttachment,
     String? archivoNombre,
   }) {
     return Container(
@@ -2059,81 +2087,123 @@ class _TicketsScreenState extends State<TicketsScreen> {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Colors.white10)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            onPressed: enviando ? null : onAttach,
-            icon: const Icon(
-              Icons.attach_file_rounded,
-              color: Colors.grey,
-              size: 20,
-            ),
-            tooltip: 'Adjuntar archivo',
-          ),
-          if (archivoNombre != null)
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12, right: 6),
-                child: Text(
-                  archivoNombre,
-                  style: const TextStyle(color: Colors.white54, fontSize: 9),
-                  overflow: TextOverflow.ellipsis,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              IconButton(
+                onPressed: enviando ? null : onAttach,
+                icon: const Icon(
+                  Icons.attach_file_rounded,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                tooltip: 'Adjuntar archivo',
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _mensajeController,
+                  enabled: !enviando,
+                  minLines: 1,
+                  maxLines: 4,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  decoration: const InputDecoration(
+                    hintText: 'Escribe un mensaje...',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
+                    filled: true,
+                    fillColor: Color(0xFF0B1021),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          Expanded(
-            child: TextField(
-              controller: _mensajeController,
-              enabled: !enviando,
-              minLines: 1,
-              maxLines: 4,
-              style: const TextStyle(color: Colors.white, fontSize: 11),
-              decoration: const InputDecoration(
-                hintText: 'Escribe un mensaje...',
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
-                filled: true,
-                fillColor: Color(0xFF0B1021),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 10,
+              const SizedBox(width: 7),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: enviando ? Colors.white10 : const Color(0xFF2563EB),
+                  shape: BoxShape.circle,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  borderSide: BorderSide.none,
+                child: IconButton(
+                  onPressed: enviando || ticketId == 0
+                      ? null
+                      : () async => onSend(),
+                  icon: enviando
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                  tooltip: enviando ? 'Enviando...' : 'Enviar',
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 7),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: enviando ? Colors.white10 : const Color(0xFF2563EB),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              onPressed: enviando || ticketId == 0
-                  ? null
-                  : () async => onSend(),
-              icon: enviando
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+          if (archivoNombre != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1324),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.attach_file_rounded,
+                    color: Color(0xFF93C5FD),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      archivoNombre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
                       ),
-                    )
-                  : const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: enviando ? null : onRemoveAttachment,
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white54,
                       size: 18,
                     ),
-              tooltip: enviando ? 'Enviando...' : 'Enviar',
+                    tooltip: 'Quitar archivo',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 32,
+                      height: 32,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -2217,6 +2287,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
         color = const Color(0xFFEAB308);
         icon = Icons.circle;
         break;
+      case 'bloqueado':
+        bg = const Color(0xFF3F3F46);
+        color = const Color(0xFFA1A1AA);
+        icon = Icons.lock_outline;
+        break;
       case 'solucionado':
         bg = const Color(0xFF064E3B);
         color = const Color(0xFF10B981);
@@ -2265,7 +2340,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        top: 16,
+        right: 16,
+        bottom: 16,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF0D1427),
         borderRadius: BorderRadius.circular(13),
@@ -2486,6 +2566,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
     switch (estado.toLowerCase().trim()) {
       case 'pendiente':
         return 'Pendiente';
+      case 'bloqueado':
+        return 'Bloqueado';
       case 'en proceso':
       case 'en_proceso':
       case 'proceso':
@@ -2503,6 +2585,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
     switch (estado.toLowerCase().trim()) {
       case 'pendiente':
         return 'pendiente';
+      case 'bloqueado':
+        return 'bloqueado';
       case 'solucionado':
         return 'solucionado';
       case 'cancelado':
@@ -2627,7 +2711,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ),
       drawer: const CustomSidebar(activeMenu: 'Tickets'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 180,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2664,6 +2753,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     subtitle: 'Este mes',
                     icon: Icons.access_time_rounded,
                     iconColor: Colors.amber,
+                  ),
+                  SizedBox(width: 10),
+                  KPIStatCard(
+                    title: 'Bloqueados',
+                    count: _bloqueados.toString(),
+                    subtitle: 'Este mes',
+                    icon: Icons.lock_outline,
+                    iconColor: Colors.deepOrangeAccent,
                   ),
                   SizedBox(width: 10),
                   KPIStatCard(
@@ -2901,6 +2998,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   VoidCallback? _accionTicket(TicketItem ticket) {
     final estado = ticket.status.toLowerCase().trim();
+    if (estado == 'bloqueado') return null;
     if (estado == 'en proceso' && selectedFilter != 'Mis tickets') return null;
     if (selectedFilter == 'Mis tickets' && estado == 'en proceso') {
       return () => _mostrarSolucion(ticket);
@@ -2921,7 +3019,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+          SnackBar(
+            content: Text(
+              ApiService.sanitizeUserFacingMessage(
+                e,
+                fallback: 'No se pudo completar la acción.',
+              ),
+            ),
+          ),
         );
       }
     }
@@ -3357,7 +3462,11 @@ class TicketCard extends StatelessWidget {
     String prefix = '• ';
     final normalizedStatus = status.trim().toLowerCase();
 
-    if (normalizedStatus == 'solucionado') {
+    if (normalizedStatus == 'bloqueado') {
+      bg = const Color(0xFF3F3F46).withValues(alpha: 0.15);
+      text = const Color(0xFFA1A1AA);
+      prefix = '⛔ ';
+    } else if (normalizedStatus == 'solucionado') {
       bg = const Color(0xFF10B981).withValues(alpha: 0.15);
       text = const Color(0xFF10B981);
       prefix = '✓ ';
@@ -3386,11 +3495,10 @@ class TicketCard extends StatelessWidget {
 
   Widget _assignedPhoto() {
     final path = ticket.assignedPhoto.trim();
-    if (path.isEmpty) {
-      return const CircleAvatar(
+    if (path.isEmpty || path == 'US') {
+      return CircleAvatar(
         radius: 10,
-        backgroundColor: Color(0xFF3B82F6),
-        child: Text('US', style: TextStyle(color: Colors.white, fontSize: 8)),
+        backgroundImage: AssetImage(kDefaultAvatarAsset),
       );
     }
 
@@ -3401,10 +3509,9 @@ class TicketCard extends StatelessWidget {
         width: 20,
         height: 20,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+        errorBuilder: (context, error, stackTrace) => CircleAvatar(
           radius: 10,
-          backgroundColor: Color(0xFF3B82F6),
-          child: Text('US', style: TextStyle(color: Colors.white, fontSize: 8)),
+          backgroundImage: AssetImage(kDefaultAvatarAsset),
         ),
       ),
     );

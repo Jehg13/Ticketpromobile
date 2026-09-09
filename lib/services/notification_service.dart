@@ -131,7 +131,10 @@ class NotificationService {
         'success': response.statusCode >= 200 &&
             response.statusCode < 300 &&
             data['success'] == true,
-        'message': data['message']?.toString() ?? '',
+        'message': ApiService.sanitizeUserFacingMessage(
+          data['message'],
+          fallback: '',
+        ),
         'data': data,
       };
     } catch (error) {
@@ -140,7 +143,7 @@ class NotificationService {
         'statusCode': 0,
         'success': false,
         'message': 'No se pudo registrar el token de notificaciones.',
-        'error': error.toString(),
+        'error': ApiService.sanitizeUserFacingMessage(error, fallback: ''),
       };
     }
   }
@@ -185,7 +188,10 @@ class NotificationService {
         'success': response.statusCode >= 200 &&
             response.statusCode < 300 &&
             data['success'] == true,
-        'message': data['message']?.toString() ?? '',
+        'message': ApiService.sanitizeUserFacingMessage(
+          data['message'],
+          fallback: '',
+        ),
         'data': data,
       };
     } catch (error) {
@@ -194,7 +200,7 @@ class NotificationService {
         'statusCode': 0,
         'success': false,
         'message': 'No se pudo retirar el token de notificaciones.',
-        'error': error.toString(),
+        'error': ApiService.sanitizeUserFacingMessage(error, fallback: ''),
       };
     }
   }

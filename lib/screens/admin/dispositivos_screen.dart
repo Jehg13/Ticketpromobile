@@ -370,7 +370,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       onRefresh: _cargarDatos,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 96,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -435,19 +440,14 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                     children: [
                       const AdminAvatar(radius: 16),
                       SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const AdminDrawerRole(),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const AdminDrawerUserName(),
+                            const AdminDrawerRole(),
+                          ],
+                        ),
                       ),
                     ],
                   ),

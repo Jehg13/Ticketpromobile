@@ -34,13 +34,8 @@ dynamic body;
 try {
   body = jsonDecode(response.body);
 } catch (_) {
-
-
-
-
   throw Exception(
-    'El servidor devolviÃ³ una respuesta no vÃ¡lida. '
-    'CÃ³digo: ${response.statusCode}',
+    'El servidor devolvió una respuesta no válida.',
   );
 }
 
@@ -57,7 +52,10 @@ if (body is Map<String, dynamic>) {
   for (final key in const ['message', 'error', 'exception']) {
     final value = body[key];
     if (value != null) {
-      final text = value.toString().trim();
+      final text = ApiService.sanitizeUserFacingMessage(
+        value,
+        fallback: '',
+      ).trim();
       if (text.isNotEmpty) {
         parts.add(text);
       }
@@ -73,23 +71,24 @@ if (body is Map<String, dynamic>) {
 
       if (value is List) {
         for (final error in value) {
-          final text = error.toString().trim();
+          final text = ApiService.sanitizeUserFacingMessage(
+            error,
+            fallback: '',
+          ).trim();
           if (text.isNotEmpty) {
             parts.add('$campo: $text');
           }
         }
       } else {
-        final text = value.toString().trim();
+        final text = ApiService.sanitizeUserFacingMessage(
+          value,
+          fallback: '',
+        ).trim();
         if (text.isNotEmpty) {
           parts.add('$campo: $text');
         }
       }
     }
-  }
-
-  final trace = body['trace'];
-  if (trace is List && trace.isNotEmpty) {
-    parts.add(trace.map((item) => item.toString()).join('\n'));
   }
 
   if (parts.isNotEmpty) {
@@ -109,7 +108,10 @@ if (decoded is Map<String, dynamic>) {
   for (final key in const ['message', 'error', 'exception']) {
     final value = decoded[key];
     if (value != null) {
-      final text = value.toString().trim();
+      final text = ApiService.sanitizeUserFacingMessage(
+        value,
+        fallback: '',
+      ).trim();
       if (text.isNotEmpty) {
         parts.add(text);
       }
@@ -123,23 +125,24 @@ if (decoded is Map<String, dynamic>) {
       final value = entry.value;
       if (value is List) {
         for (final error in value) {
-          final text = error.toString().trim();
+          final text = ApiService.sanitizeUserFacingMessage(
+            error,
+            fallback: '',
+          ).trim();
           if (text.isNotEmpty) {
             parts.add('$field: $text');
           }
         }
       } else {
-        final text = value.toString().trim();
+        final text = ApiService.sanitizeUserFacingMessage(
+          value,
+          fallback: '',
+        ).trim();
         if (text.isNotEmpty) {
           parts.add('$field: $text');
         }
       }
     }
-  }
-
-  final trace = decoded['trace'];
-  if (trace is List && trace.isNotEmpty) {
-    parts.add(trace.map((item) => item.toString()).join('\n'));
   }
 
   if (parts.isNotEmpty) {
@@ -149,7 +152,10 @@ if (decoded is Map<String, dynamic>) {
 
 final body = response.body.trim();
 if (body.isNotEmpty) {
-  return body;
+  return ApiService.sanitizeUserFacingMessage(
+    body,
+    fallback: 'La solicitud falló.',
+  );
 }
 
 return 'La solicitud fallÃ³ con cÃ³digo ${response.statusCode}.';

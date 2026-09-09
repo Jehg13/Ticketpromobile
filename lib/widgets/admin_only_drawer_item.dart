@@ -11,7 +11,7 @@ class AdminOnlyDrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: SessionService.canManageUsersAndChanges(),
+      future: SessionService.canViewGerenteTiSections(),
       builder: (context, snapshot) {
         if (snapshot.data != true) {
           return const SizedBox.shrink();
@@ -38,6 +38,8 @@ class AdminDrawerRole extends StatelessWidget {
         final role = (user['role'] ?? user['rol'] ?? '').toString().trim();
         return Text(
           role.isNotEmpty ? role : 'Sin rol',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(color: color, fontSize: 11),
         );
       },
@@ -50,5 +52,39 @@ class AdminDrawerRole extends StatelessWidget {
       return Map<String, dynamic>.from(response['user'] as Map);
     }
     return SessionService.getUser();
+  }
+}
+
+class AdminDrawerUserName extends StatelessWidget {
+  const AdminDrawerUserName({
+    super.key,
+    this.color = Colors.white,
+    this.fallback = 'Usuario',
+  });
+
+  final Color color;
+  final String fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final name = SessionService.displayName(
+          snapshot.data,
+          fallback: fallback,
+        );
+        return Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        );
+      },
+    );
   }
 }

@@ -439,8 +439,11 @@ Future<void> _seleccionarEvidencias() async {
             ),
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(
-                isDesktop ? 24 : 16,
+              padding: EdgeInsets.only(
+                left: isDesktop ? 24 : 16,
+                top: isDesktop ? 24 : 16,
+                right: isDesktop ? 24 : 16,
+                bottom: MediaQuery.of(context).padding.bottom + 96,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,6 +480,8 @@ Future<void> _seleccionarEvidencias() async {
                 children: [
                   Text(
                     nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -486,6 +491,8 @@ Future<void> _seleccionarEvidencias() async {
                   const SizedBox(height: 4),
                   Text(
                     rol,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 13,

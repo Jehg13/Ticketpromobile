@@ -60,7 +60,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final Color primaryGradientEnd = const Color(0xFF4F46E5);
 
   final TextEditingController _nombreController = TextEditingController(
-    text: 'Jesus Hinojosa',
+    text: '',
   );
   final TextEditingController _usuarioController = TextEditingController(
     text: 'jhinojosa',
@@ -136,7 +136,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       ),
       drawer: _buildAppDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 96,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -359,7 +364,13 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       if (mounted) {
         setState(() => _guardandoCambios = false);
       }
-      _mostrarMensaje(e.toString().replaceFirst('Exception: ', ''), true);
+      _mostrarMensaje(
+        ApiService.sanitizeUserFacingMessage(
+          e,
+          fallback: 'Ocurrió un error inesperado.',
+        ),
+        true,
+      );
     }
   }
 
@@ -455,8 +466,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
+                child: SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
@@ -470,6 +483,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                       color: Colors.black,
                       size: 16,
                     ),
+                  ),
                   ),
                 ),
               ),
@@ -1410,19 +1424,14 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     children: [
                       const AdminAvatar(radius: 16),
                       SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const AdminDrawerRole(),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const AdminDrawerUserName(),
+                            const AdminDrawerRole(),
+                          ],
+                        ),
                       ),
                     ],
                   ),

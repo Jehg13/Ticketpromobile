@@ -149,6 +149,8 @@ class IndexAdminService {
 
 class AdminDashboardData {
   final UsuarioAdmin usuario;
+  final bool perfilInicialPendiente;
+  final List<String> perfilPendienteCampos;
   final List<NotificacionAdmin> notificaciones;
   final int notificacionesNoLeidas;
   final int totalTickets;
@@ -181,6 +183,8 @@ class AdminDashboardData {
 
   const AdminDashboardData({
     required this.usuario,
+    required this.perfilInicialPendiente,
+    required this.perfilPendienteCampos,
     required this.notificaciones,
     required this.notificacionesNoLeidas,
     required this.totalTickets,
@@ -221,6 +225,12 @@ class AdminDashboardData {
           json['usuario'] ?? {},
         ),
       ),
+      perfilInicialPendiente:
+          json['perfilInicialPendiente'] == true,
+      perfilPendienteCampos:
+          (json['perfilPendienteCampos'] as List? ?? [])
+              .map((item) => item.toString())
+              .toList(),
       notificaciones: (json['notificaciones'] as List? ?? [])
           .map(
             (item) => NotificacionAdmin.fromJson(

@@ -488,7 +488,12 @@ class _CambiosScreenState extends State<CambiosScreen> {
         onRefresh: () => _cargarSolicitudes(pagina: paginaActual),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.only(
+            left: 16,
+            top: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).padding.bottom + 96,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1659,21 +1664,16 @@ class CustomSidebar extends StatelessWidget {
                     children: [
                       const AdminAvatar(radius: 16),
                       SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jesus Hinojosa',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const AdminDrawerUserName(),
+                            const AdminDrawerRole(
+                              color: _CambiosScreenState.textMuted,
                             ),
-                          ),
-                          const AdminDrawerRole(
-                            color: _CambiosScreenState.textMuted,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

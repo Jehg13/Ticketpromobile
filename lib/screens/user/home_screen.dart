@@ -152,7 +152,12 @@ Future<void> showUserNotifications(BuildContext context) {
                                     ),
                                   )
                                 : ListView.separated(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.only(
+                                      left: 16,
+                                      top: 16,
+                                      right: 16,
+                                      bottom: MediaQuery.of(context).padding.bottom + 96,
+                                    ),
                                     itemCount: items.length,
                                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                                     itemBuilder: (_, index) {
@@ -1641,6 +1646,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     cargandoUsuario
                         ? 'Cargando...'
                         : 'Bienvenido, $nombreUsuario',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1813,6 +1820,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 nombreUsuario,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -1830,6 +1839,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   rolUsuario,
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF93C5FD),
                     fontSize: 11,

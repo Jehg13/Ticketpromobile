@@ -931,7 +931,16 @@ class UsersService {
       final decoded = jsonDecode(response.body);
 
       if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
+        final map = Map<String, dynamic>.from(decoded);
+        for (final key in const ['message', 'error', 'exception', 'raw']) {
+          if (map.containsKey(key)) {
+            map[key] = ApiService.sanitizeUserFacingMessage(
+              map[key],
+              fallback: '',
+            );
+          }
+        }
+        return map;
       }
 
       return {
@@ -955,9 +964,12 @@ class UsersService {
     final parts = <String>[];
 
     for (final key in const ['message', 'error', 'exception']) {
-      final value = data[key];
-      if (value != null && value.toString().trim().isNotEmpty) {
-        parts.add(value.toString().trim());
+      final value = ApiService.sanitizeUserFacingMessage(
+        data[key],
+        fallback: '',
+      );
+      if (value.trim().isNotEmpty) {
+        parts.add(value.trim());
       }
     }
 
@@ -967,9 +979,14 @@ class UsersService {
         errors.entries.map((entry) {
           final value = entry.value;
           if (value is List) {
-            return '${entry.key}: ${value.map((e) => e.toString()).join(' | ')}';
+            final mensajes = value
+                .map((e) => ApiService.sanitizeUserFacingMessage(e, fallback: ''))
+                .where((item) => item.trim().isNotEmpty)
+                .join(' | ');
+            return mensajes.isEmpty ? '' : '${entry.key}: $mensajes';
           }
-          return '${entry.key}: $value';
+          final texto = ApiService.sanitizeUserFacingMessage(value, fallback: '');
+          return texto.isEmpty ? '' : '${entry.key}: $texto';
         }).join('\n'),
       );
     }
@@ -984,13 +1001,10 @@ class UsersService {
   }
 
   static String _mensajeError(Map<String, dynamic> data, String defecto) {
-    final message = data['message'];
-
-    if (message != null && message.toString().trim().isNotEmpty) {
-      return message.toString();
-    }
-
-    return defecto;
+    return ApiService.sanitizeUserFacingMessage(
+      data['message'],
+      fallback: defecto,
+    );
   }
 
   // ============================================================

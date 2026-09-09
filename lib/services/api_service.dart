@@ -191,6 +191,70 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
   }
 
+  static String sanitizeUserFacingMessage(
+    dynamic value, {
+    String fallback = 'Ocurrió un error al procesar la solicitud.',
+  }) {
+    final text = _messageText(value);
+    if (text.isEmpty) {
+      return fallback;
+    }
+
+    if (_isTechnicalMessage(text)) {
+      return fallback;
+    }
+
+    return text;
+  }
+
+  static String _messageText(dynamic value) {
+    if (value == null) return '';
+
+    if (value is Map) {
+      for (final key in const ['message', 'error', 'exception', 'detail']) {
+        final nested = _messageText(value[key]);
+        if (nested.isNotEmpty) {
+          return nested;
+        }
+      }
+      return '';
+    }
+
+    if (value is List) {
+      return value
+          .map(_messageText)
+          .where((item) => item.isNotEmpty)
+          .join('\n');
+    }
+
+    final text = value.toString().trim();
+    if (text.startsWith('Exception: ')) {
+      return text.replaceFirst('Exception: ', '');
+    }
+    if (text.startsWith('Error: ')) {
+      return text.replaceFirst('Error: ', '');
+    }
+
+    return text;
+  }
+
+  static bool _isTechnicalMessage(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('sqlstate') ||
+        lower.contains('pdoexception') ||
+        lower.contains('queryexception') ||
+        lower.contains('integrity constraint') ||
+        lower.contains('syntax error') ||
+        lower.contains('unknown column') ||
+        (lower.contains('table ') && lower.contains("doesn't exist")) ||
+        lower.contains('could not find driver') ||
+        lower.contains('connection refused') ||
+        lower.contains('stack trace') ||
+        lower.contains('exception trace') ||
+        lower.contains('connection: mysql') ||
+        lower.contains('laravel\\');
+  }
+
   static Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {

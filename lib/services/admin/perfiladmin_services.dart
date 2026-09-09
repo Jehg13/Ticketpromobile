@@ -383,7 +383,16 @@ class PerfilAdminService {
       );
 
       if (decoded is Map<String, dynamic>) {
-        return decoded;
+        final map = Map<String, dynamic>.from(decoded);
+        for (final key in const ['message', 'error', 'exception', 'raw']) {
+          if (map.containsKey(key)) {
+            map[key] = ApiService.sanitizeUserFacingMessage(
+              map[key],
+              fallback: '',
+            );
+          }
+        }
+        return map;
       }
 
       return {
@@ -393,9 +402,10 @@ class PerfilAdminService {
     } catch (_) {
       return {
         'success': false,
-        'message': response.body.isNotEmpty
-            ? response.body
-            : 'Respuesta inválida del servidor.',
+        'message': ApiService.sanitizeUserFacingMessage(
+          response.body.isNotEmpty ? response.body : null,
+          fallback: 'Respuesta inválida del servidor.',
+        ),
       };
     }
   }

@@ -107,11 +107,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   }
 
   String _limpiarError(Object e) {
-    final texto = e.toString();
-    if (texto.startsWith('Exception: ')) {
-      return texto.replaceFirst('Exception: ', '');
-    }
-    return texto;
+    return ApiService.sanitizeUserFacingMessage(
+      e,
+      fallback: 'Ocurrió un error al procesar la solicitud.',
+    );
   }
 
   void _mostrarMensaje(String mensaje, {bool isError = false}) {
@@ -741,9 +740,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   Expanded(
                     child: SafeArea(
                       child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isDesktop ? 32.0 : 16.0,
-                          vertical: 24.0,
+                        padding: EdgeInsets.only(
+                          left: isDesktop ? 32.0 : 16.0,
+                          top: 24.0,
+                          right: isDesktop ? 32.0 : 16.0,
+                          bottom: MediaQuery.of(context).padding.bottom + 96,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1611,10 +1612,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   ),
                 ),
                 Positioned(
-                  bottom: 4,
-                  right: 4,
+                  bottom: 2,
+                  right: 2,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -1627,7 +1628,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                     ),
                     child: const Icon(
                       Icons.camera_alt_rounded,
-                      size: 16,
+                      size: 13,
                       color: backgroundColor,
                     ),
                   ),

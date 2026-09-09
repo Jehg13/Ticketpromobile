@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -705,7 +704,12 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                               ),
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.only(
+                                left: 16,
+                                top: 16,
+                                right: 16,
+                                bottom: MediaQuery.of(context).padding.bottom + 96,
+                              ),
                               itemCount: itemsActuales.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 8),
@@ -892,57 +896,10 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   }
 
   String _limpiarError(Object error) {
-    final text = error.toString()
-        .replaceFirst('Exception: ', '')
-        .replaceFirst('Bad state: ', '')
-        .trim();
-
-    if (text.isEmpty) {
-      return 'Ocurrió un error inesperado.';
-    }
-
-    if ((text.startsWith('{') && text.endsWith('}')) ||
-        (text.startsWith('[') && text.endsWith(']'))) {
-      try {
-        final decoded = jsonDecode(text);
-        if (decoded is Map) {
-          final parts = <String>[];
-          for (final key in const ['message', 'error', 'exception']) {
-            final value = decoded[key];
-            if (value != null && value.toString().trim().isNotEmpty) {
-              parts.add(value.toString().trim());
-            }
-          }
-          if (decoded['errors'] is Map) {
-            final errors = decoded['errors'] as Map;
-            for (final entry in errors.entries) {
-              final field = entry.key.toString();
-              final value = entry.value;
-              if (value is List) {
-                for (final item in value) {
-                  final itemText = item.toString().trim();
-                  if (itemText.isNotEmpty) {
-                    parts.add('$field: $itemText');
-                  }
-                }
-              } else {
-                final itemText = value.toString().trim();
-                if (itemText.isNotEmpty) {
-                  parts.add('$field: $itemText');
-                }
-              }
-            }
-          }
-          if (parts.isNotEmpty) {
-            return parts.join('\n\n');
-          }
-        }
-      } catch (_) {
-        // Si no es JSON válido, conservamos el texto original.
-      }
-    }
-
-    return text;
+    return ApiService.sanitizeUserFacingMessage(
+      error,
+      fallback: 'Ocurrió un error inesperado.',
+    );
   }
 
   String _textoSeguro(dynamic value) {
@@ -1473,19 +1430,14 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                       children: [
                         const AdminAvatar(radius: 16),
                         SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Jesus Hinojosa',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const AdminDrawerRole(color: AdminScreen.textMuted),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const AdminDrawerUserName(),
+                              const AdminDrawerRole(color: AdminScreen.textMuted),
+                            ],
+                          ),
                         ),
                       ],
                     ),
