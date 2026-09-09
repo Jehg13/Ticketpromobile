@@ -828,49 +828,63 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
                   id.contains(busqueda);
             }).toList();
 
-            return AlertDialog(
+            final screenWidth = MediaQuery.of(context).size.width;
+
+            return Dialog(
               backgroundColor: cardDark,
               insetPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
+                horizontal: 16,
                 vertical: 24,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-              contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-              title: Row(
-                children: [
-                  const Icon(
-                    Icons.people_alt_outlined,
-                    color: Colors.blueAccent,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Seleccionar usuario',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${usuariosFiltrados.length}/${_usuarios.length}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
-                  ),
-                ],
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 430,
+              child: Container(
+                width: screenWidth > 500 ? 460 : screenWidth * 0.9,
+                height: 500,
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.people_alt_outlined,
+                          color: Colors.blueAccent,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Seleccionar usuario',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${usuariosFiltrados.length}/${_usuarios.length}',
+                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () => Navigator.pop(dialogContext),
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.grey,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: searchController,
-                      autofocus: true,
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       onChanged: (texto) {
                         setModalState(() {

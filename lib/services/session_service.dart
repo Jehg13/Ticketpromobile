@@ -153,12 +153,11 @@ class SessionService {
   }
 
   static Future<bool> canManageUsersAndChanges() async {
-    final privAdmin = (await getPrivAdmin() ?? '').trim().toLowerCase();
-    final hasAdminPermission =
-        privAdmin == 'y' || privAdmin == 'yes' || privAdmin == 'true' ||
-        privAdmin == '1';
-
-    return hasAdminPermission;
+    final user = await getUser();
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    return role == 'gerente ti';
   }
 
   static Future<bool> canViewGerenteTiSections() async {
@@ -166,7 +165,7 @@ class SessionService {
     final role = _normalizeRole(
       _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
     );
-    return role == 'gerente ti' || role == 'programador';
+    return role == 'gerente ti';
   }
 
   static Future<void> updatePicture(String picture) async {

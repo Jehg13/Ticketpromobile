@@ -211,7 +211,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ticket['status'],
       fallback: 'No especificado',
     );
-    final bool ticketBloqueado = estado.toLowerCase().trim() == 'bloqueado';
+    final bool ticketBloqueado = _isTicketBlocked(ticket);
     final String fechaCreacion = _formatearFecha(
       ticket['created_at'] ?? ticket['fecha'],
     );
@@ -606,9 +606,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 detalle['evidencias_solucion'] ??
                 detalle['solucion_evidencias'],
           );
+    final bool ticketBloqueado = _isTicketBlocked(detalle);
     final bool puedeEditar =
+        !ticketBloqueado &&
         selectedFilter == 'Mis tickets' &&
-        estado.toLowerCase().trim() == 'en proceso' &&
+        (estado.toLowerCase().trim() == 'en proceso' ||
+            estado.toLowerCase().trim() == 'en_proceso') &&
         (ticket.id == null || !_solucionesEnviadas.contains(ticket.id));
     final solucionController = TextEditingController(
       text: solucion == 'No hay una solución registrada.' ? '' : solucion,
@@ -813,9 +816,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
         );
       },
     );
-    solucionController.dispose();
-    evidenciaController.dispose();
-    problemaSolucionado.dispose();
+    Future.delayed(const Duration(milliseconds: 350), () {
+      solucionController.dispose();
+      evidenciaController.dispose();
+      problemaSolucionado.dispose();
+    });
   }
 
   Widget _buildEditableSolution(
@@ -2562,6 +2567,139 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return '$dia/$mes/$anio $hora:$minuto';
   }
 
+  bool _isTicketBlocked(dynamic ticketData) {
+    if (ticketData == null) return false;
+
+    String status = '';
+    String assignedTo = '';
+    String levantadoPor = '';
+    Map<String, dynamic>? map;
+
+    if (ticketData is TicketItem) {
+      status = ticketData.status.toLowerCase().trim();
+      assignedTo = ticketData.assignedTo.toLowerCase().trim();
+      levantadoPor = ticketData.levantadoPor.toLowerCase().trim();
+      map = ticketData.rawMap;
+    } else if (ticketData is Map) {
+      map = Map<String, dynamic>.from(ticketData);
+      status = _string(
+        map['estado'],
+        map['status'],
+        fallback: '',
+      ).toLowerCase().trim();
+
+      final dynamic tech =
+          map['tomado_por'] ?? map['tecnico'] ?? map['assigned_to'];
+      final dynamic req =
+          map['user'] ?? map['usuario'] ?? map['levantado_por'];
+
+      if (tech is Map) {
+        assignedTo = _string(tech['name'], tech['nombre'], fallback: '')
+            .toLowerCase()
+            .trim();
+      } else if (tech != null) {
+        assignedTo = tech.toString().toLowerCase().trim();
+      }
+
+      if (req is Map) {
+        levantadoPor = _string(req['name'], req['nombre'], fallback: '')
+            .toLowerCase()
+            .trim();
+      } else if (req != null) {
+        levantadoPor = req.toString().toLowerCase().trim();
+      }
+    }
+
+    if (status == 'bloqueado') return true;
+
+    if (map != null) {
+      final isBlockedFlag = map['bloqueado'] == true ||
+          map['es_bloqueado'] == true ||
+          map['is_blocked'] == true ||
+          map['bloqueado'] == 1 ||
+          map['es_bloqueado'] == 1 ||
+          map['bloqueado']?.toString().toLowerCase() == 'true' ||
+          map['bloqueado']?.toString().toLowerCase() == '1';
+      if (isBlockedFlag) return true;
+    }
+
+    final bool isPendienteOProceso = status == 'pendiente' ||
+        status == 'en proceso' ||
+        status == 'en_proceso' ||
+        status == 'proceso';
+
+    if (isPendienteOProceso) {
+      if (assignedTo.isNotEmpty &&
+          assignedTo != 'sin asignar' &&
+          levantadoPor.isNotEmpty &&
+          levantadoPor != 'usuario') {
+        if (assignedTo == levantadoPor) {
+          return true;
+        }
+      }
+
+      if (map != null) {
+        final dynamic techMap =
+            map['tomado_por'] ?? map['tecnico'] ?? map['assigned_to'];
+        final dynamic reqMap =
+            map['user'] ?? map['usuario'] ?? map['levantado_por'];
+
+        if (techMap is Map && reqMap is Map) {
+          final techId = (techMap['id'] ?? techMap['user_id'] ?? techMap['usuario_id'])
+              ?.toString();
+          final reqId = (reqMap['id'] ?? reqMap['user_id'] ?? reqMap['usuario_id'])
+              ?.toString();
+          if (techId != null &&
+              reqId != null &&
+              techId.isNotEmpty &&
+              techId == reqId) {
+            return true;
+          }
+
+          final techLogin = (techMap['login'] ??
+                  techMap['username'] ??
+                  techMap['usuario'])
+              ?.toString()
+              .toLowerCase()
+              .trim();
+          final reqLogin = (reqMap['login'] ??
+                  reqMap['username'] ??
+                  reqMap['usuario'])
+              ?.toString()
+              .toLowerCase()
+              .trim();
+          if (techLogin != null &&
+              reqLogin != null &&
+              techLogin.isNotEmpty &&
+              techLogin == reqLogin) {
+            return true;
+          }
+        }
+
+        if (reqMap is Map) {
+          final String privAdmin =
+              _string(reqMap['priv_admin'], null).toLowerCase();
+          final String role =
+              _string(reqMap['role'], reqMap['rol']).toLowerCase();
+          final bool esAdmin = privAdmin == 'y' ||
+              privAdmin == 'yes' ||
+              privAdmin == 'true' ||
+              privAdmin == '1' ||
+              role.contains('admin') ||
+              role.contains('gerente') ||
+              role.contains('tecnico') ||
+              role.contains('técnico');
+
+          if (esAdmin) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
   String _textoEstado(String estado) {
     switch (estado.toLowerCase().trim()) {
       case 'pendiente':
@@ -2998,7 +3136,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   VoidCallback? _accionTicket(TicketItem ticket) {
     final estado = ticket.status.toLowerCase().trim();
-    if (estado == 'bloqueado') return null;
+    if (estado == 'bloqueado' || _isTicketBlocked(ticket)) return null;
     if (estado == 'en proceso' && selectedFilter != 'Mis tickets') return null;
     if (selectedFilter == 'Mis tickets' && estado == 'en proceso') {
       return () => _mostrarSolucion(ticket);
@@ -3138,6 +3276,7 @@ class TicketItem {
   final String time;
   final String description;
   final String levantadoPor;
+  final Map<String, dynamic>? rawMap;
 
   TicketItem({
     this.id,
@@ -3153,6 +3292,7 @@ class TicketItem {
     required this.time,
     this.description = '',
     this.levantadoPor = 'Usuario',
+    this.rawMap,
   });
 
   factory TicketItem.fromMap(Map<String, dynamic> map) {
@@ -3222,7 +3362,152 @@ class TicketItem {
           : '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
       description: textValue(map['descripcion']),
       levantadoPor: requesterText,
+      rawMap: map,
     );
+  }
+
+    bool get isBlocked => TicketItem.isTicketBlocked(this);
+
+  static bool isTicketBlocked(dynamic ticketData) {
+    if (ticketData == null) return false;
+
+    String status = '';
+    String assignedTo = '';
+    String levantadoPor = '';
+    Map<String, dynamic>? map;
+
+    String textVal(dynamic val) {
+      if (val == null) return '';
+      if (val is Map) {
+        return textVal(
+          val['nombre'] ??
+              val['name'] ??
+              val['razon_social'] ??
+              val['descripcion'] ??
+              val['value'],
+        );
+      }
+      if (val is List) {
+        return val.map(textVal).where((t) => t.isNotEmpty).join(', ');
+      }
+      return val.toString().trim();
+    }
+
+    if (ticketData is TicketItem) {
+      status = ticketData.status.toLowerCase().trim();
+      assignedTo = ticketData.assignedTo.toLowerCase().trim();
+      levantadoPor = ticketData.levantadoPor.toLowerCase().trim();
+      map = ticketData.rawMap;
+    } else if (ticketData is Map) {
+      map = Map<String, dynamic>.from(ticketData);
+      status = textVal(map['estado'] ?? map['status']).toLowerCase();
+
+      final dynamic tech =
+          map['tomado_por'] ?? map['tecnico'] ?? map['assigned_to'];
+      final dynamic req =
+          map['user'] ?? map['usuario'] ?? map['levantado_por'];
+
+      if (tech is Map) {
+        assignedTo = textVal(tech['name'] ?? tech['nombre']).toLowerCase();
+      } else if (tech != null) {
+        assignedTo = tech.toString().toLowerCase().trim();
+      }
+
+      if (req is Map) {
+        levantadoPor = textVal(req['name'] ?? req['nombre']).toLowerCase();
+      } else if (req != null) {
+        levantadoPor = req.toString().toLowerCase().trim();
+      }
+    }
+
+    if (status == 'bloqueado') return true;
+
+    if (map != null) {
+      final isBlockedFlag = map['bloqueado'] == true ||
+          map['es_bloqueado'] == true ||
+          map['is_blocked'] == true ||
+          map['bloqueado'] == 1 ||
+          map['es_bloqueado'] == 1 ||
+          map['bloqueado']?.toString().toLowerCase() == 'true' ||
+          map['bloqueado']?.toString().toLowerCase() == '1';
+      if (isBlockedFlag) return true;
+    }
+
+    final bool isPendienteOProceso = status == 'pendiente' ||
+        status == 'en proceso' ||
+        status == 'en_proceso' ||
+        status == 'proceso';
+
+    if (isPendienteOProceso) {
+      if (assignedTo.isNotEmpty &&
+          assignedTo != 'sin asignar' &&
+          levantadoPor.isNotEmpty &&
+          levantadoPor != 'usuario') {
+        if (assignedTo == levantadoPor) {
+          return true;
+        }
+      }
+
+      if (map != null) {
+        final dynamic techMap =
+            map['tomado_por'] ?? map['tecnico'] ?? map['assigned_to'];
+        final dynamic reqMap =
+            map['user'] ?? map['usuario'] ?? map['levantado_por'];
+
+        if (techMap is Map && reqMap is Map) {
+          final techId = (techMap['id'] ?? techMap['user_id'] ?? techMap['usuario_id'])
+              ?.toString();
+          final reqId = (reqMap['id'] ?? reqMap['user_id'] ?? reqMap['usuario_id'])
+              ?.toString();
+          if (techId != null &&
+              reqId != null &&
+              techId.isNotEmpty &&
+              techId == reqId) {
+            return true;
+          }
+
+          final techLogin = (techMap['login'] ??
+                  techMap['username'] ??
+                  techMap['usuario'])
+              ?.toString()
+              .toLowerCase()
+              .trim();
+          final reqLogin = (reqMap['login'] ??
+                  reqMap['username'] ??
+                  reqMap['usuario'])
+              ?.toString()
+              .toLowerCase()
+              .trim();
+          if (techLogin != null &&
+              reqLogin != null &&
+              techLogin.isNotEmpty &&
+              techLogin == reqLogin) {
+            return true;
+          }
+        }
+
+        if (reqMap is Map) {
+          final String privAdmin =
+              (reqMap['priv_admin'] ?? '').toString().toLowerCase();
+          final String role =
+              (reqMap['role'] ?? reqMap['rol'] ?? '').toString().toLowerCase();
+          final bool esAdmin = privAdmin == 'y' ||
+              privAdmin == 'yes' ||
+              privAdmin == 'true' ||
+              privAdmin == '1' ||
+              role.contains('admin') ||
+              role.contains('gerente') ||
+              role.contains('tecnico') ||
+              role.contains('técnico');
+
+          if (esAdmin) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 }
 
@@ -3283,7 +3568,9 @@ class TicketCard extends StatelessWidget {
                         ),
                         _buildPriorityBadge(ticket.priority),
                         const SizedBox(width: 5),
-                        _buildStatusBadge(ticket.status),
+                        _buildStatusBadge(
+                          ticket.isBlocked ? 'Bloqueado' : ticket.status,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 9),
