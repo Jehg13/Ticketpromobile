@@ -47,9 +47,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final TextEditingController _departamentoController = TextEditingController(
     text: 'Tecnologias',
   );
-  final TextEditingController _rolController = TextEditingController(
-    text: '',
-  );
+  final TextEditingController _rolController = TextEditingController(text: '');
   final TextEditingController _oficinaController = TextEditingController(
     text: 'Reynosa',
   );
