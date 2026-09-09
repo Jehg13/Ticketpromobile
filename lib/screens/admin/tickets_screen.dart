@@ -788,6 +788,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
         );
       },
     );
+    // Esperar a que Flutter termine de desmontar los TextField del diálogo
+    // antes de liberar sus controladores y el ValueNotifier.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     solucionController.dispose();
     evidenciaController.dispose();
     problemaSolucionado.dispose();
