@@ -791,43 +791,46 @@ class _AvisosScreenState extends State<AvisosScreen> {
     );
   }
   Widget _buildHeader(bool isDesktop) {
-    if (!isDesktop) {
-      return const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Avisos',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          SizedBox(height: 4),
-          Text('Mantente informado sobre mantenimientos, fallas y actualizaciones', style: TextStyle(color: Colors.grey, fontSize: 13)),
-        ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Avisos',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              SizedBox(height: 4),
-              Text('Mantente informado sobre mantenimientos, fallas y actualizaciones', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ],
-          ),
-        ),
-        const SizedBox(width: 20),
-        Row(
-          mainAxisSize: MainAxisSize.min,
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SessionService.getUser(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final nombre = SessionService.displayName(user);
+        final rol = SessionService.displayRole(user);
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    rol,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 20),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                home.UserHeaderActions(onNotifications: () => home.showUserNotifications(context)),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
   Widget _buildFilterAndSearch(bool isDesktop) {
