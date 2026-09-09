@@ -2269,7 +2269,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        top: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).padding.bottom + 80,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF0D1427),
         borderRadius: BorderRadius.circular(13),

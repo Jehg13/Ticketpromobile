@@ -528,7 +528,12 @@ class _AdminScreenState extends State<AdminScreen> {
               onRefresh: _loadDashboard,
               color: AdminScreen.accentBlue,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.only(
+                  left: 16,
+                  top: 16,
+                  right: 16,
+                  bottom: MediaQuery.of(context).padding.bottom + 80,
+                ),
                 children: [
                   if (_errorMessage != null)
                     Container(

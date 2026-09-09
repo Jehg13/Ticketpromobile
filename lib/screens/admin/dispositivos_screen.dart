@@ -370,7 +370,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       onRefresh: _cargarDatos,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

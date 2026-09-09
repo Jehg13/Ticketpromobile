@@ -244,7 +244,8 @@ class SessionService {
         privAdmin == 'y' || privAdmin == 'yes' || privAdmin == 'true' ||
         privAdmin == '1';
 
-    return role == 'gerente ti' && hasAdminPermission;
+    return (role == 'gerente ti' || role == 'programador') &&
+        (hasAdminPermission || role == 'programador');
   }
 
   static Future<void> updatePicture(String picture) async {

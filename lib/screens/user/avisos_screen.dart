@@ -780,7 +780,12 @@ class _AvisosScreenState extends State<AvisosScreen> {
                 onRefresh: () => _cargarAvisos(),
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: isDesktop ? 32 : 16, vertical: 24),
+                  padding: EdgeInsets.only(
+                    left: isDesktop ? 32 : 16,
+                    top: 24,
+                    right: isDesktop ? 32 : 16,
+                    bottom: MediaQuery.of(context).padding.bottom + 80,
+                  ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader(isDesktop), const SizedBox(height: 20), _buildFilterAndSearch(isDesktop), const SizedBox(height: 20), if (error != null) _buildError(), _buildAvisosContainer(screenWidth)]),
                 ),
               ),

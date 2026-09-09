@@ -589,9 +589,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   Expanded(
                     child: SafeArea(
                       child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isDesktop ? 32.0 : 16.0,
-                          vertical: 24.0,
+                        padding: EdgeInsets.only(
+                          left: isDesktop ? 32.0 : 16.0,
+                          top: 24.0,
+                          right: isDesktop ? 32.0 : 16.0,
+                          bottom: MediaQuery.of(context).padding.bottom + 80,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

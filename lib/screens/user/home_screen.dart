@@ -151,7 +151,12 @@ Future<void> showUserNotifications(BuildContext context) {
                                     ),
                                   )
                                 : ListView.separated(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.only(
+                                      left: 16,
+                                      top: 16,
+                                      right: 16,
+                                      bottom: MediaQuery.of(context).padding.bottom + 80,
+                                    ),
                                     itemCount: items.length,
                                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                                     itemBuilder: (_, index) {

@@ -104,7 +104,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       ),
       drawer: _buildAppDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
