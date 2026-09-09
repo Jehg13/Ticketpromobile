@@ -1044,6 +1044,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       },
     );
 
+    // El diálogo aún termina de desmontar el TextField al resolver showDialog.
+    // Esperar la transición evita destruir su controlador mientras tiene dependientes.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     searchController.dispose();
 
     return resultado;
