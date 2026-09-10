@@ -1109,26 +1109,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   Icons.badge_outlined,
                   double.infinity,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _infoTile(
-                        'Estado de la cuenta',
-                        _getPerfilValue('active', fallback: 'Activo'),
-                        Icons.toggle_on_outlined,
-                        double.infinity,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _infoTile(
-                        'Rol',
-                        rol,
-                        Icons.verified_user_outlined,
-                        double.infinity,
-                      ),
-                    ),
-                  ],
+                _infoTile(
+                  'Rol',
+                  rol,
+                  Icons.verified_user_outlined,
+                  double.infinity,
                 ),
               ];
               if (constraints.maxWidth <= 760) {
