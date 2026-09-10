@@ -36,12 +36,15 @@ class _CrearticketsScreenState extends State<CrearticketsScreen> {
       TextEditingController();
   final TextEditingController comentariosController =
       TextEditingController();
+  final TextEditingController otroTipoFallaController =
+      TextEditingController();
 
   @override
   void dispose() {
     tituloController.dispose();
     descripcionController.dispose();
     comentariosController.dispose();
+    otroTipoFallaController.dispose();
     super.dispose();
   }
 
@@ -208,11 +211,23 @@ Future<void> _seleccionarEvidencias() async {
       return;
     }
 
-    final tipoFalla = selectedFailureType?.trim();
+    final tipoFallaSeleccionado = selectedFailureType?.trim();
 
-    if (tipoFalla == null || tipoFalla.isEmpty) {
+    if (tipoFallaSeleccionado == null || tipoFallaSeleccionado.isEmpty) {
       _mostrarMensaje(
         'Selecciona el tipo de falla',
+        esError: true,
+      );
+      return;
+    }
+
+    final tipoFalla = _esOtroTipo(tipoFallaSeleccionado)
+        ? otroTipoFallaController.text.trim()
+        : tipoFallaSeleccionado;
+
+    if (tipoFalla.isEmpty) {
+      _mostrarMensaje(
+        'Describe el tipo de falla',
         esError: true,
       );
       return;
@@ -303,6 +318,7 @@ Future<void> _seleccionarEvidencias() async {
     tituloController.clear();
     descripcionController.clear();
     comentariosController.clear();
+    otroTipoFallaController.clear();
 
     if (!mounted) {
       return;
@@ -736,6 +752,7 @@ Future<void> _seleccionarEvidencias() async {
 
   Widget _buildTicketFormCard() {
     final isHardware = _esTipoEquipo(selectedFailureType);
+    final isOtro = _esOtroTipo(selectedFailureType);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -790,6 +807,10 @@ Future<void> _seleccionarEvidencias() async {
                       CrossAxisAlignment.start,
                   children: [
                     _buildFailureType(),
+                    if (isOtro) ...[
+                      const SizedBox(height: 20),
+                      _buildOtroTipoFalla(),
+                    ],
                     if (isHardware) ...[
                       const SizedBox(height: 20),
                       _buildEquipo(),
@@ -811,6 +832,10 @@ Future<void> _seleccionarEvidencias() async {
                           CrossAxisAlignment.start,
                       children: [
                         _buildFailureType(),
+                        if (isOtro) ...[
+                          const SizedBox(height: 20),
+                          _buildOtroTipoFalla(),
+                        ],
                         if (isHardware) ...[
                           const SizedBox(height: 20),
                           _buildEquipo(),
@@ -1054,6 +1079,9 @@ Future<void> _seleccionarEvidencias() async {
                     selectedFailureType = value;
                     selectedEquipo = null;
                     equipos = [];
+                    if (!_esOtroTipo(value)) {
+                      otroTipoFallaController.clear();
+                    }
                   });
 
                   if (_esTipoEquipo(value)) {
@@ -1197,6 +1225,29 @@ Future<void> _seleccionarEvidencias() async {
   bool _esTipoEquipo(String? value) {
     final normalized = value?.trim().toLowerCase() ?? '';
     return normalized == 'equipo';
+  }
+
+  bool _esOtroTipo(String? value) {
+    return value?.trim().toLowerCase() == 'otro';
+  }
+
+  Widget _buildOtroTipoFalla() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _formLabel('Describe el tipo de falla'),
+        const SizedBox(height: 8),
+        TextField(
+          controller: otroTipoFallaController,
+          enabled: !enviandoTicket,
+          maxLength: 100,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          decoration: _inputDecoration(
+            'Ej. Problema con un servicio externo',
+          ).copyWith(counterStyle: const TextStyle(color: Colors.white38)),
+        ),
+      ],
+    );
   }
 
   Widget _buildYesNoSection(
