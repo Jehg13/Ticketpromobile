@@ -2962,6 +2962,21 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               ),
                               border: InputBorder.none,
                               isDense: true,
+                              suffixIcon: _buscarController.text.isNotEmpty
+                                  ? IconButton(
+                                      onPressed: () {
+                                        _buscarController.clear();
+                                        _cargarTickets(pagina: 1);
+                                      },
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: textMuted,
+                                        size: 18,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
