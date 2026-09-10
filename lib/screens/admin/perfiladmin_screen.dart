@@ -256,7 +256,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     final esFotoCustom = _esFotoPersonalizada(picture);
     setState(() {
       _puedeEditarPerfil = puedeEditarPerfil;
-      _esProgramador = SessionService.esProgramador(data);
+      _esProgramador = SessionService.esProgramadorConPermiso(data);
       _rolSistema = rolSistema;
       _fotoUrl = esFotoCustom ? ApiService.storageFileUrl(picture) : null;
       _tieneFoto = esFotoCustom;

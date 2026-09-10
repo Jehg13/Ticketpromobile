@@ -170,19 +170,18 @@ class SessionService {
 
   static Future<bool> canAccessAdminPanel() async {
     final user = await getUser();
+    final privAdmin = _toString(user?['priv_admin']).toUpperCase();
+
+    return privAdmin == 'Y';
+  }
+
+  static bool esProgramadorConPermiso(Map<String, dynamic>? user) {
     final role = _normalizeRole(
       _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
     );
     final privAdmin = _toString(user?['priv_admin']).toUpperCase();
 
-    return privAdmin == 'Y' || role == 'programador';
-  }
-
-  static bool esProgramador(Map<String, dynamic>? user) {
-    final role = _normalizeRole(
-      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
-    );
-    return role == 'programador';
+    return role == 'programador' && privAdmin == 'Y';
   }
 
   static Future<void> updatePicture(String picture) async {

@@ -86,7 +86,9 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         _perfil['departamento'] = _getLocalOrProfileValue('departamento');
         _perfil['oficina'] = _getLocalOrProfileValue('oficina');
         _perfil['numero_empleado'] = _getLocalOrProfileValue('numero_empleado');
-        _esProgramador = SessionService.esProgramador(usuarioNormalizado);
+        _esProgramador = SessionService.esProgramadorConPermiso(
+          usuarioNormalizado,
+        );
         _cargandoPerfil = false;
       });
     } catch (e) {
