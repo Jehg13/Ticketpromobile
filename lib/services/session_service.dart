@@ -168,6 +168,23 @@ class SessionService {
     return role == 'gerente ti';
   }
 
+  static Future<bool> canAccessAdminPanel() async {
+    final user = await getUser();
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    final privAdmin = _toString(user?['priv_admin']).toUpperCase();
+
+    return privAdmin == 'Y' || role == 'programador';
+  }
+
+  static bool esProgramador(Map<String, dynamic>? user) {
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    return role == 'programador';
+  }
+
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
   }

@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../services/perfil_usuario_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
+import '../admin/home_screen.dart' as admin;
 import 'home_screen.dart' as home;
 import 'mistickets_screen.dart';
 
@@ -53,6 +54,7 @@ class _PasswordHintChip extends StatelessWidget {
 class _MiPerfilScreenState extends State<MiPerfilScreen> {
   final Map<String, dynamic> _perfil = {};
   bool _cargandoPerfil = true;
+  bool _esProgramador = false;
   bool _procesandoFoto = false;
   String? _fotoNuevaPath;
   String? _fotoNuevaNombre;
@@ -84,6 +86,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         _perfil['departamento'] = _getLocalOrProfileValue('departamento');
         _perfil['oficina'] = _getLocalOrProfileValue('oficina');
         _perfil['numero_empleado'] = _getLocalOrProfileValue('numero_empleado');
+        _esProgramador = SessionService.esProgramador(usuarioNormalizado);
         _cargandoPerfil = false;
       });
     } catch (e) {
@@ -756,6 +759,18 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                               login,
                               rol,
                             ),
+                            if (_esProgramador) ...[
+                              const SizedBox(height: 16),
+                              _buildProgramadorNavigationCard(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const admin.AdminScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                             const SizedBox(height: 24),
                             _buildMainLayout(isDesktop, screenWidth),
                           ],
@@ -766,6 +781,41 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildProgramadorNavigationCard({
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101C32),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.admin_panel_settings_outlined, color: Color(0xFF93C5FD)),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Herramientas de pruebas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                SizedBox(height: 3),
+                Text('Acceso de Programador al panel administrativo.', style: TextStyle(color: Colors.white60, fontSize: 12)),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: onPressed,
+            icon: const Icon(Icons.dashboard_outlined, size: 17),
+            label: const Text('Ir al admin'),
+          ),
+        ],
+      ),
     );
   }
 

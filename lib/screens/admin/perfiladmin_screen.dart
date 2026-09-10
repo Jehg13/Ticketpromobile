@@ -14,6 +14,7 @@ import 'dispositivos_screen.dart';
 import 'tickets_screen.dart';
 import 'users_screen.dart';
 import 'home_screen.dart';
+import '../user/home_screen.dart' as user_home;
 
 class PerfiladminScreen extends StatefulWidget {
   const PerfiladminScreen({super.key});
@@ -94,6 +95,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   bool _eliminandoFoto = false;
   bool _hayCambios = false;
   bool _puedeEditarPerfil = false;
+  bool _esProgramador = false;
   String _rolSistema = '';
   bool _guardandoCambios = false;
   final Map<String, String> _valoresOriginales = {};
@@ -146,6 +148,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeaderPerfil(),
+            if (_esProgramador) ...[
+              const SizedBox(height: 16),
+              _buildProgramadorNavigationCard(),
+            ],
             const SizedBox(height: 20),
             _buildCardFotoPerfil(),
             const SizedBox(height: 16),
@@ -250,11 +256,49 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     final esFotoCustom = _esFotoPersonalizada(picture);
     setState(() {
       _puedeEditarPerfil = puedeEditarPerfil;
+      _esProgramador = SessionService.esProgramador(data);
       _rolSistema = rolSistema;
       _fotoUrl = esFotoCustom ? ApiService.storageFileUrl(picture) : null;
       _tieneFoto = esFotoCustom;
       _hayCambios = false;
     });
+  }
+
+  Widget _buildProgramadorNavigationCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101C32),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.dashboard_customize_outlined, color: Color(0xFF93C5FD)),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Vista de usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                SizedBox(height: 3),
+                Text('Regresa al dashboard para realizar pruebas como usuario.', style: TextStyle(color: Colors.white60, fontSize: 12)),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const user_home.HomeScreen()),
+              );
+            },
+            icon: const Icon(Icons.home_outlined, size: 17),
+            label: const Text('Ir al dashboard'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<String> get _camposEditables => const [

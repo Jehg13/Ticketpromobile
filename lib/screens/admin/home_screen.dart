@@ -14,6 +14,7 @@ import 'dispositivos_screen.dart';
 import 'perfiladmin_screen.dart';
 import 'tickets_screen.dart';
 import 'users_screen.dart';
+import '../welcome_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -50,6 +51,17 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _loadDashboard() async {
+    final puedeAcceder = await SessionService.canAccessAdminPanel();
+    if (!puedeAcceder) {
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
