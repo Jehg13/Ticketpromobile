@@ -39,7 +39,7 @@ class CambiosService {
     );
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -109,7 +109,7 @@ class CambiosService {
     }
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse('$endpoint/$id'),
         headers: {
           'Accept': 'application/json',
@@ -193,7 +193,7 @@ class CambiosService {
     }
 
     try {
-      final response = await http.patch(
+      final response = await ApiService.client.patch(
         Uri.parse('$endpoint/$id/$accion'),
         headers: {
           'Accept': 'application/json',

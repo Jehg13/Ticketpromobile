@@ -484,7 +484,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 18),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            top: 16,
+                            right: 16,
+                            bottom: MediaQuery.of(context).padding.bottom + 144,
+                          ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
@@ -2258,7 +2263,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return 'N/A';
     }
 
-    final fechaParsed = DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto)?.toLocal();
 
     if (fechaParsed == null) {
       return texto;
@@ -2284,7 +2289,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return 'Fecha no disponible';
     }
 
-    final fechaParsed = DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto)?.toLocal();
 
     if (fechaParsed == null) {
       return texto;
@@ -3081,38 +3086,41 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
-      builder: (context, snapshot) {
-        final picture = snapshot.data?['picture']?.toString().trim() ?? '';
-        final isDefaultPicture = SessionService.isDefaultProfilePicture(picture);
-        final imageUrl = isDefaultPicture ? '' : ApiService.profileImageUrl(picture);
-        return CircleAvatar(
-          radius: radius,
-          backgroundColor: const Color(0xFF2563EB),
-          child: ClipOval(
-            child: imageUrl.isEmpty
-                ? Image.asset(
-                    'assets/images/user.png',
-                    width: radius * 2,
-                    height: radius * 2,
-                    fit: BoxFit.cover,
-                  )
-                : Image.asset(
-                    'assets/images/user.png',
-                    width: radius * 2,
-                    height: radius * 2,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Image.asset(
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
+          final picture = snapshot.data?['picture']?.toString().trim() ?? '';
+          final isDefaultPicture = SessionService.isDefaultProfilePicture(picture);
+          final imageUrl = isDefaultPicture ? '' : ApiService.profileImageUrl(picture);
+          return CircleAvatar(
+            radius: radius,
+            backgroundColor: const Color(0xFF2563EB),
+            child: ClipOval(
+              child: imageUrl.isEmpty
+                  ? Image.asset(
                       'assets/images/user.png',
                       width: radius * 2,
                       height: radius * 2,
                       fit: BoxFit.cover,
+                    )
+                  : Image.network(
+                      '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
+                      width: radius * 2,
+                      height: radius * 2,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Image.asset(
+                        'assets/images/user.png',
+                        width: radius * 2,
+                        height: radius * 2,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 }

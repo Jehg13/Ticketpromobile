@@ -67,7 +67,7 @@ class UsersService {
         '${ApiService.baseUrl}/usuarios',
       ).replace(queryParameters: queryParameters);
 
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -266,7 +266,7 @@ class UsersService {
         '${ApiService.baseUrl}/usuarios/${Uri.encodeComponent(loginLimpio)}',
       );
 
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -517,7 +517,7 @@ class UsersService {
         body['password'] = password.trim();
       }
 
-      final response = await http.put(
+      final response = await ApiService.client.put(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -623,7 +623,7 @@ class UsersService {
         '${ApiService.baseUrl}/usuarios/${Uri.encodeComponent(loginLimpio)}',
       );
 
-      final response = await http.delete(
+      final response = await ApiService.client.delete(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -682,7 +682,7 @@ class UsersService {
     }
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse('${ApiService.baseUrl}/usuarios/empresas'),
         headers: {
           'Accept': 'application/json',
@@ -755,7 +755,7 @@ class UsersService {
     }
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/empresas/$empresaId/oficinas',
         ),
@@ -830,7 +830,7 @@ class UsersService {
     }
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse(
           '${ApiService.baseUrl}/usuarios/oficinas/$oficinaId/departamentos',
         ),

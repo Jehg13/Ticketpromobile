@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static final ValueNotifier<int> pictureVersion = ValueNotifier<int>(0);
 
   static const String tokenKey = 'auth_token';
 
@@ -168,8 +170,25 @@ class SessionService {
     return role == 'gerente ti';
   }
 
+  static Future<bool> canAccessAdminPanel() async {
+    final user = await getUser();
+    final privAdmin = _toString(user?['priv_admin']).toUpperCase();
+
+    return privAdmin == 'Y';
+  }
+
+  static bool esProgramadorConPermiso(Map<String, dynamic>? user) {
+    final role = _normalizeRole(
+      _firstNonEmpty(user, ['role', 'rol', 'puesto', 'cargo']),
+    );
+    final privAdmin = _toString(user?['priv_admin']).toUpperCase();
+
+    return role == 'programador' && privAdmin == 'Y';
+  }
+
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
+    pictureVersion.value++;
   }
 
   static Future<void> updateInitialData({

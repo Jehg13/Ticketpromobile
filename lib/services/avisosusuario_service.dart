@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import 'api_service.dart';
 import 'session_service.dart';
 
@@ -31,7 +29,7 @@ class AvisosusuarioService {
     );
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -125,7 +123,7 @@ class AvisosusuarioService {
     );
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',

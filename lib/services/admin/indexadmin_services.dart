@@ -1,5 +1,8 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
+import '../api_service.dart';
 
 class IndexAdminService {
   final String baseUrl;
@@ -33,7 +36,7 @@ class IndexAdminService {
       queryParameters: queryParameters,
     );
 
-    final response = await http.get(
+    final response = await ApiService.client.get(
       uri,
       headers: {
         'Accept': 'application/json',
@@ -67,7 +70,7 @@ class IndexAdminService {
       queryParameters: queryParameters,
     );
 
-    final response = await http.get(
+    final response = await ApiService.client.get(
       uri,
       headers: {
         'Accept': 'application/json',

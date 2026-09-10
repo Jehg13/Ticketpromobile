@@ -14,6 +14,7 @@ import 'dispositivos_screen.dart';
 import 'perfiladmin_screen.dart';
 import 'tickets_screen.dart';
 import 'users_screen.dart';
+import '../welcome_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -50,6 +51,17 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _loadDashboard() async {
+    final puedeAcceder = await SessionService.canAccessAdminPanel();
+    if (!puedeAcceder) {
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -1193,17 +1205,15 @@ class _AdminScreenState extends State<AdminScreen> {
                             'Promedio actual',
                         badgeColor: AdminScreen.cyanAccent,
                       ),
+                      KPICard(
+                        icon: Icons.bar_chart_rounded,
+                        iconColor: AdminScreen.accentBlue,
+                        title: 'Tickets del mes',
+                        value: monthlyTickets.toString(),
+                        badgeText: 'Este mes',
+                        badgeColor: AdminScreen.cyanAccent,
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  KPICard(
-                    icon: Icons.bar_chart_rounded,
-                    iconColor: AdminScreen.accentBlue,
-                    title: 'Tickets del mes',
-                    value: monthlyTickets.toString(),
-                    badgeText: 'Este mes',
-                    badgeColor: AdminScreen.cyanAccent,
-                    fullWidth: true,
                   ),
                   const SizedBox(height: 20),
                   CardContainer(
@@ -1905,9 +1915,11 @@ class AdminAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString().trim() ?? '';
         final isDefault = SessionService.isDefaultProfilePicture(picture);
         final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
@@ -1917,7 +1929,7 @@ class AdminAvatar extends StatelessWidget {
           child: ClipOval(
             child: !isDefault && imageUrl.isNotEmpty
                 ? Image.network(
-                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
                     width: radius * 2,
                     height: radius * 2,
                     fit: BoxFit.cover,
@@ -1936,7 +1948,8 @@ class AdminAvatar extends StatelessWidget {
                   ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 }

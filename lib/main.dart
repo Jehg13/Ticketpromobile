@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'screens/splash_screen.dart';
 import 'services/deep_link_service.dart';
@@ -8,14 +11,22 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.initialize();
 
   final deepLinkService = DeepLinkService(appNavigatorKey);
-  await deepLinkService.initialize();
 
   runApp(TicketProMobile(
     deepLinkService: deepLinkService,
   ));
+
+  // Let Flutter draw the splash immediately. Startup services must not block
+  // the first frame, otherwise Android shows the native window background.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]));
+    unawaited(deepLinkService.initialize());
+    unawaited(NotificationService.initialize());
+  });
 }
 
 class TicketProMobile extends StatelessWidget {

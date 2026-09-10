@@ -2045,58 +2045,109 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
     final bool puedeAnterior = _paginaActual > 1 && !_cargando;
     final bool puedeSiguiente = _paginaActual < _ultimaPagina && !_cargando;
+    final int firstTicket = ((_paginaActual - 1) * _tickets.length) + 1;
+    final int lastTicket = firstTicket + _tickets.length - 1;
+    final pageInfo = Text(
+      'Mostrando ${_tickets.isEmpty ? 0 : firstTicket} a '
+      '${_tickets.isEmpty ? 0 : lastTicket} de $_totalTickets tickets',
+      style: const TextStyle(color: Colors.grey, fontSize: 12),
+    );
+    final controls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildPaginationButton(
+          icon: Icons.chevron_left_rounded,
+          enabled: puedeAnterior,
+          onPressed: puedeAnterior
+              ? () => _cargarTickets(pagina: _paginaActual - 1)
+              : null,
+        ),
+        const SizedBox(width: 4),
+        ..._visiblePages(_ultimaPagina).map(
+          (page) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _buildPageNumberButton(page),
+          ),
+        ),
+        const SizedBox(width: 4),
+        _buildPaginationButton(
+          icon: Icons.chevron_right_rounded,
+          enabled: puedeSiguiente,
+          onPressed: puedeSiguiente
+              ? () => _cargarTickets(pagina: _paginaActual + 1)
+              : null,
+        ),
+      ],
+    );
 
     return Padding(
       padding: const EdgeInsets.only(top: 18, bottom: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 500) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Center(child: pageInfo),
+                const SizedBox(height: 12),
+                Center(child: FittedBox(child: controls)),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Center(child: pageInfo),
+              const SizedBox(height: 12),
+              Center(child: controls),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<int> _visiblePages(int total) {
+    if (total <= 7) {
+      return List<int>.generate(total, (index) => index + 1);
+    }
+    if (_paginaActual <= 4) return [1, 2, 3, 4, 5, -1, total];
+    if (_paginaActual >= total - 3) {
+      return [1, -1, total - 4, total - 3, total - 2, total - 1, total];
+    }
+    return [1, -1, _paginaActual - 1, _paginaActual, _paginaActual + 1, -1, total];
+  }
+
+  Widget _buildPageNumberButton(int page) {
+    if (page == -1) {
+      return const SizedBox(
+        width: 20,
+        height: 32,
+        child: Center(child: Text('...', style: TextStyle(color: Colors.grey))),
+      );
+    }
+    final selected = _paginaActual == page;
+    return InkWell(
+      onTap: _cargando ? null : () => _cargarTickets(pagina: page),
+      borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: selected ? const Color(0xFF2563EB) : const Color(0xFF060A17),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected ? const Color(0xFF2563EB) : Colors.white12,
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildPaginationButton(
-              icon: Icons.chevron_left_rounded,
-              enabled: puedeAnterior,
-              onPressed: puedeAnterior
-                  ? () => _cargarTickets(pagina: _paginaActual - 1)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111B2F),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Página $_paginaActual / $_ultimaPagina',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            _buildPaginationButton(
-              icon: Icons.chevron_right_rounded,
-              enabled: puedeSiguiente,
-              onPressed: puedeSiguiente
-                  ? () => _cargarTickets(pagina: _paginaActual + 1)
-                  : null,
-            ),
-          ],
+        child: Text(
+          '$page',
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.grey,
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );
@@ -3313,7 +3364,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
   String _formatearFecha(dynamic value) {
     if (value == null || value.toString().trim().isEmpty) return 'Sin fecha';
-    final DateTime? fecha = DateTime.tryParse(value.toString());
+    final DateTime? fecha = DateTime.tryParse(value.toString())?.toLocal();
     if (fecha == null) return value.toString();
     final String dia = fecha.day.toString().padLeft(2, '0');
     final String mes = fecha.month.toString().padLeft(2, '0');
@@ -3420,7 +3471,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
                 left: isDesktop ? 24 : 16,
                 top: isDesktop ? 24 : 16,
                 right: isDesktop ? 24 : 16,
-                bottom: MediaQuery.of(context).padding.bottom + 96,
+                bottom: MediaQuery.of(context).padding.bottom + 144,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

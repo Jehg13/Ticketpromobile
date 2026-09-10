@@ -12,7 +12,7 @@ class TicketsAdminServices {
     String buscar = '',
     int pagina = 1,
   }) async {
-    final response = await http.get(
+    final response = await ApiService.client.get(
       Uri.parse('${ApiService.baseUrl}/admin/tickets').replace(
         queryParameters: {
           'filtro': filtro,
@@ -26,7 +26,7 @@ class TicketsAdminServices {
   }
 
   Future<Map<String, dynamic>> obtenerTicket(int id) async {
-    final response = await http.get(
+    final response = await ApiService.client.get(
       Uri.parse('${ApiService.baseUrl}/admin/tickets/$id'),
       headers: await _headers(),
     );
@@ -34,7 +34,7 @@ class TicketsAdminServices {
   }
 
   Future<Map<String, dynamic>> tomarTicket(int ticketId) async {
-    final response = await http.post(
+    final response = await ApiService.client.post(
       Uri.parse('${ApiService.baseUrl}/admin/tickets/$ticketId/tomar'),
       headers: await _headers(),
     );
@@ -64,18 +64,21 @@ class TicketsAdminServices {
       'fecha_firma': fechaFirma,
       'firma': firma,
     });
-    for (final file in evidencias) {
-      final bytes = await file.readAsBytes();
-      request.files.add(
-        http.MultipartFile.fromBytes(
+    final archivosMultipart = await Future.wait(
+      evidencias.map((file) async {
+        final bytes = await file.readAsBytes();
+        return http.MultipartFile.fromBytes(
           'evidencias[]',
           bytes,
           filename: file.name,
-        ),
-      );
-    }
+        );
+      }),
+    );
+    request.files.addAll(archivosMultipart);
 
-    final response = await http.Response.fromStream(await request.send());
+    final response = await http.Response.fromStream(
+      await ApiService.client.send(request),
+    );
     return _decode(response, 'No se pudo guardar la solución.');
   }
 
@@ -109,7 +112,9 @@ class TicketsAdminServices {
         ),
       );
     }
-    final response = await http.Response.fromStream(await request.send());
+    final response = await http.Response.fromStream(
+      await ApiService.client.send(request),
+    );
     return _decode(response, 'No se pudo enviar el mensaje.');
   }
 

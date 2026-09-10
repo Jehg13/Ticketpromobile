@@ -784,7 +784,7 @@ class _AvisosScreenState extends State<AvisosScreen> {
                     left: isDesktop ? 32 : 16,
                     top: 24,
                     right: isDesktop ? 32 : 16,
-                    bottom: MediaQuery.of(context).padding.bottom + 96,
+                    bottom: MediaQuery.of(context).padding.bottom + 144,
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader(isDesktop), const SizedBox(height: 20), _buildFilterAndSearch(isDesktop), const SizedBox(height: 20), if (error != null) _buildError(), _buildAvisosContainer(screenWidth)]),
                 ),

@@ -165,7 +165,7 @@ static Future<Map<String, dynamic>> obtenerDatos() async {
 final headers = await _headers();
 
 
-final response = await http.get(
+final response = await ApiService.client.get(
   Uri.parse('$baseUrl/admin/avisos'),
   headers: headers,
 );
@@ -318,7 +318,7 @@ if (notificationId == null) {
   return false;
 }
 
-final response = await http.patch(
+final response = await ApiService.client.patch(
   Uri.parse('${ApiService.baseUrl}/mis-tickets-notificaciones/$notificationId/leida'),
   headers: {
     'Accept': 'application/json',
@@ -342,7 +342,7 @@ if (token == null || token.isEmpty) {
   return false;
 }
 
-final response = await http.patch(
+final response = await ApiService.client.patch(
   Uri.parse('${ApiService.baseUrl}/mis-tickets-notificaciones-leer-todas'),
   headers: {
     'Accept': 'application/json',
@@ -363,7 +363,7 @@ static Future<Map<String, dynamic>> obtenerAviso(int id) async {
 final headers = await _headers();
 
 
-final response = await http.get(
+final response = await ApiService.client.get(
   Uri.parse('$baseUrl/admin/avisos/$id'),
   headers: headers,
 );
@@ -454,7 +454,7 @@ await _agregarArchivo(request, archivo);
 
 
 
-final streamedResponse = await request.send();
+final streamedResponse = await ApiService.client.send(request);
 
 final response = await http.Response.fromStream(
   streamedResponse,
@@ -553,7 +553,7 @@ await _agregarArchivo(request, archivo);
 
 
 
-final streamedResponse = await request.send();
+final streamedResponse = await ApiService.client.send(request);
 
 final response = await http.Response.fromStream(
   streamedResponse,
@@ -596,7 +596,7 @@ static Future<String> eliminarAviso(int id) async {
 final headers = await _headers();
 
 
-final response = await http.delete(
+final response = await ApiService.client.delete(
   Uri.parse('$baseUrl/admin/avisos/$id'),
   headers: headers,
 );

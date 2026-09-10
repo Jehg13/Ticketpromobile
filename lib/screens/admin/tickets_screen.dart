@@ -580,11 +580,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
       null,
       fallback: '',
     );
-    final String conformidad = _string(
-      solution['conformidad'],
-      detalle['conformidad'] ?? detalle['usuario_conformidad'],
-      fallback: 'Sin información registrada.',
-    );
     final String fechaSolucion = _formatearFecha(
       solution['fecha_solucion'] ??
           detalle['fecha_solucion'] ??
@@ -691,7 +686,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             ? _buildSignaturePad(firmaPuntos)
                             : _buildRegisteredSignature(
                                 nombreUsuario: nombreUsuario,
-                                conformidad: conformidad,
                                 fechaFirma: fechaFirma,
                                 firma: firma,
                               ),
@@ -736,6 +730,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 final dialogNavigator = Navigator.of(
                                   dialogContext,
                                 );
+                                final fechaRegistro =
+                                    DateTime.now().toLocal().toIso8601String();
                                 try {
                                   final String nombreFirmante =
                                       nombreUsuario.trim().isEmpty
@@ -746,10 +742,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                     ticketId: id,
                                     solucion: solucionController.text.trim(),
                                     nombreFirmante: nombreFirmante,
-                                    fechaSolucion: DateTime.now()
-                                        .toIso8601String(),
-                                    fechaFirma: DateTime.now()
-                                        .toIso8601String(),
+                                    fechaSolucion: fechaRegistro,
+                                    fechaFirma: fechaRegistro,
                                     firma: await _firmaDataUrl(firmaPuntos),
                                     problemaSolucionado:
                                         problemaSolucionado.value,
@@ -975,16 +969,17 @@ class _TicketsScreenState extends State<TicketsScreen> {
               border: Border.all(color: Colors.black26),
             ),
             child: StatefulBuilder(
-              builder: (context, setSignatureState) => Listener(
-                onPointerDown: (event) {
-                  points.add(event.localPosition);
+              builder: (context, setSignatureState) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (details) {
+                  points.add(details.localPosition);
                   setSignatureState(() {});
                 },
-                onPointerMove: (event) {
-                  points.add(event.localPosition);
+                onPanUpdate: (details) {
+                  points.add(details.localPosition);
                   setSignatureState(() {});
                 },
-                onPointerUp: (_) {
+                onPanEnd: (_) {
                   points.add(Offset.infinite);
                   setSignatureState(() {});
                 },
@@ -1007,6 +1002,61 @@ class _TicketsScreenState extends State<TicketsScreen> {
               child: const Text('Limpiar firma'),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisteredSignature({
+    required String nombreUsuario,
+    required String fechaFirma,
+    required String firma,
+  }) {
+    return _solutionCard(
+      title: 'Conformidad del usuario',
+      icon: Icons.verified_user_outlined,
+      iconColor: const Color(0xFF60A5FA),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Información registrada al momento de cerrar el ticket.',
+            style: TextStyle(color: Colors.grey, fontSize: 10),
+          ),
+          const SizedBox(height: 18),
+          _solutionDetailRow('Persona que levantó el ticket', nombreUsuario),
+          _solutionDetailRow(
+            'Fecha de firma',
+            fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
+            last: firma.isEmpty,
+          ),
+          if (firma.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text(
+              'Firma',
+              style: TextStyle(color: Colors.grey, fontSize: 10),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(minHeight: 90, maxHeight: 180),
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Image.network(
+                _buildFileUrl(firma),
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Center(
+                  child: Text(
+                    'Firma registrada',
+                    style: TextStyle(color: Colors.black54, fontSize: 11),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1057,63 +1107,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
             height: 1.5,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRegisteredSignature({
-    required String nombreUsuario,
-    required String conformidad,
-    required String fechaFirma,
-    required String firma,
-  }) {
-    return _solutionCard(
-      title: 'Conformidad del usuario',
-      icon: Icons.verified_user_outlined,
-      iconColor: const Color(0xFF60A5FA),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Información registrada al momento de cerrar el ticket.',
-            style: TextStyle(color: Colors.grey, fontSize: 10),
-          ),
-          const SizedBox(height: 18),
-          _solutionDetailRow('Persona que levantó el ticket', nombreUsuario),
-          _solutionDetailRow('Conformidad', conformidad),
-          _solutionDetailRow(
-            'Fecha de firma',
-            fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
-            last: firma.isEmpty,
-          ),
-          if (firma.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            const Text(
-              'Firma',
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              constraints: const BoxConstraints(minHeight: 90, maxHeight: 180),
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Image.network(
-                _buildFileUrl(firma),
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Center(
-                  child: Text(
-                    'Firma registrada',
-                    style: TextStyle(color: Colors.black54, fontSize: 11),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -2557,7 +2550,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   String _formatearFecha(dynamic value) {
     if (value == null || value.toString().trim().isEmpty) return 'Sin fecha';
-    final DateTime? fecha = DateTime.tryParse(value.toString());
+    final DateTime? fecha = DateTime.tryParse(value.toString())?.toLocal();
     if (fecha == null) return value.toString();
     final String dia = fecha.day.toString().padLeft(2, '0');
     final String mes = fecha.month.toString().padLeft(2, '0');
@@ -2970,6 +2963,21 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               ),
                               border: InputBorder.none,
                               isDense: true,
+                              suffixIcon: _buscarController.text.isNotEmpty
+                                  ? IconButton(
+                                      onPressed: () {
+                                        _buscarController.clear();
+                                        _cargarTickets(pagina: 1);
+                                      },
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: textMuted,
+                                        size: 18,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
@@ -3325,7 +3333,9 @@ class TicketItem {
     final requesterMap = requester is Map
         ? Map<String, dynamic>.from(requester)
         : null;
-    final date = DateTime.tryParse(map['created_at']?.toString() ?? '');
+    final date = DateTime.tryParse(
+      map['created_at']?.toString() ?? '',
+    )?.toLocal();
     final dynamic department = assignedMap?['departamento'];
     final String departmentText = textValue(department);
     final dynamic requesterName =
@@ -4109,9 +4119,11 @@ class TicketsAdminAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _loadPicture(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<String?>(
+        future: _loadPicture(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?.trim() ?? '';
         final isDefault = SessionService.isDefaultProfilePicture(picture);
         final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
@@ -4122,7 +4134,7 @@ class TicketsAdminAvatar extends StatelessWidget {
           child: ClipOval(
             child: !isDefault && imageUrl.isNotEmpty
                 ? Image.network(
-                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
                     width: radius * 2,
                     height: radius * 2,
                     fit: BoxFit.cover,
@@ -4141,7 +4153,8 @@ class TicketsAdminAvatar extends StatelessWidget {
                   ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 

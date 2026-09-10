@@ -22,7 +22,7 @@ class CrearTicketService {
 
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -156,39 +156,36 @@ class CrearTicketService {
       }
 
       if (evidencias != null && evidencias.isNotEmpty) {
-        for (final file in evidencias) {
-          try {
-            final bytes = await file.readAsBytes();
+        final archivosMultipart = await Future.wait(
+          evidencias.map((file) async {
+            try {
+              final bytes = await file.readAsBytes();
 
-            if (bytes.isEmpty) {
+              if (bytes.isEmpty) {
+                return null;
+              }
 
-              continue;
+              return http.MultipartFile.fromBytes(
+                'evidencia[]',
+                bytes,
+                filename: file.name,
+              );
+            } catch (_) {
+              throw Exception('No se pudo leer el archivo ${file.name}');
             }
+          }),
+        );
 
-
-
-            final archivo = http.MultipartFile.fromBytes(
-              'evidencia[]',
-              bytes,
-              filename: file.name,
-            );
-
-            request.files.add(archivo);
-          } catch (e) {
-
-
-            throw Exception(
-              'No se pudo leer el archivo ${file.name}',
-            );
-          }
-        }
+        request.files.addAll(
+          archivosMultipart.whereType<http.MultipartFile>(),
+        );
       }
 
 
 
 
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await ApiService.client.send(request);
 
       final response = await http.Response.fromStream(
         streamedResponse,

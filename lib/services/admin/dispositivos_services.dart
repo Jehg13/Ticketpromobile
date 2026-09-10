@@ -94,7 +94,7 @@ class DispositivosService {
       queryParameters: queryParameters,
     );
 
-    final response = await http.get(
+    final response = await ApiService.client.get(
       uri,
       headers: headers,
     );
@@ -340,7 +340,7 @@ class DispositivosService {
   ) async {
     final headers = await _headers();
 
-    final response = await http.get(
+    final response = await ApiService.client.get(
       Uri.parse('$baseUrl/dispositivos/$id'),
       headers: headers,
     );
@@ -380,7 +380,7 @@ class DispositivosService {
   }) async {
     final headers = await _headers();
 
-    final response = await http.post(
+    final response = await ApiService.client.post(
       Uri.parse('$baseUrl/dispositivos'),
       headers: {
         ...headers,
@@ -430,7 +430,7 @@ class DispositivosService {
   }) async {
     final headers = await _headers();
 
-    final response = await http.put(
+    final response = await ApiService.client.put(
       Uri.parse('$baseUrl/dispositivos/$id'),
       headers: {
         ...headers,
@@ -476,7 +476,7 @@ class DispositivosService {
   ) async {
     final headers = await _headers();
 
-    final response = await http.patch(
+    final response = await ApiService.client.patch(
       Uri.parse('$baseUrl/dispositivos/$id/estado'),
       headers: headers,
     );
@@ -513,7 +513,7 @@ class DispositivosService {
   ) async {
     final headers = await _headers();
 
-    final response = await http.delete(
+    final response = await ApiService.client.delete(
       Uri.parse('$baseUrl/dispositivos/$id'),
       headers: headers,
     );

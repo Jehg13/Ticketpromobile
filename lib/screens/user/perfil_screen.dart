@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../services/perfil_usuario_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
+import '../admin/home_screen.dart' as admin;
 import 'home_screen.dart' as home;
 import 'mistickets_screen.dart';
 
@@ -53,6 +54,7 @@ class _PasswordHintChip extends StatelessWidget {
 class _MiPerfilScreenState extends State<MiPerfilScreen> {
   final Map<String, dynamic> _perfil = {};
   bool _cargandoPerfil = true;
+  bool _esProgramador = false;
   bool _procesandoFoto = false;
   String? _fotoNuevaPath;
   String? _fotoNuevaNombre;
@@ -84,6 +86,9 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         _perfil['departamento'] = _getLocalOrProfileValue('departamento');
         _perfil['oficina'] = _getLocalOrProfileValue('oficina');
         _perfil['numero_empleado'] = _getLocalOrProfileValue('numero_empleado');
+        _esProgramador = SessionService.esProgramadorConPermiso(
+          usuarioNormalizado,
+        );
         _cargandoPerfil = false;
       });
     } catch (e) {
@@ -290,6 +295,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   _mostrarMensaje(_limpiarError(e), isError: true);
                 }
               },
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Enviar solicitud'),
             ),
           ],
@@ -488,6 +497,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                                   }
                                 }
                               },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                              ),
                               child: actualizando
                                   ? const SizedBox(
                                       width: 18,
@@ -744,7 +757,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                           left: isDesktop ? 32.0 : 16.0,
                           top: 24.0,
                           right: isDesktop ? 32.0 : 16.0,
-                          bottom: MediaQuery.of(context).padding.bottom + 96,
+                          bottom: MediaQuery.of(context).padding.bottom + 144,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,6 +769,18 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                               login,
                               rol,
                             ),
+                            if (_esProgramador) ...[
+                              const SizedBox(height: 16),
+                              _buildProgramadorNavigationCard(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const admin.AdminScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                             const SizedBox(height: 24),
                             _buildMainLayout(isDesktop, screenWidth),
                           ],
@@ -766,6 +791,53 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildProgramadorNavigationCard({
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101C32),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.admin_panel_settings_outlined, color: Color(0xFF93C5FD)),
+              SizedBox(width: 12),
+              Text(
+                'Herramientas de pruebas',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Acceso de Programador al panel administrativo.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.dashboard_outlined, size: 17),
+              label: const Text('Ir al admin'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1037,26 +1109,11 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   Icons.badge_outlined,
                   double.infinity,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _infoTile(
-                        'Estado de la cuenta',
-                        _getPerfilValue('active', fallback: 'Activo'),
-                        Icons.toggle_on_outlined,
-                        double.infinity,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _infoTile(
-                        'Rol',
-                        rol,
-                        Icons.verified_user_outlined,
-                        double.infinity,
-                      ),
-                    ),
-                  ],
+                _infoTile(
+                  'Rol',
+                  rol,
+                  Icons.verified_user_outlined,
+                  double.infinity,
                 ),
               ];
               if (constraints.maxWidth <= 760) {
@@ -1885,9 +1942,11 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString() ?? '';
         final imageUrl = ApiService.profileImageUrl(picture);
         return CircleAvatar(
@@ -1895,7 +1954,9 @@ class UserAvatar extends StatelessWidget {
           backgroundColor: const Color(0xFF2563EB),
           backgroundImage: imageUrl.isEmpty
               ? null
-              : NetworkImage('$imageUrl?profile_refresh=${picture.hashCode}'),
+            : NetworkImage(
+                '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
+              ),
           child: imageUrl.isEmpty
               ? Text(
                   _getInitials(name),
@@ -1907,7 +1968,8 @@ class UserAvatar extends StatelessWidget {
                 )
               : null,
         );
-      },
+        },
+      ),
     );
   }
 }

@@ -16,7 +16,7 @@ class PerfilUsuarioService {
     final uri = Uri.parse('${ApiService.baseUrl}/perfil/inicial');
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -64,7 +64,7 @@ class PerfilUsuarioService {
     final uri = Uri.parse('${ApiService.baseUrl}/perfil/inicial');
 
     try {
-      final response = await http.put(
+      final response = await ApiService.client.put(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -130,7 +130,7 @@ class PerfilUsuarioService {
     final uri = Uri.parse('${ApiService.baseUrl}/perfil/password');
 
     try {
-      final response = await http.put(
+      final response = await ApiService.client.put(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -183,7 +183,7 @@ class PerfilUsuarioService {
     final uri = Uri.parse('${ApiService.baseUrl}/perfil/solicitud-cambio');
 
     try {
-      final response = await http.post(
+      final response = await ApiService.client.post(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -257,7 +257,7 @@ class PerfilUsuarioService {
         );
       }
 
-      final streamed = await request.send();
+      final streamed = await ApiService.client.send(request);
       final response = await http.Response.fromStream(streamed);
 
 
@@ -294,7 +294,7 @@ class PerfilUsuarioService {
     final uri = Uri.parse('${ApiService.baseUrl}/perfil/foto');
 
     try {
-      final response = await http.delete(
+      final response = await ApiService.client.delete(
         uri,
         headers: {
           'Accept': 'application/json',

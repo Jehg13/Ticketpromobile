@@ -1292,6 +1292,20 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                             decoration: _inputDecoration(
                               Icons.search,
                               'Buscar avisos...',
+                            ).copyWith(
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {});
+                                      },
+                                      icon: const Icon(
+                                        Icons.close_rounded,
+                                        color: Colors.grey,
+                                        size: 18,
+                                      ),
+                                    )
+                                  : null,
                             ),
                           ),
                           const SizedBox(height: 8),
