@@ -99,6 +99,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   bool _esProgramador = false;
   String _rolSistema = '';
   bool _guardandoCambios = false;
+  bool _mfaActivo = false;
   final Map<String, String> _valoresOriginales = {};
 
   @override
@@ -259,6 +260,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       _puedeEditarPerfil = puedeEditarPerfil;
       _esProgramador = SessionService.esProgramadorConPermiso(data);
       _rolSistema = rolSistema;
+      final mfa = data['mfa'];
+      _mfaActivo = mfa is bool
+          ? mfa
+          : ['y', '1', 'si', 'true'].contains(
+              mfa?.toString().trim().toLowerCase(),
+            );
       _fotoUrl = esFotoCustom ? ApiService.storageFileUrl(picture) : null;
       _tieneFoto = esFotoCustom;
       _hayCambios = false;
@@ -1014,11 +1021,13 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           _buildSecurityCard(
             Icons.verified_user_outlined,
             'Verificación en dos pasos',
-            'Agrega una capa adicional de seguridad a tu cuenta.',
-            Icons.add_circle_outline,
-            'Activar',
+            _mfaActivo
+                ? 'Tu cuenta está protegida con autenticación de dos pasos.'
+                : 'Agrega una capa adicional de seguridad a tu cuenta.',
+            _mfaActivo ? Icons.remove_circle_outline : Icons.add_circle_outline,
+            _mfaActivo ? 'Desactivar' : 'Activar',
             _showModalVerificacion2Pasos,
-            status: 'Desactivada',
+            status: _mfaActivo ? 'Activa' : 'Desactivada',
           ),
         ],
       ),
@@ -1367,6 +1376,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   void _showModalVerificacion2Pasos() {
+    if (_mfaActivo) {
+      _mostrarDialogoDesactivarMfa();
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1439,6 +1452,90 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _mostrarDialogoDesactivarMfa() async {
+    final controller = TextEditingController();
+    final codigo = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: cardDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Desactivar verificación', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 42),
+            const SizedBox(height: 12),
+            const Text(
+              'Ingresa el código actual de Google Authenticator para confirmar.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, height: 1.4),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: 6,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
+              decoration: InputDecoration(
+                hintText: '000000',
+                hintStyle: const TextStyle(color: Colors.white30, letterSpacing: 6),
+                counterText: '',
+                filled: true,
+                fillColor: bgDark,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: primaryGradientStart),
+            onPressed: () {
+              if (RegExp(r'^\d{6}$').hasMatch(controller.text.trim())) {
+                Navigator.pop(dialogContext, controller.text.trim());
+              }
+            },
+            child: const Text('Desactivar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || codigo == null) return;
+
+    final response = await ApiService.disableMfa(codigo: codigo);
+    if (!mounted) return;
+    if (response['success'] == true) {
+      setState(() => _mfaActivo = false);
+      final user = await SessionService.getUser();
+      if (user != null) {
+        user['mfa'] = 'N';
+        await SessionService.saveSession(
+          token: await ApiService.getToken() ?? '',
+          user: user,
+        );
+      }
+    }
+    if (!mounted) return;
+    _mostrarMensaje(
+      response['message']?.toString() ??
+          (response['success'] == true
+              ? 'La verificación en dos pasos fue desactivada correctamente.'
+              : 'No se pudo desactivar MFA.'),
+      response['success'] != true,
     );
   }
 

@@ -83,10 +83,30 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mfaRequired) {
-        mostrarMensaje(
-          'Se requiere verificación de autenticación.',
+        final respuestaApi = resultado['data'];
+        final challenge = (resultado['mfa_challenge'] ??
+                (respuestaApi is Map ? respuestaApi['mfa_challenge'] : null))
+            ?.toString()
+            .trim() ??
+            '';
+        if (challenge.isEmpty) {
+          mostrarMensaje(
+            'El servidor no entregó la sesión MFA. Actualiza la aplicación o intenta nuevamente.',
+          );
+          return;
+        }
+        final codigo = await _mostrarModalMfa();
+        if (!mounted || codigo == null) return;
+        final verificacion = await ApiService.verifyMfa(
+          challenge: challenge,
+          codigo: codigo,
         );
-        return;
+        if (!verificacion['success']) {
+          mostrarMensaje(verificacion['message']?.toString() ?? 'Código MFA incorrecto.');
+          return;
+        }
+        resultado['token'] = verificacion['token'];
+        resultado['user'] = verificacion['user'];
       }
 
       final String? token =
@@ -166,6 +186,159 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  Future<String?> _mostrarModalMfa() async {
+    final controller = TextEditingController();
+    final codigo = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final colors = Theme.of(dialogContext).colorScheme;
+        return Dialog(
+          backgroundColor: const Color(0xFF101C38),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1D6FEA).withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF4B9BFF).withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Icon(
+                    LucideIcons.shield_check,
+                    color: Color(0xFF70B5FF),
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Verificación de seguridad',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                const Text(
+                  'Ingresa el código de 6 dígitos que aparece en Google Authenticator.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFB8C6E3),
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 9,
+                  ),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '000000',
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF7183A8),
+                      letterSpacing: 8,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF0A142B),
+                    prefixIcon: Icon(
+                      LucideIcons.key_round,
+                      color: Color(0xFF70B5FF),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFF294B80)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF55A4FF),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFB8C6E3),
+                          side: const BorderSide(color: Color(0xFF38547F)),
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final value = controller.text.trim();
+                          if (RegExp(r'^\d{6}$').hasMatch(value)) {
+                            Navigator.pop(dialogContext, value);
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF1769D1),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(50),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: Icon(LucideIcons.arrow_right, size: 18),
+                        label: const Text('Continuar'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Tu cuenta está protegida con autenticación de dos pasos.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colors.onSurface.withValues(alpha: 0.55),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    controller.dispose();
+    return codigo;
   }
 
   void mostrarMensaje(String mensaje) {

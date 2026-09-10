@@ -98,6 +98,63 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     return '$fileUrl/$cleanPath';
   }
 
+  static Future<Map<String, dynamic>> verifyMfa({
+    required String challenge,
+    required String codigo,
+  }) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/login/mfa/verify'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'challenge': challenge, 'codigo': codigo}),
+    );
+    final data = _decodeJsonBody(response.body);
+    return {
+      'statusCode': response.statusCode,
+      'success': response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          data['success'] == true,
+      'message': data['message']?.toString() ?? 'No se pudo verificar el código.',
+      'token': data['token'],
+      'user': data['user'],
+    };
+  }
+
+  static Future<Map<String, dynamic>> disableMfa({
+    required String codigo,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      return {
+        'statusCode': 401,
+        'success': false,
+        'message': 'Tu sesión expiró. Inicia sesión nuevamente.',
+      };
+    }
+
+    final response = await client.post(
+      Uri.parse('$baseUrl/perfil/mfa/desactivar'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'codigo': codigo}),
+    );
+    final data = _decodeJsonBody(response.body);
+    return {
+      'statusCode': response.statusCode,
+      'success': response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          data['success'] == true,
+      'message': data['message']?.toString() ??
+          'No se pudo desactivar la verificación en dos pasos.',
+    };
+  }
+
   // ============================================================
   // IMÁGENES DE PERFIL
   // ============================================================
@@ -471,6 +528,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         'token': data['token'],
         'user': data['user'] ?? data['usuario'],
         'login': data['login'],
+        'mfa_challenge': data['mfa_challenge'],
         'data': data,
       };
     } catch (e) {
