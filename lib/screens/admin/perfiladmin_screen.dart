@@ -271,30 +271,42 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF101C32),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.45)),
+        border: Border.all(color: primaryGradientStart.withValues(alpha: 0.45)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.dashboard_customize_outlined, color: Color(0xFF93C5FD)),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Vista de usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                SizedBox(height: 3),
-                Text('Regresa al dashboard para realizar pruebas como usuario.', style: TextStyle(color: Colors.white60, fontSize: 12)),
-              ],
-            ),
+          const Row(
+            children: [
+              Icon(Icons.dashboard_customize_outlined, color: Color(0xFF93C5FD)),
+              SizedBox(width: 12),
+              Text(
+                'Vista de usuario',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const user_home.HomeScreen()),
-              );
-            },
-            icon: const Icon(Icons.home_outlined, size: 17),
-            label: const Text('Ir al dashboard'),
+          const SizedBox(height: 8),
+          const Text(
+            'Regresa al dashboard para realizar pruebas como usuario.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const user_home.HomeScreen()),
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryGradientStart,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.home_outlined, size: 17),
+              label: const Text('Ir al dashboard'),
+            ),
           ),
         ],
       ),
@@ -1302,6 +1314,10 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                                 }
                               }
                             },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: primaryGradientStart,
+                              foregroundColor: Colors.white,
+                            ),
                             child: actualizando
                                 ? const SizedBox(
                                     width: 18,
@@ -1399,8 +1415,8 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFC084FC),
-                    foregroundColor: Colors.black,
+                    backgroundColor: primaryGradientStart,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),

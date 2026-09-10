@@ -295,6 +295,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   _mostrarMensaje(_limpiarError(e), isError: true);
                 }
               },
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Enviar solicitud'),
             ),
           ],
@@ -493,6 +497,10 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                                   }
                                 }
                               },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                              ),
                               child: actualizando
                                   ? const SizedBox(
                                       width: 18,
@@ -795,26 +803,38 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF101C32),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.45)),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.45)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.admin_panel_settings_outlined, color: Color(0xFF93C5FD)),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Herramientas de pruebas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                SizedBox(height: 3),
-                Text('Acceso de Programador al panel administrativo.', style: TextStyle(color: Colors.white60, fontSize: 12)),
-              ],
-            ),
+          const Row(
+            children: [
+              Icon(Icons.admin_panel_settings_outlined, color: Color(0xFF93C5FD)),
+              SizedBox(width: 12),
+              Text(
+                'Herramientas de pruebas',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          FilledButton.icon(
-            onPressed: onPressed,
-            icon: const Icon(Icons.dashboard_outlined, size: 17),
-            label: const Text('Ir al admin'),
+          const SizedBox(height: 8),
+          const Text(
+            'Acceso de Programador al panel administrativo.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.dashboard_outlined, size: 17),
+              label: const Text('Ir al admin'),
+            ),
           ),
         ],
       ),
