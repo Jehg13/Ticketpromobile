@@ -730,6 +730,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 final dialogNavigator = Navigator.of(
                                   dialogContext,
                                 );
+                                final fechaRegistro =
+                                    DateTime.now().toLocal().toIso8601String();
                                 try {
                                   final String nombreFirmante =
                                       nombreUsuario.trim().isEmpty
@@ -740,10 +742,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                     ticketId: id,
                                     solucion: solucionController.text.trim(),
                                     nombreFirmante: nombreFirmante,
-                                    fechaSolucion: DateTime.now()
-                                        .toIso8601String(),
-                                    fechaFirma: DateTime.now()
-                                        .toIso8601String(),
+                                    fechaSolucion: fechaRegistro,
+                                    fechaFirma: fechaRegistro,
                                     firma: await _firmaDataUrl(firmaPuntos),
                                     problemaSolucionado:
                                         problemaSolucionado.value,
@@ -969,16 +969,17 @@ class _TicketsScreenState extends State<TicketsScreen> {
               border: Border.all(color: Colors.black26),
             ),
             child: StatefulBuilder(
-              builder: (context, setSignatureState) => Listener(
-                onPointerDown: (event) {
-                  points.add(event.localPosition);
+              builder: (context, setSignatureState) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (details) {
+                  points.add(details.localPosition);
                   setSignatureState(() {});
                 },
-                onPointerMove: (event) {
-                  points.add(event.localPosition);
+                onPanUpdate: (details) {
+                  points.add(details.localPosition);
                   setSignatureState(() {});
                 },
-                onPointerUp: (_) {
+                onPanEnd: (_) {
                   points.add(Offset.infinite);
                   setSignatureState(() {});
                 },
@@ -2549,7 +2550,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   String _formatearFecha(dynamic value) {
     if (value == null || value.toString().trim().isEmpty) return 'Sin fecha';
-    final DateTime? fecha = DateTime.tryParse(value.toString());
+    final DateTime? fecha = DateTime.tryParse(value.toString())?.toLocal();
     if (fecha == null) return value.toString();
     final String dia = fecha.day.toString().padLeft(2, '0');
     final String mes = fecha.month.toString().padLeft(2, '0');

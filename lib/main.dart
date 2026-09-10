@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'screens/splash_screen.dart';
 import 'services/deep_link_service.dart';
@@ -20,6 +21,9 @@ Future<void> main() async {
   // Let Flutter draw the splash immediately. Startup services must not block
   // the first frame, otherwise Android shows the native window background.
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]));
     unawaited(deepLinkService.initialize());
     unawaited(NotificationService.initialize());
   });
