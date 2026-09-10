@@ -304,6 +304,27 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
   }
 
+  static Future<Map<String, dynamic>> getMobileMaintenance() async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      return {'enabled': false, 'message': ''};
+    }
+
+    final response = await client.get(
+      Uri.parse('$baseUrl/maintenance?platform=mobile'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('No se pudo consultar el estado de mantenimiento.');
+    }
+
+    return _decodeJsonBody(response.body);
+  }
+
   static Future<Map<String, dynamic>> resetPassword({
     required String email,
     required String token,

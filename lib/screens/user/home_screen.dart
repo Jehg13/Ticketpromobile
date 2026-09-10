@@ -272,6 +272,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool cargandoUsuario = true;
   bool cargandoTickets = true;
+  bool cargandoMantenimiento = true;
+  bool mantenimientoActivo = false;
 
   String? errorTickets;
 
@@ -295,6 +297,27 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _cargarUsuario();
     _cargarTickets();
+    _cargarEstadoMantenimiento();
+  }
+
+  Future<void> _cargarEstadoMantenimiento() async {
+    try {
+      final estado = await ApiService.getMobileMaintenance();
+      final rol = (await SessionService.getRole() ?? '').trim().toLowerCase();
+      final privilegio = (await SessionService.getPrivAdmin() ?? '').trim().toUpperCase();
+      if (!mounted) return;
+      if (rol != 'programador' || privilegio != 'Y') {
+        setState(() => cargandoMantenimiento = false);
+        return;
+      }
+      setState(() {
+        mantenimientoActivo = estado['enabled'] == true;
+        cargandoMantenimiento = false;
+      });
+    } catch (_) {
+      // El dashboard conserva su funcionamiento si la consulta informativa falla.
+      if (mounted) setState(() => cargandoMantenimiento = false);
+    }
   }
 
   Future<void> _cargarUsuario() async {
@@ -1059,7 +1082,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: notificaciones.isEmpty
                       ? _buildNotificacionesVacias()
                       : ListView.separated(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            top: 16,
+                            right: 16,
+                            bottom: MediaQuery.of(context).padding.bottom + 180,
+                          ),
                           itemCount: notificaciones.length,
                           separatorBuilder: (_, _) =>
                               const SizedBox(height: 8),
@@ -1413,7 +1441,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final isDesktop = screenWidth >= 1024;
 
-    if (cargandoUsuario || cargandoTickets) {
+    if (cargandoUsuario || cargandoTickets || cargandoMantenimiento) {
       return const LoadingScreen(mensaje: 'Cargando tu información...');
     }
 
@@ -1448,11 +1476,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     onRefresh: _cargarTickets,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        top: 16,
+                        right: 16,
+                        bottom: MediaQuery.of(context).padding.bottom + 180,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(context, isDesktop),
+                          if (mantenimientoActivo) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF172554),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.45)),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.construction_rounded, color: Color(0xFF93C5FD)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Mantenimiento web activo\n\nEsta cuenta puede ver el dashboard porque tiene permisos de administración.',
+                                      style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 20),
                           if (errorTickets != null) _buildErrorTickets(),
                           _buildLayout(context, isDesktop),
@@ -1809,7 +1867,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -1958,7 +2016,7 @@ class _HomeScreenState extends State<HomeScreen> {
       trailing: Text(
         'Total: $ticketsTotal',
         style: const TextStyle(
-          color: Colors.purpleAccent,
+          color: Color(0xFF60A5FA),
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -2042,7 +2100,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final tipo = _textoSeguro(ticket['tipo_falla']);
 
-    final estado = _textoSeguro(ticket['estado']);
+    final estado = _estadoVisible(ticket);
 
     final prioridad = _textoSeguro(ticket['prioridad']);
 
@@ -2064,16 +2122,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final fechaAsignacion = _formatearFecha(ticket['fecha_asignacion']);
 
-    final solucion = ticket['solucion'];
-
-    final problemaSolucionado = solucion is Map
-        ? solucion['problema_solucionado']
-        : null;
-
-    final seSoluciono =
-        problemaSolucionado == true ||
-        problemaSolucionado == 1 ||
-        problemaSolucionado?.toString().toLowerCase() == 'true';
+    final estadoNormalizado = estado.toLowerCase().trim();
+    final seSoluciono = estadoNormalizado == 'solucionado' ||
+        estadoNormalizado == 'solucionados';
+    final estadoSolucion = estadoNormalizado == 'cancelado' ||
+            estadoNormalizado == 'cancelados'
+        ? 'No'
+        : seSoluciono
+        ? 'Sí'
+        : estado;
 
     final detailItems = [
       {'label': 'Tipo de falla', 'value': tipo.isNotEmpty ? tipo : 'N/A'},
@@ -2084,13 +2141,23 @@ class _HomeScreenState extends State<HomeScreen> {
       {'label': 'Tomado por', 'value': tomadoPor.isNotEmpty ? tomadoPor : 'N/A'},
       {'label': 'Fecha reporte', 'value': fechaReporte},
       {'label': 'Asignación', 'value': fechaAsignacion},
-      {'label': '¿Se solucionó?', 'value': seSoluciono ? 'Sí' : 'No', 'color': seSoluciono ? Colors.green : Colors.red},
+      {
+        'label': '¿Se solucionó?',
+        'value': estadoSolucion,
+        'color': seSoluciono
+            ? Colors.green
+            : estadoNormalizado == 'cancelado' ||
+                    estadoNormalizado == 'cancelados'
+                ? Colors.red
+                : const Color(0xFF60A5FA),
+      },
     ];
 
     return _buildCard(
       title: 'Último ticket',
       trailing: TextButton(
         onPressed: () => _abrirDetalleTicket(context, ticket),
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF60A5FA)),
         child: const Text('Ver detalles'),
       ),
       child: Container(
@@ -2338,6 +2405,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'Mis tickets recientes',
         trailing: TextButton(
           onPressed: () => _abrirMisTickets(context),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF60A5FA)),
           child: const Text('Ver todos'),
         ),
         child: const Center(
@@ -2356,6 +2424,7 @@ class _HomeScreenState extends State<HomeScreen> {
       title: 'Mis tickets recientes',
       trailing: TextButton.icon(
         onPressed: () => _abrirMisTickets(context),
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF60A5FA)),
         icon: const Icon(Icons.arrow_forward_rounded, size: 14),
         label: const Text('Ver todos'),
       ),
@@ -2407,7 +2476,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final folio = _textoSeguro(ticket['folio']);
     final titulo = _textoSeguro(ticket['titulo']);
     final tipo = _textoSeguro(ticket['tipo_falla']);
-    final estado = _textoSeguro(ticket['estado']);
+    final estado = _estadoVisible(ticket);
     final fecha = _formatearFecha(ticket['created_at']);
     final prioridad = _textoSeguro(ticket['prioridad']);
     final equipo = _obtenerEquipoTicket(ticket);
@@ -2425,7 +2494,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mostrarEquipo && equipo.isNotEmpty) {
       chips.add(_ticketInfoChip('Equipo', equipo, Colors.tealAccent));
     }
-    chips.add(_ticketInfoChip('Fecha', fecha, Colors.purpleAccent));
+    chips.add(_ticketInfoChip('Fecha', fecha, const Color(0xFF60A5FA)));
 
     return Material(
       color: Colors.transparent,
@@ -2545,6 +2614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       minimumSize: const Size(0, 34),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       backgroundColor: const Color(0xFF1D4ED8).withValues(alpha: 0.18),
+                      foregroundColor: const Color(0xFF93C5FD),
                     ),
                     icon: const Icon(Icons.visibility_outlined, size: 14),
                     label: const Text('Ver', style: TextStyle(fontSize: 11)),
@@ -2618,7 +2688,10 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (estado.toLowerCase().trim()) {
       case 'abierto':
       case 'abiertos':
-        return Colors.yellow;
+      case 'pendiente':
+      case 'pendientes':
+      case 'pending':
+        return const Color(0xFF60A5FA);
 
       case 'en proceso':
       case 'en_proceso':
@@ -2635,6 +2708,25 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return Colors.grey;
     }
+
+  }
+
+  String _estadoVisible(Map<String, dynamic> ticket) {
+    final estado = _textoSeguro(ticket['estado']);
+    final estadoNormalizado = estado.toLowerCase().trim();
+    final tomadoPor = _obtenerUsuarioTicket(
+      ticket['tomado_por'],
+      ticket['tomado_por_usuario'],
+    );
+
+    if (estadoNormalizado != 'solucionado' &&
+        estadoNormalizado != 'solucionados' &&
+        estadoNormalizado != 'cancelado' &&
+        estadoNormalizado != 'cancelados') {
+      return tomadoPor.isEmpty ? 'Pendiente' : 'En proceso';
+    }
+
+    return estado.isNotEmpty ? estado : 'Pendiente';
   }
 
   Color _colorPrioridad(String prioridad) {
@@ -2851,6 +2943,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           _abrirAvisos(context);
         },
+        style: TextButton.styleFrom(foregroundColor: const Color(0xFF60A5FA)),
         child: const Text('Ver todos'),
       ),
       child: avisos.isEmpty
@@ -3253,7 +3346,12 @@ class AppNavigationDrawer extends StatelessWidget {
     return Drawer(
       child: Container(
         color: const Color(0xFF0B1021),
-        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+        padding: EdgeInsets.only(
+          top: 36,
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 48,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3373,6 +3471,7 @@ class AppNavigationDrawer extends StatelessWidget {
               },
             ),
 
+            const Spacer(),
             const Divider(color: Colors.white12, height: 1),
 
             _drawerItem(

@@ -8,6 +8,7 @@ import '../../services/session_service.dart';
 import '../../services/admin/perfiladmin_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
+import '../../widgets/admin_navigation_drawer.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -58,7 +59,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final Color cardDark = const Color(0xFF121826);
   final Color inputBg = const Color(0xFF172033);
   final Color primaryGradientStart = const Color(0xFF2563EB);
-  final Color primaryGradientEnd = const Color(0xFF4F46E5);
+  final Color primaryGradientEnd = const Color(0xFF2563EB);
 
   final TextEditingController _nombreController = TextEditingController(
     text: '',
@@ -531,7 +532,9 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom + 24,
+                    ),
                     constraints: const BoxConstraints(),
                     onPressed: _seleccionarFoto,
                     icon: const Icon(
@@ -1440,9 +1443,47 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   }
 
   Widget _buildAppDrawer() {
+    return AdminNavigationDrawer(
+      items: [
+        AdminNavigationDrawerItem(icon: Icons.dashboard_rounded, title: 'Inicio', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AdminScreen(), mensaje: 'Cargando inicio...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.confirmation_number_outlined, title: 'Tickets', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const TicketsScreen(), mensaje: 'Cargando tickets...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.sync_alt_rounded, title: 'Cambios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const CambiosScreen(), mensaje: 'Cargando cambios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.people_outline, title: 'Usuarios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const UserScreen(), mensaje: 'Cargando usuarios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.devices_other, title: 'Dispositivos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const DispositivosScreen(), mensaje: 'Cargando dispositivos...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.campaign_outlined, title: 'Avisos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AvisosadminScreen(), mensaje: 'Cargando avisos...');
+        }),
+        const AdminNavigationDrawerItem(icon: Icons.person_outline, title: 'Mi perfil', selected: true),
+      ],
+      onLogout: () async {
+        await SessionService.clearSession();
+        if (!context.mounted) return;
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      },
+    );
+    /*
     return Drawer(
       backgroundColor: const Color(0xFF0D1630),
-      child: ListView(
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
         padding: EdgeInsets.zero,
         children: [
           Container(
@@ -1579,29 +1620,25 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
               Navigator.pop(context);
             },
           ),
-          const Divider(color: Colors.white10, height: 24),
-          _buildDrawerItem(
-            Icons.logout_rounded,
-            'Cerrar sesión',
-            isExit: true,
-            onTap: () async {
-              await SessionService.clearSession();
-
-              if (!mounted) {
-                return;
-              }
-
-              if (!context.mounted) {
-                return;
-              }
-
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
+        ],
+            ),
           ),
-          const SizedBox(height: 10),
+          SafeArea(
+            top: false,
+            child: _buildDrawerItem(
+              Icons.logout_rounded,
+              'Cerrar sesión',
+              isExit: true,
+              onTap: () async {
+                await SessionService.clearSession();
+                if (!mounted || !context.mounted) return;
+                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              },
+            ),
+          ),
         ],
       ),
-    );
+    );*/
   }
 
   Widget _buildDrawerItem(
@@ -1612,7 +1649,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     VoidCallback? onTap,
   }) {
     final itemColor = isExit
-        ? Colors.redAccent
+        ? Colors.white70
         : selected
         ? Colors.white
         : const Color(0xFF94A3B8);
@@ -1620,7 +1657,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
     final item = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
-        tileColor: selected ? const Color(0xFF4F46E5) : null,
+        tileColor: selected ? const Color(0xFF2563EB) : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         leading: Icon(icon, color: itemColor, size: 20),
         title: Text(

@@ -5,6 +5,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
+import '../../widgets/admin_navigation_drawer.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'home_screen.dart';
@@ -24,7 +25,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
   final Color cardDark = const Color(0xFF121826);
   final Color inputBg = const Color(0xFF172033);
   final Color primaryGradientStart = const Color(0xFF2563EB);
-  final Color primaryGradientEnd = const Color(0xFF4F46E5);
+  final Color primaryGradientEnd = const Color(0xFF2563EB);
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nombreEquipoController = TextEditingController();
@@ -396,10 +397,46 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
   }
 
   Widget _buildAppDrawer() {
+    return AdminNavigationDrawer(
+      items: [
+        AdminNavigationDrawerItem(icon: Icons.dashboard_rounded, title: 'Inicio', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AdminScreen(), mensaje: 'Cargando inicio...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.confirmation_number_outlined, title: 'Tickets', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const TicketsScreen(), mensaje: 'Cargando tickets...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.sync_alt_rounded, title: 'Cambios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const CambiosScreen(), mensaje: 'Cargando cambios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.people_outline, title: 'Usuarios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const UserScreen(), mensaje: 'Cargando usuarios...');
+        }),
+        const AdminNavigationDrawerItem(icon: Icons.devices_other, title: 'Dispositivos', selected: true),
+        AdminNavigationDrawerItem(icon: Icons.campaign_outlined, title: 'Avisos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AvisosadminScreen(), mensaje: 'Cargando avisos...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.person_outline, title: 'Mi perfil', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const PerfiladminScreen(), mensaje: 'Cargando perfil...');
+        }),
+      ],
+      onLogout: _cerrarSesion,
+    );
+    /*
     return Drawer(
       backgroundColor: const Color(0xFF0D1630),
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom + 24,
+        ),
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(color: Color(0xFF0D1630)),
@@ -535,16 +572,21 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
               );
             },
           ),
-          const Divider(color: Colors.white10),
-          _drawerItem(
-            Icons.logout_rounded,
-            'Cerrar sesión',
-            isExit: true,
-            onTap: _cerrarSesion,
+        ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: _drawerItem(
+              Icons.logout_rounded,
+              'Cerrar sesión',
+              isExit: true,
+              onTap: _cerrarSesion,
+            ),
           ),
         ],
       ),
-    );
+    );*/
   }
 
   Widget _drawerItem(
@@ -555,7 +597,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     VoidCallback? onTap,
   }) {
     final color = isExit
-        ? Colors.redAccent
+        ? Colors.white70
         : selected
         ? Colors.white
         : const Color(0xFF94A3B8);
@@ -563,7 +605,7 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
     final item = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
-        tileColor: selected ? const Color(0xFF4F46E5) : null,
+        tileColor: selected ? const Color(0xFF2563EB) : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         leading: Icon(icon, color: color, size: 20),
         title: Text(

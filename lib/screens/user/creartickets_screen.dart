@@ -1900,7 +1900,6 @@ class AppNavigationDrawer extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
-
           const Divider(
             color: Colors.white12,
             height: 1,
@@ -1993,6 +1992,7 @@ class AppNavigationDrawer extends StatelessWidget {
             },
           ),
 
+          const Spacer(),
           const Divider(
             color: Colors.white12,
             height: 1,

@@ -488,7 +488,7 @@ class _DetallesScreenState extends State<DetallesScreen> {
                                   _infoChip('Tipo', tipoFalla, Colors.blue),
                                   _infoChip('Prioridad', prioridad, _prioridadColor(prioridad)),
                                   if (mostrarEquipo) _infoChip('Equipo', equipo, Colors.tealAccent),
-                                  _infoChip('Fecha', fecha, Colors.purpleAccent),
+                                  _infoChip('Fecha', fecha, const Color(0xFF60A5FA)),
                                 ],
                               ),
                             ],
@@ -511,7 +511,7 @@ class _DetallesScreenState extends State<DetallesScreen> {
                                 SizedBox(width: tileWidth, child: _summaryTile('Departamento', departamento, Icons.business_center_outlined, Colors.indigo)),
                                 if (mostrarEquipo) SizedBox(width: tileWidth, child: _summaryTile('Equipo', equipo, Icons.devices_outlined, Colors.teal)),
                                 SizedBox(width: tileWidth, child: _summaryTile('Oficina', oficina, Icons.location_city_outlined, Colors.cyan)),
-                                SizedBox(width: tileWidth, child: _summaryTile('Técnico', tecnico, Icons.person_outline_rounded, Colors.purple)),
+                                SizedBox(width: tileWidth, child: _summaryTile('Técnico', tecnico, Icons.person_outline_rounded, const Color(0xFF60A5FA))),
                                 SizedBox(width: tileWidth, child: _summaryTile('Actualización', fechaActualizacion, Icons.event_available_outlined, Colors.orange)),
                               ],
                             );

@@ -7,6 +7,7 @@ import '../services/session_service.dart';
 import 'admin/home_screen.dart';
 import 'user/home_screen.dart';
 import 'recoverpassword_screen.dart';
+import 'maintenance_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -132,6 +133,19 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
+        final mantenimiento = await ApiService.getMobileMaintenance();
+        if (!mounted) return;
+        if (mantenimiento['enabled'] == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MaintenanceScreen(
+                message: mantenimiento['message']?.toString(),
+              ),
+            ),
+          );
+          return;
+        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

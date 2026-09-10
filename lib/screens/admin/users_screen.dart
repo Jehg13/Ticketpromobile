@@ -10,6 +10,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
+import '../../widgets/admin_navigation_drawer.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -28,7 +29,7 @@ class _UserScreenState extends State<UserScreen> {
   static const Color background = Color(0xFF070B18);
   static const Color cardBg = Color(0xFF0F172A);
   static const Color sidebarBg = Color(0xFF0D1630);
-  static const Color primaryBlue = Color(0xFF4F46E5);
+  static const Color primaryBlue = Color(0xFF2563EB);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color greenAccent = Color(0xFF00A86B);
   static const Color redAccent = Color(0xFFE11D48);
@@ -1014,12 +1015,12 @@ class _UserScreenState extends State<UserScreen> {
                                 gradient: const LinearGradient(
                                   colors: [
                                     Color(0xFF60A5FA),
-                                    Color(0xFF4F46E5),
+                                    Color(0xFF2563EB),
                                   ],
                                 ),
                                 boxShadow: const [
                                   BoxShadow(
-                                    color: Color(0xFF4F46E5),
+                                    color: Color(0xFF2563EB),
                                     blurRadius: 18,
                                     offset: Offset(0, 12),
                                   ),
@@ -2333,7 +2334,7 @@ class UserCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: const Color(0xFF4F46E5),
+                backgroundColor: const Color(0xFF2563EB),
                 child: Text(
                   item.getInitials(),
                   style: const TextStyle(color: Colors.white, fontSize: 11),
@@ -2487,7 +2488,7 @@ class UserCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
+        color: const Color(0xFF2563EB).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -2568,6 +2569,66 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return AdminNavigationDrawer(
+      items: [
+        AdminNavigationDrawerItem(
+          icon: Icons.dashboard_rounded,
+          title: 'Inicio',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const AdminScreen(), mensaje: 'Cargando inicio...');
+          },
+        ),
+        AdminNavigationDrawerItem(
+          icon: Icons.confirmation_number_outlined,
+          title: 'Tickets',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const TicketsScreen(), mensaje: 'Cargando tickets...');
+          },
+        ),
+        AdminNavigationDrawerItem(
+          icon: Icons.published_with_changes_rounded,
+          title: 'Cambios',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const CambiosScreen(), mensaje: 'Cargando cambios...');
+          },
+        ),
+        const AdminNavigationDrawerItem(icon: Icons.people_outline, title: 'Usuarios', selected: true),
+        AdminNavigationDrawerItem(
+          icon: Icons.devices_other,
+          title: 'Dispositivos',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const DispositivosScreen(), mensaje: 'Cargando dispositivos...');
+          },
+        ),
+        AdminNavigationDrawerItem(
+          icon: Icons.campaign_outlined,
+          title: 'Avisos',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const AvisosadminScreen(), mensaje: 'Cargando avisos...');
+          },
+        ),
+        AdminNavigationDrawerItem(
+          icon: Icons.person_outline,
+          title: 'Mi perfil',
+          onTap: () {
+            Navigator.pop(context);
+            navigateWithLoading(context, const PerfiladminScreen(), mensaje: 'Cargando perfil...');
+          },
+        ),
+      ],
+      onLogout: () async {
+        Navigator.pop(context);
+        await SessionService.clearSession();
+        if (!context.mounted) return;
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      },
+    );
+    /*
     return Drawer(
       backgroundColor: const Color(0xFF0D1630),
       child: ListView(
@@ -2759,7 +2820,7 @@ class CustomSidebar extends StatelessWidget {
           ),
         ],
       ),
-    );
+    );*/
   }
 
   Widget _drawerItem(
@@ -2773,13 +2834,13 @@ class CustomSidebar extends StatelessWidget {
     final item = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
-        color: selected ? const Color(0xFF4F46E5) : Colors.transparent,
+        color: selected ? const Color(0xFF2563EB) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: ListTile(
           leading: Icon(
             icon,
             color: isExit
-                ? Colors.redAccent
+                ? Colors.white70
                 : selected
                 ? Colors.white
                 : const Color(0xFF94A3B8),
@@ -2789,7 +2850,7 @@ class CustomSidebar extends StatelessWidget {
             title,
             style: TextStyle(
               color: isExit
-                  ? Colors.redAccent
+                  ? Colors.white70
                   : selected
                   ? Colors.white
                   : const Color(0xFF94A3B8),

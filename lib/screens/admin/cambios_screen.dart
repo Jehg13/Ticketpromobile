@@ -5,6 +5,7 @@ import '../../widgets/loading_screen.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
+import '../../widgets/admin_navigation_drawer.dart';
 import 'avisosadmin_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -23,7 +24,7 @@ class _CambiosScreenState extends State<CambiosScreen> {
   static const Color background = Color(0xFF070B18);
   static const Color cardBg = Color(0xFF0F172A);
   static const Color sidebarBg = Color(0xFF0D1630);
-  static const Color primaryBlue = Color(0xFF4F46E5);
+  static const Color primaryBlue = Color(0xFF2563EB);
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color greenAccent = Color(0xFF00A86B);
   static const Color redAccent = Color(0xFFE11D48);
@@ -1618,6 +1619,41 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return AdminNavigationDrawer(
+      items: [
+        AdminNavigationDrawerItem(icon: Icons.grid_view_rounded, title: 'Inicio', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AdminScreen(), mensaje: 'Cargando inicio...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.confirmation_number_outlined, title: 'Tickets', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const TicketsScreen(), mensaje: 'Cargando tickets...');
+        }),
+        const AdminNavigationDrawerItem(icon: Icons.sync_alt_rounded, title: 'Cambios', selected: true),
+        AdminNavigationDrawerItem(icon: Icons.people_outline, title: 'Usuarios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const UserScreen(), mensaje: 'Cargando usuarios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.devices_other, title: 'Dispositivos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const DispositivosScreen(), mensaje: 'Cargando dispositivos...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.campaign_outlined, title: 'Avisos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AvisosadminScreen(), mensaje: 'Cargando avisos...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.person_outline, title: 'Mi perfil', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const PerfiladminScreen(), mensaje: 'Cargando perfil...');
+        }),
+      ],
+      onLogout: () async {
+        await SessionService.clearSession();
+        if (!context.mounted) return;
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      },
+    );
+    /*
     return Drawer(
       backgroundColor: _CambiosScreenState.sidebarBg,
       child: ListView(
@@ -1782,7 +1818,6 @@ class CustomSidebar extends StatelessWidget {
             isExit: true,
             onTap: () async {
               await SessionService.clearSession();
-
               if (!context.mounted) {
                 return;
               }
@@ -1792,7 +1827,7 @@ class CustomSidebar extends StatelessWidget {
           ),
         ],
       ),
-    );
+    );*/
   }
 
   Widget _drawerItem(
@@ -1812,7 +1847,7 @@ class CustomSidebar extends StatelessWidget {
           leading: Icon(
             icon,
             color: isExit
-                ? Colors.redAccent
+                ? Colors.white70
                 : selected
                 ? Colors.white
                 : _CambiosScreenState.textMuted,
@@ -1822,7 +1857,7 @@ class CustomSidebar extends StatelessWidget {
             title,
             style: TextStyle(
               color: isExit
-                  ? Colors.redAccent
+                  ? Colors.white70
                   : selected
                   ? Colors.white
                   : _CambiosScreenState.textMuted,

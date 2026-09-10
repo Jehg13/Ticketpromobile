@@ -82,6 +82,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
         if (usuarioNormalizado != null) {
           _perfil.addAll(Map<String, dynamic>.from(usuarioNormalizado));
         }
+
         _perfil['empresa'] = _getLocalOrProfileValue('empresa');
         _perfil['departamento'] = _getLocalOrProfileValue('departamento');
         _perfil['oficina'] = _getLocalOrProfileValue('oficina');
@@ -96,6 +97,19 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
       setState(() => _cargandoPerfil = false);
       _mostrarMensaje(_limpiarError(e), isError: true);
     }
+  }
+
+  bool get _mfaActivo {
+    final valor = _perfil['mfa_enabled'] ??
+        _perfil['mfa_activo'] ??
+        _perfil['two_factor_enabled'] ??
+        _perfil['google2fa_enabled'];
+
+    if (valor is bool) return valor;
+    if (valor is num) return valor != 0;
+
+    final texto = valor?.toString().trim().toLowerCase();
+    return texto == 'true' || texto == '1' || texto == 'y' || texto == 'si';
   }
 
   String _getLocalOrProfileValue(String key) {
@@ -545,6 +559,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
   }
 
   Future<void> _mostrarDialogoMfa() async {
+    final mfaActivo = _mfaActivo;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -554,13 +569,15 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
             'Verificación en dos pasos',
             style: TextStyle(color: Colors.white),
           ),
-          content: const SingleChildScrollView(
+          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Para activar la verificación en dos pasos desde la versión web:',
+                  mfaActivo
+                      ? 'Para desactivar la verificación en dos pasos desde la versión web:'
+                      : 'Para activar la verificación en dos pasos desde la versión web:',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -572,27 +589,35 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                   style: TextStyle(color: Colors.white70),
                 ),
                 Text(
-                  '2. Haz clic en "Activar verificación en dos pasos".',
+                  mfaActivo
+                      ? '2. Haz clic en "Desactivar verificación en dos pasos".'
+                      : '2. Haz clic en "Activar verificación en dos pasos".',
                   style: TextStyle(color: Colors.white70),
                 ),
-                Text(
-                  '3. Descarga Google Authenticator o Microsoft Authenticator.',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                Text(
-                  '4. Escanea el código QR que aparece en la web.',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                Text(
-                  '5. Ingresa el código de 6 dígitos generado por la app y guarda la configuración.',
-                  style: TextStyle(color: Colors.white70),
-                ),
+                if (!mfaActivo) ...[
+                  Text(
+                    '3. Descarga Google Authenticator o Microsoft Authenticator.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  Text(
+                    '4. Escanea el código QR que aparece en la web.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  Text(
+                    '5. Ingresa el código de 6 dígitos generado por la app y guarda la configuración.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
               ],
             ),
           ),
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext),
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Entendido'),
             ),
           ],
@@ -1442,10 +1467,12 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                 icon: Icons.verified_user_outlined,
                 title: 'Verificación en dos pasos',
                 description: 'Agrega una capa adicional de seguridad a tu cuenta.',
-                buttonIcon: Icons.add_circle_outline,
-                buttonText: 'Activar',
+                buttonIcon: _mfaActivo
+                    ? Icons.remove_circle_outline
+                    : Icons.add_circle_outline,
+                buttonText: _mfaActivo ? 'Desactivar' : 'Activar',
                 onPressed: _mostrarDialogoMfa,
-                status: 'Desactivada',
+                status: _mfaActivo ? 'Activa' : 'Desactivada',
               ),
             ],
           ),
@@ -2097,6 +2124,7 @@ class AppNavigationDrawer extends StatelessWidget {
               onTap: () {},
             ),
 
+            const Spacer(),
             const Divider(color: Colors.white12, height: 1),
 
             _drawerItem(

@@ -11,6 +11,7 @@ import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
 import '../../widgets/admin_only_drawer_item.dart';
+import '../../widgets/admin_navigation_drawer.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
 import 'home_screen.dart';
@@ -1400,11 +1401,47 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
   }
 
   Widget _buildAppDrawer() {
+    return AdminNavigationDrawer(
+      items: [
+        AdminNavigationDrawerItem(icon: Icons.dashboard_rounded, title: 'Inicio', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const AdminScreen(), mensaje: 'Cargando inicio...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.confirmation_number_outlined, title: 'Tickets', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const TicketsScreen(), mensaje: 'Cargando tickets...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.sync_alt_rounded, title: 'Cambios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const CambiosScreen(), mensaje: 'Cargando cambios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.people_outline, title: 'Usuarios', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const UserScreen(), mensaje: 'Cargando usuarios...');
+        }),
+        AdminNavigationDrawerItem(icon: Icons.devices_other, title: 'Dispositivos', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const DispositivosScreen(), mensaje: 'Cargando dispositivos...');
+        }),
+        const AdminNavigationDrawerItem(icon: Icons.campaign_outlined, title: 'Avisos', selected: true),
+        AdminNavigationDrawerItem(icon: Icons.person_outline, title: 'Mi perfil', onTap: () {
+          Navigator.pop(context);
+          navigateWithLoading(context, const PerfiladminScreen(), mensaje: 'Cargando perfil...');
+        }),
+      ],
+      onLogout: _cerrarSesion,
+    );
+    /*
     return Drawer(
       backgroundColor: AdminScreen.sidebarBg,
       child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 24,
+          ),
           children: [
             Padding(
               padding: const EdgeInsets.all(20),
@@ -1550,19 +1587,24 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                 );
               },
             ),
-            const Divider(color: Colors.white10),
-            _drawerItem(
-              context,
-              Icons.logout_rounded,
-              'Cerrar sesión',
-              selected: false,
-              isDestructive: true,
-              onTap: _cerrarSesion,
+          ],
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: _drawerItem(
+                context,
+                Icons.logout_rounded,
+                'Cerrar sesión',
+                selected: false,
+                isDestructive: true,
+                onTap: _cerrarSesion,
+              ),
             ),
           ],
         ),
       ),
-    );
+    );*/
   }
 
   Widget _drawerItem(
@@ -1574,7 +1616,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     bool isDestructive = false,
   }) {
     final itemColor = isDestructive
-        ? Colors.redAccent
+        ? Colors.white70
         : selected
         ? Colors.white
         : AdminScreen.textMuted;
