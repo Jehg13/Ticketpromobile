@@ -409,12 +409,13 @@ Future<void> _seleccionarEvidencias() async {
     showUserMessage(context, mensaje, isError: esError);
   }
 
-  void _irAInicio() {
+  void _cancelarTicket() {
     if (enviandoTicket) {
       return;
     }
 
-    navigateWithLoading(context, const HomeScreen(), mensaje: 'Cargando inicio...');
+    FocusScope.of(context).unfocus();
+    _limpiarFormulario();
   }
 
   @override
@@ -1438,7 +1439,7 @@ Future<void> _seleccionarEvidencias() async {
                         ),
                       ),
                       onPressed:
-                          enviandoTicket ? null : _irAInicio,
+                          enviandoTicket ? null : _cancelarTicket,
                       child: const Text(
                         'Cancelar',
                         style: TextStyle(
@@ -1475,7 +1476,7 @@ Future<void> _seleccionarEvidencias() async {
                       ),
                     ),
                     onPressed:
-                        enviandoTicket ? null : _irAInicio,
+                        enviandoTicket ? null : _cancelarTicket,
                     child: const Text(
                       'Cancelar',
                       style: TextStyle(
