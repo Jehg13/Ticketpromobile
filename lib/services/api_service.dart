@@ -109,6 +109,7 @@ class ApiService {
           data['success'] == true,
       'message':
           data['message']?.toString() ?? 'No se pudo verificar el código.',
+      'retry_after': _retryAfterSeconds(response, data),
       'token': data['token'],
       'user': data['user'],
     };
@@ -519,6 +520,7 @@ class ApiService {
         'user': data['user'] ?? data['usuario'],
         'login': data['login'],
         'mfa_challenge': data['mfa_challenge'],
+        'retry_after': _retryAfterSeconds(response, data),
         'data': data,
       };
     } catch (e) {
@@ -531,6 +533,17 @@ class ApiService {
         'data': null,
       };
     }
+  }
+
+  static int _retryAfterSeconds(
+    http.Response response,
+    Map<String, dynamic> data,
+  ) {
+    final payloadValue = data['retry_after'];
+    final headerValue = response.headers['retry-after'];
+    return int.tryParse(payloadValue?.toString() ?? '') ??
+        int.tryParse(headerValue ?? '') ??
+        0;
   }
 
   // ============================================================
