@@ -370,7 +370,12 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       onRefresh: _cargarDatos,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1044,6 +1049,9 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
       },
     );
 
+    // El diálogo aún termina de desmontar el TextField al resolver showDialog.
+    // Esperar la transición evita destruir su controlador mientras tiene dependientes.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     searchController.dispose();
 
     return resultado;

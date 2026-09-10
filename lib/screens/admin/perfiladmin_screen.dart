@@ -47,9 +47,7 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
   final TextEditingController _departamentoController = TextEditingController(
     text: 'Tecnologias',
   );
-  final TextEditingController _rolController = TextEditingController(
-    text: '',
-  );
+  final TextEditingController _rolController = TextEditingController(text: '');
   final TextEditingController _oficinaController = TextEditingController(
     text: 'Reynosa',
   );
@@ -104,7 +102,12 @@ class _PerfiladminScreenState extends State<PerfiladminScreen> {
       ),
       drawer: _buildAppDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

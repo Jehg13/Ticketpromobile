@@ -361,6 +361,11 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      await _mostrarErrorApi(
+        'No se pudieron cargar los avisos',
+        'Ocurrió un error al consultar la API.',
+        detalles: e.toString(),
+      );
       setState(() {
         avisos = [];
         notificaciones = [];
@@ -372,6 +377,56 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         _error = _limpiarError(e);
       });
     }
+  }
+
+  Future<void> _mostrarErrorApi(
+    String titulo,
+    String mensaje, {
+    String? detalles,
+  }) async {
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: cardDark,
+        title: Text(titulo, style: const TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(mensaje, style: const TextStyle(color: Colors.white70)),
+              if (detalles != null && detalles.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Detalle técnico:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  detalles.trim(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _crearAviso() async {
@@ -654,7 +709,12 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                               ),
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.only(
+                                left: 16,
+                                top: 16,
+                                right: 16,
+                                bottom: MediaQuery.of(context).padding.bottom + 80,
+                              ),
                               itemCount: itemsActuales.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 8),
@@ -934,7 +994,23 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
     return 'Activo';
   }
 
+  String _estadoApiAviso(Map<String, dynamic> item) {
+    final value = _textoSeguro(
+      item['estado'] ?? item['status'] ?? item['activo'],
+    ).toLowerCase();
+    if (value.isEmpty) return 'activo';
+    if (value.contains('inactivo') || value == '0' || value == 'false') {
+      return 'inactivo';
+    }
+    return 'activo';
+  }
+
   bool _isActivo(Map<String, dynamic> item) => _estadoAviso(item) == 'Activo';
+
+  bool _puedeModificarAviso(Map<String, dynamic> item) {
+    final value = item['puede_modificar'];
+    return value == true || value == 1 || value == '1' || value == 'true';
+  }
 
   String _fechaAviso(Map<String, dynamic> item) {
     for (final key in [
@@ -1579,6 +1655,7 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
 
   Widget _buildAvisoCardMobile(Map<String, dynamic> item) {
     final isActivo = _isActivo(item);
+    final puedeModificar = _puedeModificarAviso(item);
 
     final avisoCard = Container(
       padding: const EdgeInsets.all(12),
@@ -1599,36 +1676,43 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                   Switch(
                     value: isActivo,
                     activeThumbColor: Colors.blueAccent,
-                    onChanged: (val) async {
-                      final id = int.tryParse(_textoSeguro(item['id'])) ?? 0;
-                      if (id == 0) return;
+                    onChanged: !puedeModificar
+                        ? null
+                        : (val) async {
+                            final id =
+                                int.tryParse(_textoSeguro(item['id'])) ?? 0;
+                            if (id == 0) return;
 
-                      try {
-                        await AvisosAdminService.actualizarAviso(
-                          id: id,
-                          titulo: _tituloAviso(item),
-                          tipo: _textoSeguro(item['tipo']).isNotEmpty
-                              ? _textoSeguro(item['tipo'])
-                              : 'informativo',
-                          importancia: _prioridadAviso(item),
-                          fechaInicio: _fechaInicio(item),
-                          horaInicio: _horaInicio(item),
-                          aplicaA: _textoSeguro(item['aplica_a']).isNotEmpty
-                              ? _textoSeguro(item['aplica_a'])
-                              : 'todos',
-                          afectaA: item['afecta_a'] ?? const [],
-                          descripcion: _contenidoAviso(item),
-                          mostrarNotificaciones: _mostrarNotificaciones(item),
-                          fijado: _fijado(item),
-                          estado: val ? 'activo' : 'inactivo',
-                        );
-                        if (!mounted) return;
-                        await _cargarDatos();
-                      } catch (e) {
-                        if (!mounted) return;
-                        _mostrarMensaje(_limpiarError(e), isError: true);
-                      }
-                    },
+                            try {
+                              final estadoNuevo = val ? 'activo' : 'inactivo';
+                              await AvisosAdminService.actualizarAviso(
+                                id: id,
+                                titulo: _tituloAviso(item),
+                                tipo: _textoSeguro(item['tipo']).isNotEmpty
+                                    ? _textoSeguro(item['tipo'])
+                                    : 'informativo',
+                                importancia: _prioridadAviso(item),
+                                fechaInicio: _fechaInicio(item),
+                                horaInicio: _horaInicio(item),
+                                aplicaA:
+                                    _textoSeguro(item['aplica_a']).isNotEmpty
+                                    ? _textoSeguro(item['aplica_a'])
+                                    : 'todos',
+                                afectaA: item['afecta_a'] ?? const [],
+                                descripcion: _contenidoAviso(item),
+                                mostrarNotificaciones: _mostrarNotificaciones(
+                                  item,
+                                ),
+                                fijado: _fijado(item),
+                                estado: estadoNuevo,
+                              );
+                              if (!mounted) return;
+                              await _cargarDatos();
+                            } catch (e) {
+                              if (!mounted) return;
+                              _mostrarMensaje(_limpiarError(e), isError: true);
+                            }
+                          },
                   ),
                   Text(
                     _estadoAviso(item),
@@ -1689,30 +1773,32 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _showModalEditarAviso(item),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        color: Colors.blueAccent,
-                        size: 18,
+                  if (puedeModificar) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => _showModalEditarAviso(item),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          color: Colors.blueAccent,
+                          size: 18,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _showModalEliminarAviso(item),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: Colors.redAccent,
-                        size: 18,
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => _showModalEliminarAviso(item),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                          size: 18,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],

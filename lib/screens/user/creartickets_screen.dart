@@ -439,8 +439,11 @@ Future<void> _seleccionarEvidencias() async {
             ),
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(
-                isDesktop ? 24 : 16,
+              padding: EdgeInsets.only(
+                left: isDesktop ? 24 : 16,
+                top: isDesktop ? 24 : 16,
+                right: isDesktop ? 24 : 16,
+                bottom: MediaQuery.of(context).padding.bottom + 80,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

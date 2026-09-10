@@ -116,6 +116,15 @@ class _UserScreenState extends State<UserScreen> {
           ? Map<String, dynamic>.from(respuesta['estadisticas'])
           : <String, dynamic>{};
 
+      if (respuesta['success'] != true) {
+        await _mostrarErrorApi(
+          titulo: 'No se pudieron cargar los usuarios',
+          mensaje: respuesta['message']?.toString() ??
+              'Ocurrió un error inesperado.',
+          detalles: respuesta['error_details']?.toString(),
+        );
+      }
+
       setState(() {
         usuarios = nuevaLista;
         _totalUsuarios = _toInt(
@@ -124,8 +133,13 @@ class _UserScreenState extends State<UserScreen> {
         _ultimaPagina = _toInt(pagination['last_page'] ?? 1);
         _estadisticas = estadisticas;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      await _mostrarErrorApi(
+        titulo: 'No se pudieron cargar los usuarios',
+        mensaje: 'Ocurrió un error inesperado al consultar la API.',
+        detalles: e.toString(),
+      );
       setState(() {
         usuarios = [];
         _totalUsuarios = 0;
@@ -144,6 +158,62 @@ class _UserScreenState extends State<UserScreen> {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Future<void> _mostrarErrorApi({
+    required String titulo,
+    required String mensaje,
+    String? detalles,
+  }) async {
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: cardBg,
+        title: Text(
+          titulo,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                mensaje,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              if (detalles != null && detalles.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Detalle técnico:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  detalles.trim(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _irAPagina(int pagina) async {
@@ -193,7 +263,12 @@ class _UserScreenState extends State<UserScreen> {
       ),
       drawer: const CustomSidebar(activeMenu: 'Usuarios'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          top: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -82,13 +82,48 @@ if (body is Map<String, dynamic>) {
 
   if (body['error'] != null &&
       body['error'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\nerror: ${body['error']}';
+  }
 
+  if (body['exception'] != null &&
+      body['exception'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\nexception: ${body['exception']}';
+  }
+
+  if (body['trace'] != null &&
+      body['trace'].toString().trim().isNotEmpty) {
+    mensaje = '$mensaje\n\ntrace: ${body['trace']}';
   }
 }
 
 throw Exception(mensaje);
+}
 
+static String _errorFromResponse(http.Response response, dynamic decoded) {
+if (decoded is Map<String, dynamic>) {
+  final parts = <String>[];
 
+  for (final key in const ['message', 'error', 'exception']) {
+    final value = decoded[key];
+    if (value != null) {
+      final text = value.toString().trim();
+      if (text.isNotEmpty) {
+        parts.add(text);
+      }
+    }
+  }
+
+  if (parts.isNotEmpty) {
+    return parts.join('\n\n');
+  }
+}
+
+final body = response.body.trim();
+if (body.isNotEmpty) {
+  return body;
+}
+
+return 'La solicitud falló con código ${response.statusCode}.';
 }
 
 static Future<Map<String, dynamic>> obtenerDatos() async {
@@ -392,6 +427,10 @@ final response = await http.Response.fromStream(
 
 final decoded = _decodeResponse(response);
 
+if (response.statusCode < 200 || response.statusCode >= 300) {
+  throw Exception(_errorFromResponse(response, decoded));
+}
+
 if (decoded is! Map<String, dynamic>) {
   throw Exception(
     'La respuesta al crear el aviso no es válida.',
@@ -487,6 +526,10 @@ final response = await http.Response.fromStream(
 
 final decoded = _decodeResponse(response);
 
+if (response.statusCode < 200 || response.statusCode >= 300) {
+  throw Exception(_errorFromResponse(response, decoded));
+}
+
 if (decoded is! Map<String, dynamic>) {
   throw Exception(
     'La respuesta al actualizar el aviso no es válida.',
@@ -524,6 +567,10 @@ final response = await http.delete(
 );
 
 final decoded = _decodeResponse(response);
+
+if (response.statusCode < 200 || response.statusCode >= 300) {
+  throw Exception(_errorFromResponse(response, decoded));
+}
 
 if (decoded is Map<String, dynamic>) {
   return decoded['message']?.toString() ??
@@ -634,3 +681,6 @@ return '$hour:$minute';
 
 }
 }
+
+
+
