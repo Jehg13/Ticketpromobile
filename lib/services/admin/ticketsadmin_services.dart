@@ -64,16 +64,17 @@ class TicketsAdminServices {
       'fecha_firma': fechaFirma,
       'firma': firma,
     });
-    for (final file in evidencias) {
-      final bytes = await file.readAsBytes();
-      request.files.add(
-        http.MultipartFile.fromBytes(
+    final archivosMultipart = await Future.wait(
+      evidencias.map((file) async {
+        final bytes = await file.readAsBytes();
+        return http.MultipartFile.fromBytes(
           'evidencias[]',
           bytes,
           filename: file.name,
-        ),
-      );
-    }
+        );
+      }),
+    );
+    request.files.addAll(archivosMultipart);
 
     final response = await http.Response.fromStream(await request.send());
     return _decode(response, 'No se pudo guardar la solución.');
