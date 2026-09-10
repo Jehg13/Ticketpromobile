@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:http/http.dart' as http;
-
 import 'api_service.dart';
 import 'session_service.dart';
 
@@ -104,7 +102,7 @@ class NotificationService {
 
     try {
 
-      final response = await http.post(
+      final response = await ApiService.client.post(
         Uri.parse('${ApiService.baseUrl}/device-tokens'),
         headers: {
           'Accept': 'application/json',
@@ -172,7 +170,7 @@ class NotificationService {
     }
 
     try {
-      final response = await http.delete(
+      final response = await ApiService.client.delete(
         Uri.parse('${ApiService.baseUrl}/device-tokens'),
         headers: {
           'Accept': 'application/json',

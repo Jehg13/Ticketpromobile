@@ -22,6 +22,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
 
   static const FlutterSecureStorage storage =
       FlutterSecureStorage();
+  static final http.Client client = http.Client();
 
   // ============================================================
   // ARCHIVOS / IMÁGENES
@@ -269,7 +270,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
 
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse('$baseUrl/password/forgot'),
         headers: {
           'Accept': 'application/json',
@@ -364,7 +365,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
 
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse('$baseUrl/password/reset'),
         headers: {
           'Accept': 'application/json',
@@ -407,7 +408,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     bool remember = false,
   }) async {
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse('$baseUrl/login'),
         headers: {
           'Accept': 'application/json',
@@ -728,7 +729,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
 
     try {
-      final response = await http.get(
+      final response = await client.get(
         Uri.parse('$baseUrl/user'),
         headers: {
           'Accept': 'application/json',
@@ -791,7 +792,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
 
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse('$baseUrl/logout'),
         headers: {
           'Accept': 'application/json',

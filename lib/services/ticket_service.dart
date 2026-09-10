@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import 'api_service.dart';
 import 'session_service.dart';
 
@@ -24,7 +22,7 @@ class TicketService {
 
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse(url),
         headers: {
           'Accept': 'application/json',
@@ -122,7 +120,7 @@ class TicketService {
 
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse(url),
         headers: {
           'Accept': 'application/json',
@@ -250,7 +248,7 @@ class TicketService {
         '${ApiService.baseUrl}/mis-tickets-notificaciones/$notificationId/leida';
 
     try {
-      final response = await http.patch(
+      final response = await ApiService.client.patch(
         Uri.parse(url),
         headers: {
           'Accept': 'application/json',
@@ -284,7 +282,7 @@ class TicketService {
         '${ApiService.baseUrl}/mis-tickets-notificaciones-leer-todas';
 
     try {
-      final response = await http.patch(
+      final response = await ApiService.client.patch(
         Uri.parse(url),
         headers: {
           'Accept': 'application/json',

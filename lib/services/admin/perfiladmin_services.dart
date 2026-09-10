@@ -19,7 +19,7 @@ class PerfilAdminService {
 
   static Future<Map<String, dynamic>> obtenerPerfil() async {
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         Uri.parse('$_baseUrl/perfil'),
         headers: await _headers(),
       );
@@ -81,7 +81,7 @@ class PerfilAdminService {
         ),
       );
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await ApiService.client.send(request);
 
       final response =
           await http.Response.fromStream(
@@ -132,7 +132,7 @@ class PerfilAdminService {
 
   static Future<Map<String, dynamic>> eliminarFoto() async {
     try {
-      final response = await http.delete(
+      final response = await ApiService.client.delete(
         Uri.parse('$_baseUrl/perfil/foto'),
         headers: await _headers(),
       );
@@ -195,7 +195,7 @@ class PerfilAdminService {
     try {
       final token = await ApiService.getToken();
 
-      final response = await http.put(
+      final response = await ApiService.client.put(
         Uri.parse('$_baseUrl/perfil/tecnologias'),
         headers: {
           'Accept': 'application/json',
@@ -261,7 +261,7 @@ class PerfilAdminService {
     try {
       final token = await ApiService.getToken();
 
-      final response = await http.put(
+      final response = await ApiService.client.put(
         Uri.parse('$_baseUrl/perfil/password'),
         headers: {
           'Accept': 'application/json',

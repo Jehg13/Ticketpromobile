@@ -22,7 +22,7 @@ class CrearTicketService {
 
 
     try {
-      final response = await http.get(
+      final response = await ApiService.client.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -185,7 +185,7 @@ class CrearTicketService {
 
 
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await ApiService.client.send(request);
 
       final response = await http.Response.fromStream(
         streamedResponse,

@@ -10,7 +10,7 @@ class PerfiladminService {
   static Future<Map<String, dynamic>> obtenerPerfil() {
     return _request(
       (token) =>
-          http.get(Uri.parse(ApiService.baseUrl), headers: _headers(token)),
+          ApiService.client.get(Uri.parse(ApiService.baseUrl), headers: _headers(token)),
     );
   }
 
@@ -28,7 +28,7 @@ class PerfiladminService {
       return {'success': false, 'message': 'No hay una sesión activa.'};
     }
 
-    final response = await http.put(
+    final response = await ApiService.client.put(
       Uri.parse('${ApiService.baseUrl}/perfil/admin'),
       headers: {
         ..._headers(token),
@@ -54,7 +54,7 @@ class PerfiladminService {
     required String confirmacion,
   }) {
     return _request(
-      (token) => http.put(
+      (token) => ApiService.client.put(
         Uri.parse('${ApiService.baseUrl}/perfil/password'),
         headers: {..._headers(token), 'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -82,12 +82,14 @@ class PerfiladminService {
     request.files.add(
       http.MultipartFile.fromBytes('picture', bytes, filename: archivo.name),
     );
-    return _decode(await http.Response.fromStream(await request.send()));
+    return _decode(
+      await http.Response.fromStream(await ApiService.client.send(request)),
+    );
   }
 
   static Future<Map<String, dynamic>> eliminarFoto() {
     return _request(
-      (token) => http.delete(
+      (token) => ApiService.client.delete(
         Uri.parse('${ApiService.baseUrl}/foto'),
         headers: _headers(token),
       ),
