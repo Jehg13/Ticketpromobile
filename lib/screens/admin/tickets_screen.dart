@@ -580,24 +580,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
       null,
       fallback: '',
     );
-    final String conformidad = _string(
-      solution['conformidad'],
-      detalle['conformidad'] ?? detalle['usuario_conformidad'],
-      fallback: 'Sin información registrada.',
-    );
     final String fechaSolucion = _formatearFecha(
       solution['fecha_solucion'] ??
           detalle['fecha_solucion'] ??
           detalle['solucion_at'] ??
           detalle['resolved_at'],
-    );
-    final String fechaFirma = _formatearFecha(
-      solution['fecha_firma'] ?? detalle['fecha_firma'],
-    );
-    final String firma = _string(
-      solution['firma'] ?? solution['firma_url'] ?? solution['imagen_firma'],
-      detalle['firma'] ?? detalle['firma_url'] ?? detalle['imagen_firma'],
-      fallback: '',
     );
     final evidencias = localSolution?['evidencias'] is List
         ? _convertirMapas(localSolution!['evidencias'])
@@ -686,15 +673,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           'Fecha de solución',
                           fechaSolucion,
                         ),
-                        const SizedBox(height: 20),
-                        puedeEditar
-                            ? _buildSignaturePad(firmaPuntos)
-                            : _buildRegisteredSignature(
-                                nombreUsuario: nombreUsuario,
-                                conformidad: conformidad,
-                                fechaFirma: fechaFirma,
-                                firma: firma,
-                              ),
+                        if (puedeEditar) ...[
+                          const SizedBox(height: 20),
+                          _buildSignaturePad(firmaPuntos),
+                        ],
                         const SizedBox(height: 20),
                         _buildTechnicianSection(
                           tomadoPor,
@@ -1057,63 +1039,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
             height: 1.5,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRegisteredSignature({
-    required String nombreUsuario,
-    required String conformidad,
-    required String fechaFirma,
-    required String firma,
-  }) {
-    return _solutionCard(
-      title: 'Conformidad del usuario',
-      icon: Icons.verified_user_outlined,
-      iconColor: const Color(0xFF60A5FA),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Información registrada al momento de cerrar el ticket.',
-            style: TextStyle(color: Colors.grey, fontSize: 10),
-          ),
-          const SizedBox(height: 18),
-          _solutionDetailRow('Persona que levantó el ticket', nombreUsuario),
-          _solutionDetailRow('Conformidad', conformidad),
-          _solutionDetailRow(
-            'Fecha de firma',
-            fechaFirma == 'Sin fecha' ? 'Sin fecha registrada' : fechaFirma,
-            last: firma.isEmpty,
-          ),
-          if (firma.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            const Text(
-              'Firma',
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              constraints: const BoxConstraints(minHeight: 90, maxHeight: 180),
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Image.network(
-                _buildFileUrl(firma),
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Center(
-                  child: Text(
-                    'Firma registrada',
-                    style: TextStyle(color: Colors.black54, fontSize: 11),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
