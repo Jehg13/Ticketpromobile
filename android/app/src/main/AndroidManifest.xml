@@ -34,8 +34,9 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
-                    android:scheme="ticketpro"
-                    android:host="reset-password" />
+                    android:scheme="https"
+                    android:host="tickets.cymezapi.com"
+                    android:pathPrefix="/reset-password/" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

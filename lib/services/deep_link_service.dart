@@ -23,21 +23,23 @@ class DeepLinkService {
 
   void _handleDeepLink(Uri uri) {
     final scheme = uri.scheme.toLowerCase();
-    if (scheme != 'ticketpro') {
+    if (scheme != 'https' || uri.host.toLowerCase() != 'tickets.cymezapi.com') {
       return;
     }
 
-    final host = uri.host.toLowerCase();
     final path = uri.path.toLowerCase();
-    final isResetLink = host == 'reset-password' ||
-        path == '/reset-password' ||
-        path == 'reset-password';
+    final isResetLink = path.startsWith('/reset-password/');
 
     if (!isResetLink) {
       return;
     }
 
-    final token = uri.queryParameters['token']?.trim() ?? '';
+    final tokenFromPath = uri.pathSegments.length > 1
+        ? uri.pathSegments[1].trim()
+        : '';
+    final token = tokenFromPath.isNotEmpty
+        ? tokenFromPath
+        : uri.queryParameters['token']?.trim() ?? '';
     final email = uri.queryParameters['email']?.trim() ?? '';
 
     if (token.isEmpty || email.isEmpty) {
@@ -50,16 +52,14 @@ class DeepLinkService {
     }
 
     final currentRoute = ModalRoute.of(navigator.context);
-    if (currentRoute != null && currentRoute.settings.name == '/reset-password') {
+    if (currentRoute != null &&
+        currentRoute.settings.name == '/reset-password') {
       return;
     }
 
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => ResetPasswordScreen(
-          email: email,
-          token: token,
-        ),
+        builder: (_) => ResetPasswordScreen(email: email, token: token),
       ),
       (route) => false,
     );

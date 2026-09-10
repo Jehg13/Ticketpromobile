@@ -4,24 +4,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-
 class ApiService {
   // ============================================================
   // URLS
   // ============================================================
 
-static const String serverUrl = 'https://tickets.cymezapi.com';
+  static const String serverUrl = 'https://tickets.cymezapi.com';
   static const String baseUrl = '$serverUrl/api';
 
   // Todos los archivos que están dentro de storage/app/public
   // serán servidos mediante:
   //
-  // https://tickets.cymez.com/archivo/ruta/del/archivo
+  // https://tickets.cymezapi.com/archivo/ruta/del/archivo
   //
   static const String fileUrl = '$serverUrl/archivo';
 
-  static const FlutterSecureStorage storage =
-      FlutterSecureStorage();
+  static const FlutterSecureStorage storage = FlutterSecureStorage();
   static final http.Client client = http.Client();
 
   // ============================================================
@@ -40,7 +38,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
   ///
   /// Resultado:
   ///
-  /// https://tickets.cymez.com/archivo/profile-photos/usuario.jpg
+  /// https://tickets.cymezapi.com/archivo/profile-photos/usuario.jpg
   ///
   static String storageFileUrl(String? path) {
     if (path == null || path.trim().isEmpty) {
@@ -52,14 +50,13 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     if (cleanPath.startsWith('http://localhost') ||
         cleanPath.startsWith('https://localhost')) {
       cleanPath = cleanPath
-          .replaceFirst('http://localhost', 'https://tickets.cymez.com')
-          .replaceFirst('https://localhost', 'https://tickets.cymez.com');
+          .replaceFirst('http://localhost', 'https://tickets.cymezapi.com')
+          .replaceFirst('https://localhost', 'https://tickets.cymezapi.com');
     }
 
     // Si Laravel ya devuelve una URL completa,
     // no hacemos ninguna modificación.
-    if (cleanPath.startsWith('http://') ||
-        cleanPath.startsWith('https://')) {
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
       final uri = Uri.tryParse(cleanPath);
       if (uri != null && uri.path.contains('/storage/')) {
         cleanPath = uri.path.substring(uri.path.indexOf('/storage/') + 9);
@@ -69,10 +66,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     }
 
     // Elimina / iniciales.
-    cleanPath = cleanPath.replaceFirst(
-      RegExp(r'^/+'),
-      '',
-    );
+    cleanPath = cleanPath.replaceFirst(RegExp(r'^/+'), '');
 
     // Si por alguna razón viene como:
     // storage/profile-photos/foto.jpg
@@ -80,9 +74,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     // lo convertimos a:
     // profile-photos/foto.jpg
     if (cleanPath.startsWith('storage/')) {
-      cleanPath = cleanPath.substring(
-        'storage/'.length,
-      );
+      cleanPath = cleanPath.substring('storage/'.length);
     }
 
     // Si viene como:
@@ -90,9 +82,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     //
     // eliminamos api/.
     if (cleanPath.startsWith('api/')) {
-      cleanPath = cleanPath.substring(
-        'api/'.length,
-      );
+      cleanPath = cleanPath.substring('api/'.length);
     }
 
     return '$fileUrl/$cleanPath';
@@ -113,10 +103,12 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     final data = _decodeJsonBody(response.body);
     return {
       'statusCode': response.statusCode,
-      'success': response.statusCode >= 200 &&
+      'success':
+          response.statusCode >= 200 &&
           response.statusCode < 300 &&
           data['success'] == true,
-      'message': data['message']?.toString() ?? 'No se pudo verificar el código.',
+      'message':
+          data['message']?.toString() ?? 'No se pudo verificar el código.',
       'token': data['token'],
       'user': data['user'],
     };
@@ -147,10 +139,12 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     final data = _decodeJsonBody(response.body);
     return {
       'statusCode': response.statusCode,
-      'success': response.statusCode >= 200 &&
+      'success':
+          response.statusCode >= 200 &&
           response.statusCode < 300 &&
           data['success'] == true,
-      'message': data['message']?.toString() ??
+      'message':
+          data['message']?.toString() ??
           'No se pudo desactivar la verificación en dos pasos.',
     };
   }
@@ -238,9 +232,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
       }
 
       if (decoded is Map) {
-        return decoded.map(
-          (key, value) => MapEntry(key.toString(), value),
-        );
+        return decoded.map((key, value) => MapEntry(key.toString(), value));
       }
 
       return {'raw': decoded};
@@ -334,20 +326,20 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
-        body: jsonEncode({
-          'email': cleanEmail,
-        }),
+        body: jsonEncode({'email': cleanEmail}),
       );
 
       final payload = _decodeJsonBody(response.body);
-      final bool success = response.statusCode >= 200 &&
+      final bool success =
+          response.statusCode >= 200 &&
           response.statusCode < 300 &&
           payload['success'] == true;
 
       return {
         'statusCode': response.statusCode,
         'success': success,
-        'message': payload['message']?.toString() ??
+        'message':
+            payload['message']?.toString() ??
             'No se pudo enviar el enlace de recuperación.',
         'data': payload,
       };
@@ -369,10 +361,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
 
     final response = await client.get(
       Uri.parse('$baseUrl/maintenance?platform=mobile'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -425,12 +414,14 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
       };
     }
 
-    if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$')
-        .hasMatch(cleanPassword)) {
+    if (!RegExp(
+      r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+    ).hasMatch(cleanPassword)) {
       return {
         'statusCode': 400,
         'success': false,
-        'message': 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
+        'message':
+            'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
       };
     }
 
@@ -459,14 +450,16 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
       );
 
       final payload = _decodeJsonBody(response.body);
-      final bool success = response.statusCode >= 200 &&
+      final bool success =
+          response.statusCode >= 200 &&
           response.statusCode < 300 &&
           payload['success'] == true;
 
       return {
         'statusCode': response.statusCode,
         'success': success,
-        'message': payload['message']?.toString() ??
+        'message':
+            payload['message']?.toString() ??
             'No se pudo restablecer la contraseña.',
         'data': payload,
       };
@@ -507,10 +500,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         final String? token = data['token']?.toString();
 
         if (token != null && token.isNotEmpty) {
-          await storage.write(
-            key: 'auth_token',
-            value: token,
-          );
+          await storage.write(key: 'auth_token', value: token);
         }
 
         final user = data['user'] ?? data['usuario'];
@@ -547,9 +537,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
   // GUARDAR USUARIO
   // ============================================================
 
-  static Future<void> _guardarUsuario(
-    Map<String, dynamic> user,
-  ) async {
+  static Future<void> _guardarUsuario(Map<String, dynamic> user) async {
     await storage.write(
       key: 'user_login',
       value: user['login']?.toString() ?? '',
@@ -580,10 +568,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
       value: user['active']?.toString() ?? 'N',
     );
 
-    await storage.write(
-      key: 'user_mfa',
-      value: user['mfa']?.toString() ?? 'N',
-    );
+    await storage.write(key: 'user_mfa', value: user['mfa']?.toString() ?? 'N');
 
     await storage.write(
       key: 'user_empresa',
@@ -609,12 +594,14 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         '';
     final storedPicture = await storage.read(key: 'user_picture');
     final normalizedPicture = picture.trim().toLowerCase();
-    final isDefaultPicture = normalizedPicture.isEmpty ||
+    final isDefaultPicture =
+        normalizedPicture.isEmpty ||
         normalizedPicture == 'user.png' ||
         normalizedPicture.endsWith('/user.png') ||
         normalizedPicture.contains('profile-photos/user.png');
     final normalizedStored = storedPicture?.trim().toLowerCase() ?? '';
-    final hasStoredCustomPicture = normalizedStored.isNotEmpty &&
+    final hasStoredCustomPicture =
+        normalizedStored.isNotEmpty &&
         normalizedStored != 'user.png' &&
         !normalizedStored.endsWith('/user.png') &&
         !normalizedStored.contains('profile-photos/user.png');
@@ -629,9 +616,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
   // ============================================================
 
   static Future<String?> getToken() async {
-    return await storage.read(
-      key: 'auth_token',
-    );
+    return await storage.read(key: 'auth_token');
   }
 
   // ============================================================
@@ -643,20 +628,13 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
     final email = await storage.read(key: 'user_email');
     final name = await storage.read(key: 'user_name');
     final role = await storage.read(key: 'user_role');
-    final privAdmin =
-        await storage.read(key: 'user_priv_admin');
-    final active =
-        await storage.read(key: 'user_active');
-    final mfa =
-        await storage.read(key: 'user_mfa');
-    final empresa =
-        await storage.read(key: 'user_empresa');
-    final departamento =
-        await storage.read(key: 'user_departamento');
-    final oficina =
-        await storage.read(key: 'user_oficina');
-    final numeroEmpleado =
-        await storage.read(key: 'user_numero_empleado');
+    final privAdmin = await storage.read(key: 'user_priv_admin');
+    final active = await storage.read(key: 'user_active');
+    final mfa = await storage.read(key: 'user_mfa');
+    final empresa = await storage.read(key: 'user_empresa');
+    final departamento = await storage.read(key: 'user_departamento');
+    final oficina = await storage.read(key: 'user_oficina');
+    final numeroEmpleado = await storage.read(key: 'user_numero_empleado');
     final picture = await storage.read(key: 'user_picture');
 
     if (login == null &&
@@ -691,13 +669,9 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
   // ============================================================
 
   static Future<bool> isAdmin() async {
-    final role = await storage.read(
-      key: 'user_role',
-    );
+    final role = await storage.read(key: 'user_role');
 
-    final privAdmin = await storage.read(
-      key: 'user_priv_admin',
-    );
+    final privAdmin = await storage.read(key: 'user_priv_admin');
 
     final rolNormalizado = role
         ?.trim()
@@ -709,11 +683,9 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         .replaceAll('ú', 'u');
 
     final bool rolPermitido =
-        rolNormalizado == 'gerente ti' ||
-        rolNormalizado == 'soporte tecnico';
+        rolNormalizado == 'gerente ti' || rolNormalizado == 'soporte tecnico';
 
-    return rolPermitido &&
-        privAdmin?.trim().toUpperCase() == 'Y';
+    return rolPermitido && privAdmin?.trim().toUpperCase() == 'Y';
   }
 
   // ============================================================
@@ -735,57 +707,39 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
   // ============================================================
 
   static Future<String?> getLogin() async {
-    return await storage.read(
-      key: 'user_login',
-    );
+    return await storage.read(key: 'user_login');
   }
 
   static Future<String?> getEmail() async {
-    return await storage.read(
-      key: 'user_email',
-    );
+    return await storage.read(key: 'user_email');
   }
 
   static Future<String?> getNombre() async {
-    return await storage.read(
-      key: 'user_name',
-    );
+    return await storage.read(key: 'user_name');
   }
 
   static Future<String?> getRol() async {
-    return await storage.read(
-      key: 'user_role',
-    );
+    return await storage.read(key: 'user_role');
   }
 
   static Future<String?> getPrivAdmin() async {
-    return await storage.read(
-      key: 'user_priv_admin',
-    );
+    return await storage.read(key: 'user_priv_admin');
   }
 
   static Future<String?> getEmpresa() async {
-    return await storage.read(
-      key: 'user_empresa',
-    );
+    return await storage.read(key: 'user_empresa');
   }
 
   static Future<String?> getDepartamento() async {
-    return await storage.read(
-      key: 'user_departamento',
-    );
+    return await storage.read(key: 'user_departamento');
   }
 
   static Future<String?> getOficina() async {
-    return await storage.read(
-      key: 'user_oficina',
-    );
+    return await storage.read(key: 'user_oficina');
   }
 
   static Future<String?> getNumeroEmpleado() async {
-    return await storage.read(
-      key: 'user_numero_empleado',
-    );
+    return await storage.read(key: 'user_numero_empleado');
   }
 
   // ============================================================
@@ -800,10 +754,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         'statusCode': 401,
         'success': false,
         'message': 'No hay una sesión activa.',
-        'data': {
-          'success': false,
-          'message': 'No hay una sesión activa.',
-        },
+        'data': {'success': false, 'message': 'No hay una sesión activa.'},
       };
     }
 
@@ -821,8 +772,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
       if (response.statusCode == 200 &&
           data['success'] == true &&
           data['user'] is Map<String, dynamic>) {
-        final user =
-            data['user'] as Map<String, dynamic>;
+        final user = data['user'] as Map<String, dynamic>;
 
         await _guardarUsuario(user);
       }
@@ -863,10 +813,7 @@ static const String serverUrl = 'https://tickets.cymezapi.com';
         'statusCode': 401,
         'success': false,
         'message': 'No hay una sesión activa.',
-        'data': {
-          'success': false,
-          'message': 'No hay una sesión activa.',
-        },
+        'data': {'success': false, 'message': 'No hay una sesión activa.'},
       };
     }
 
