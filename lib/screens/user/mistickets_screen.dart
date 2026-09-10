@@ -2086,19 +2086,20 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
         builder: (context, constraints) {
           if (constraints.maxWidth < 500) {
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                pageInfo,
+                Center(child: pageInfo),
                 const SizedBox(height: 12),
-                FittedBox(child: controls),
+                Center(child: FittedBox(child: controls)),
               ],
             );
           }
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(child: pageInfo),
-              const SizedBox(width: 16),
-              controls,
+              Center(child: pageInfo),
+              const SizedBox(height: 12),
+              Center(child: controls),
             ],
           );
         },
