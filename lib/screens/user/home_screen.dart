@@ -2263,7 +2263,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return 'N/A';
     }
 
-    final fechaParsed = DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto)?.toLocal();
 
     if (fechaParsed == null) {
       return texto;
@@ -2289,7 +2289,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return 'Fecha no disponible';
     }
 
-    final fechaParsed = DateTime.tryParse(texto);
+    final fechaParsed = DateTime.tryParse(texto)?.toLocal();
 
     if (fechaParsed == null) {
       return texto;

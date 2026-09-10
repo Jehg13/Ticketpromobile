@@ -3333,7 +3333,9 @@ class TicketItem {
     final requesterMap = requester is Map
         ? Map<String, dynamic>.from(requester)
         : null;
-    final date = DateTime.tryParse(map['created_at']?.toString() ?? '');
+    final date = DateTime.tryParse(
+      map['created_at']?.toString() ?? '',
+    )?.toLocal();
     final dynamic department = assignedMap?['departamento'];
     final String departmentText = textValue(department);
     final dynamic requesterName =

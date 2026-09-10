@@ -3364,7 +3364,7 @@ class _MisticketsScreenState extends State<MisticketsScreen> {
 
   String _formatearFecha(dynamic value) {
     if (value == null || value.toString().trim().isEmpty) return 'Sin fecha';
-    final DateTime? fecha = DateTime.tryParse(value.toString());
+    final DateTime? fecha = DateTime.tryParse(value.toString())?.toLocal();
     if (fecha == null) return value.toString();
     final String dia = fecha.day.toString().padLeft(2, '0');
     final String mes = fecha.month.toString().padLeft(2, '0');
