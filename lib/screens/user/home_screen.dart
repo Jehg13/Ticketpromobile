@@ -484,7 +484,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 18),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            top: 16,
+                            right: 16,
+                            bottom: MediaQuery.of(context).padding.bottom + 144,
+                          ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,

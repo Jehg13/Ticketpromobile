@@ -757,7 +757,7 @@ class _MiPerfilScreenState extends State<MiPerfilScreen> {
                           left: isDesktop ? 32.0 : 16.0,
                           top: 24.0,
                           right: isDesktop ? 32.0 : 16.0,
-                          bottom: MediaQuery.of(context).padding.bottom + 96,
+                          bottom: MediaQuery.of(context).padding.bottom + 144,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

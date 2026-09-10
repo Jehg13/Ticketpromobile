@@ -443,7 +443,7 @@ Future<void> _seleccionarEvidencias() async {
                 left: isDesktop ? 24 : 16,
                 top: isDesktop ? 24 : 16,
                 right: isDesktop ? 24 : 16,
-                bottom: MediaQuery.of(context).padding.bottom + 96,
+                bottom: MediaQuery.of(context).padding.bottom + 144,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

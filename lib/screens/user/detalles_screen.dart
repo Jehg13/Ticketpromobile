@@ -366,7 +366,7 @@ class _DetallesScreenState extends State<DetallesScreen> {
                   left: 16,
                   top: 16,
                   right: 16,
-                  bottom: MediaQuery.of(context).padding.bottom + 96,
+                  bottom: MediaQuery.of(context).padding.bottom + 144,
                 ),
                 child: Center(
                   child: ConstrainedBox(
