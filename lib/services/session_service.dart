@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static final ValueNotifier<int> pictureVersion = ValueNotifier<int>(0);
 
   static const String tokenKey = 'auth_token';
 
@@ -186,6 +188,7 @@ class SessionService {
 
   static Future<void> updatePicture(String picture) async {
     await _storage.write(key: pictureKey, value: picture.trim());
+    pictureVersion.value++;
   }
 
   static Future<void> updateInitialData({

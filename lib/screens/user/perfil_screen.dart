@@ -1957,9 +1957,11 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString() ?? '';
         final imageUrl = ApiService.profileImageUrl(picture);
         return CircleAvatar(
@@ -1967,7 +1969,9 @@ class UserAvatar extends StatelessWidget {
           backgroundColor: const Color(0xFF2563EB),
           backgroundImage: imageUrl.isEmpty
               ? null
-              : NetworkImage('$imageUrl?profile_refresh=${picture.hashCode}'),
+            : NetworkImage(
+                '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
+              ),
           child: imageUrl.isEmpty
               ? Text(
                   _getInitials(name),
@@ -1979,7 +1983,8 @@ class UserAvatar extends StatelessWidget {
                 )
               : null,
         );
-      },
+        },
+      ),
     );
   }
 }

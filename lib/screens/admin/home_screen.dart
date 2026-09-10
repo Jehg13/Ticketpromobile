@@ -1917,9 +1917,11 @@ class AdminAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SessionService.getUser(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<Map<String, dynamic>?>(
+        future: SessionService.getUser(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?['picture']?.toString().trim() ?? '';
         final isDefault = SessionService.isDefaultProfilePicture(picture);
         final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
@@ -1929,7 +1931,7 @@ class AdminAvatar extends StatelessWidget {
           child: ClipOval(
             child: !isDefault && imageUrl.isNotEmpty
                 ? Image.network(
-                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
                     width: radius * 2,
                     height: radius * 2,
                     fit: BoxFit.cover,
@@ -1948,7 +1950,8 @@ class AdminAvatar extends StatelessWidget {
                   ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 }

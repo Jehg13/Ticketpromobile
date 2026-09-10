@@ -4109,9 +4109,11 @@ class TicketsAdminAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _loadPicture(),
-      builder: (context, snapshot) {
+    return ValueListenableBuilder<int>(
+      valueListenable: SessionService.pictureVersion,
+      builder: (context, _, child) => FutureBuilder<String?>(
+        future: _loadPicture(),
+        builder: (context, snapshot) {
         final picture = snapshot.data?.trim() ?? '';
         final isDefault = SessionService.isDefaultProfilePicture(picture);
         final imageUrl = isDefault ? '' : ApiService.profileImageUrl(picture);
@@ -4122,7 +4124,7 @@ class TicketsAdminAvatar extends StatelessWidget {
           child: ClipOval(
             child: !isDefault && imageUrl.isNotEmpty
                 ? Image.network(
-                    '$imageUrl?profile_refresh=${picture.hashCode}',
+                    '$imageUrl?profile_refresh=${SessionService.pictureVersion.value}',
                     width: radius * 2,
                     height: radius * 2,
                     fit: BoxFit.cover,
@@ -4141,7 +4143,8 @@ class TicketsAdminAvatar extends StatelessWidget {
                   ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 
