@@ -493,7 +493,7 @@ class ApiService {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeJsonBody(response.body);
 
       if (response.statusCode >= 200 &&
           response.statusCode < 300 &&
@@ -541,9 +541,15 @@ class ApiService {
   ) {
     final payloadValue = data['retry_after'];
     final headerValue = response.headers['retry-after'];
-    return int.tryParse(payloadValue?.toString() ?? '') ??
-        int.tryParse(headerValue ?? '') ??
-        0;
+    final retryAfter =
+        int.tryParse(payloadValue?.toString() ?? '') ??
+        int.tryParse(headerValue ?? '');
+
+    if (retryAfter != null && retryAfter > 0) {
+      return retryAfter;
+    }
+
+    return response.statusCode == 429 ? 60 : 0;
   }
 
   // ============================================================

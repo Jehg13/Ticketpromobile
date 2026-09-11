@@ -73,7 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final bool mfaRequired = resultado['mfa_required'] == true;
 
       if (!success) {
-        _activarBloqueo(resultado['retry_after']);
+        _activarBloqueo(
+          resultado['retry_after'],
+          fallback: resultado['statusCode'] == 429,
+        );
         mostrarMensaje(_mensajeLogin(resultado));
         return;
       }
@@ -101,7 +104,10 @@ class _LoginScreenState extends State<LoginScreen> {
           codigo: codigo,
         );
         if (!verificacion['success']) {
-          _activarBloqueo(verificacion['retry_after']);
+          _activarBloqueo(
+            verificacion['retry_after'],
+            fallback: verificacion['statusCode'] == 429,
+          );
           mostrarMensaje(
             verificacion['message']?.toString() ?? 'Código MFA incorrecto.',
           );
@@ -197,8 +203,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return '${segundos}s';
   }
 
-  void _activarBloqueo(dynamic valor) {
-    final segundos = _segundosDesde(valor);
+  void _activarBloqueo(dynamic valor, {bool fallback = false}) {
+    final segundosRecibidos = _segundosDesde(valor);
+    if (segundosRecibidos <= 0 && !fallback) return;
+    final segundos = segundosRecibidos > 0 ? segundosRecibidos : 60;
     if (segundos <= 0 || !mounted) return;
 
     _temporizadorBloqueo?.cancel();
@@ -380,19 +388,84 @@ class _LoginScreenState extends State<LoginScreen> {
   void mostrarMensaje(String mensaje) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(mensaje),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF16213E),
-          margin: const EdgeInsets.all(14),
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF101A33),
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: const Color(0xFF3288FF).withValues(alpha: 0.45),
+            ),
           ),
-        ),
-      );
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+          title: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3288FF).withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3288FF).withValues(alpha: 0.35),
+                  ),
+                ),
+                child: const Icon(
+                  LucideIcons.info,
+                  color: Color(0xFF69A9FF),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'No se pudo continuar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            mensaje,
+            style: const TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1677FF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Entendido',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
