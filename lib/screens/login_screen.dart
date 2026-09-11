@@ -471,7 +471,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      // Keep the login canvas at its normal size while the keyboard overlays it.
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF050814),
       body: Container(
         width: double.infinity,
