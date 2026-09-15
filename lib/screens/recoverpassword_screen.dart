@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/auth_background.dart';
 import 'login_screen.dart';
-import 'resetpassword_screen.dart';
 
 class RecoverPasswordScreen extends StatefulWidget {
   const RecoverPasswordScreen({Key? key})
@@ -48,18 +47,12 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
     setState(() => _isSubmitting = false);
 
     if (response['success'] == true) {
-      _showMessage(
+      await _showSuccessDialog(
         response['message']?.toString() ??
-            'Se envió el enlace de recuperación a tu correo.',
-        isSuccess: true,
+            'Se envió el enlace de recuperación a tu correo. '
+                'Este enlace solo es válido durante 10 minutos.',
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(email: email),
-        ),
-      );
       return;
     }
 
@@ -67,6 +60,60 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
       response['message']?.toString() ??
           'No se pudo enviar el enlace de recuperación.',
       isSuccess: false,
+    );
+  }
+
+  Future<void> _showSuccessDialog(String message) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0B1021),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF10B981),
+                size: 26,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Correo enviado',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Continuar',
+                style: TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -59,7 +59,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
 
     if (token.isEmpty) {
-      _showMessage('Pega el token que llegó a tu correo para continuar.', isSuccess: false);
+      _showMessage(
+        'Abre el enlace de recuperación recibido en tu correo para detectar el token.',
+        isSuccess: false,
+      );
       return;
     }
 
@@ -261,7 +264,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Crea una nueva contraseña para recuperar el acceso a tu cuenta de TicketPro.',
+                        'Crea una nueva contraseña para recuperar el acceso a tu cuenta de TicketPro. '
+                        'El enlace solo es válido durante 10 minutos.',
                         style: TextStyle(
                           color: textColorSubtle,
                           fontSize: 13,
@@ -289,12 +293,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _tokenController,
+                        readOnly: true,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
                         ),
                         decoration: _buildInputDecoration(
-                          hintText: 'Pega el token del enlace recibido',
+                          hintText: 'Token detectado automáticamente',
                           icon: Icons.key_rounded,
                           inputBorderColor: inputBorderColor,
                           textColorMuted: textColorMuted,
