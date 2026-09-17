@@ -162,6 +162,11 @@ class SessionService {
     return role == 'gerente ti';
   }
 
+  static Future<bool> canDeleteUsers() async {
+    final role = _normalizeRole((await getRole()) ?? '');
+    return role == 'gerente ti';
+  }
+
   static Future<bool> canViewGerenteTiSections() async {
     final user = await getUser();
     final role = _normalizeRole(

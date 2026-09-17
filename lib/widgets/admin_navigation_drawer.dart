@@ -94,8 +94,11 @@ class AdminNavigationDrawer extends StatelessWidget {
       ),
     );
 
-    if (item.title == 'Cambios' || item.title == 'Usuarios') {
+    if (item.title == 'Cambios') {
       return AdminOnlyDrawerItem(child: tile);
+    }
+    if (item.title == 'Usuarios') {
+      return AdminOnlyDrawerItem(gerenteTiOnly: false, child: tile);
     }
     return tile;
   }

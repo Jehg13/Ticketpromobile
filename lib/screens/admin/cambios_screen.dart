@@ -1869,8 +1869,11 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
     );
-    if (title == 'Cambios' || title == 'Usuarios') {
+    if (title == 'Cambios') {
       return AdminOnlyDrawerItem(child: item);
+    }
+    if (title == 'Usuarios') {
+      return AdminOnlyDrawerItem(gerenteTiOnly: false, child: item);
     }
     return item;
   }

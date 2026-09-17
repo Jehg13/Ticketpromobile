@@ -45,6 +45,7 @@ class _UserScreenState extends State<UserScreen> {
   Map<String, dynamic> _estadisticas = {};
   String? _errorCargaUsuarios;
   String? _detalleErrorCargaUsuarios;
+  bool _puedeEliminarUsuarios = false;
 
   final TextEditingController searchController = TextEditingController();
   List<UsuarioItem> usuarios = [];
@@ -52,7 +53,17 @@ class _UserScreenState extends State<UserScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarPermisoEliminacion();
     _cargarUsuarios();
+  }
+
+  Future<void> _cargarPermisoEliminacion() async {
+    final puedeEliminar = await SessionService.canDeleteUsers();
+    if (mounted) {
+      setState(() {
+        _puedeEliminarUsuarios = puedeEliminar;
+      });
+    }
   }
 
   @override
@@ -483,6 +494,7 @@ class _UserScreenState extends State<UserScreen> {
                     item: user,
                     onView: () => _mostrarDetalleUsuario(context, user),
                     onEdit: () => _mostrarEditarUsuario(context, user),
+                    canDelete: _puedeEliminarUsuarios,
                     onDelete: () => _mostrarEliminarUsuario(context, user),
                   );
                 },
@@ -2308,6 +2320,7 @@ class UserCard extends StatelessWidget {
   final UsuarioItem item;
   final VoidCallback onView;
   final VoidCallback onEdit;
+  final bool canDelete;
   final VoidCallback onDelete;
 
   const UserCard({
@@ -2315,6 +2328,7 @@ class UserCard extends StatelessWidget {
     required this.item,
     required this.onView,
     required this.onEdit,
+    required this.canDelete,
     required this.onDelete,
   });
 
@@ -2432,18 +2446,19 @@ class UserCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        InkWell(
-                          onTap: onDelete,
-                          borderRadius: BorderRadius.circular(20),
-                          child: const Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: Color(0xFFE11D48),
-                              size: 18,
+                        if (canDelete)
+                          InkWell(
+                            onTap: onDelete,
+                            borderRadius: BorderRadius.circular(20),
+                            child: const Padding(
+                              padding: EdgeInsets.all(6),
+                              child: Icon(
+                                Icons.delete_outline,
+                                color: Color(0xFFE11D48),
+                                size: 18,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
