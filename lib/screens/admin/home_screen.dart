@@ -683,8 +683,10 @@ class _AdminScreenState extends State<AdminScreen> {
       'notificacionesNoLeidas': data.notificacionesNoLeidas,
       'textoMes': data.textoMes,
       'subtextoMes': data.subtextoMes,
+      'porcentajeMes': data.porcentajeMes,
       'textoSemana': data.textoSemana,
       'subtextoSemana': data.subtextoSemana,
+      'porcentajeSemana': data.porcentajeSemana,
       'textoTiempo': data.textoTiempo,
       'subtextoTiempo': data.subtextoTiempo,
       'quejas': data.quejasRecurrentes
@@ -763,6 +765,32 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     return fallback;
+  }
+
+  double? _doubleValueOrNull(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value?.toString() ?? '');
+  }
+
+  Color _trendColor(dynamic percentage) {
+    final value = _doubleValueOrNull(percentage);
+    if (value == null) {
+      return AdminScreen.textMuted;
+    }
+
+    return value >= 0 ? AdminScreen.greenAccent : const Color(0xFFF87171);
+  }
+
+  IconData? _trendIcon(dynamic percentage) {
+    final value = _doubleValueOrNull(percentage);
+    if (value == null) {
+      return null;
+    }
+
+    return value >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded;
   }
 
   String _formatAverageMinutes(dynamic minutesValue) {
@@ -902,6 +930,17 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final weeklyTrendText = [
+      _dashboard['textoSemana']?.toString(),
+      _dashboard['subtextoSemana']?.toString(),
+    ].where((text) => text != null && text.isNotEmpty).join(' ');
+    final monthlyTrendText = [
+      _dashboard['textoMes']?.toString(),
+      _dashboard['subtextoMes']?.toString(),
+    ].where((text) => text != null && text.isNotEmpty).join(' ');
+    final weeklyTrendColor = _trendColor(_dashboard['porcentajeSemana']);
+    final monthlyTrendColor = _trendColor(_dashboard['porcentajeMes']);
+
     final openTickets = _intValue([
       _stats['tickets_abiertos'],
       _dashboard['tickets_abiertos'],
@@ -1174,26 +1213,33 @@ class _AdminScreenState extends State<AdminScreen> {
                         iconColor: AdminScreen.accentBlue,
                         title: 'Tickets abiertos',
                         value: openTickets.toString(),
-                        badgeText:
-                            '${_dashboard['textoSemana'] ?? ''} ${_dashboard['subtextoSemana'] ?? ''}',
-                        badgeColor: AdminScreen.greenAccent,
+                        badgeText: weeklyTrendText,
+                        badgeColor: weeklyTrendColor,
+                        badgeIcon: _trendIcon(
+                          _dashboard['porcentajeSemana'],
+                        ),
                       ),
                       KPICard(
                         icon: Icons.access_time_rounded,
                         iconColor: AdminScreen.accentBlue,
                         title: 'Tickets pendientes',
                         value: pendingTickets.toString(),
-                        badgeText: 'Pendientes',
-                        badgeColor: AdminScreen.greenAccent,
+                        badgeText: weeklyTrendText,
+                        badgeColor: weeklyTrendColor,
+                        badgeIcon: _trendIcon(
+                          _dashboard['porcentajeSemana'],
+                        ),
                       ),
                       KPICard(
                         icon: Icons.check_circle_outline,
                         iconColor: AdminScreen.greenAccent,
                         title: 'Tickets resueltos',
                         value: resolvedTickets.toString(),
-                        badgeText:
-                            _dashboard['textoMes']?.toString() ?? 'Este mes',
-                        badgeColor: AdminScreen.greenAccent,
+                        badgeText: weeklyTrendText,
+                        badgeColor: weeklyTrendColor,
+                        badgeIcon: _trendIcon(
+                          _dashboard['porcentajeSemana'],
+                        ),
                       ),
                       KPICard(
                         icon: Icons.timer_outlined,
@@ -1211,8 +1257,13 @@ class _AdminScreenState extends State<AdminScreen> {
                         iconColor: AdminScreen.accentBlue,
                         title: 'Tickets del mes',
                         value: monthlyTickets.toString(),
-                        badgeText: 'Este mes',
-                        badgeColor: AdminScreen.cyanAccent,
+                        badgeText: monthlyTrendText.isEmpty
+                            ? 'Este mes'
+                            : monthlyTrendText,
+                        badgeColor: monthlyTrendColor,
+                        badgeIcon: _trendIcon(
+                          _dashboard['porcentajeMes'],
+                        ),
                       ),
                     ],
                   ),
@@ -2105,6 +2156,7 @@ class KPICard extends StatelessWidget {
   final String value;
   final String badgeText;
   final Color badgeColor;
+  final IconData? badgeIcon;
   final bool fullWidth;
   const KPICard({
     super.key,
@@ -2115,6 +2167,7 @@ class KPICard extends StatelessWidget {
     required this.value,
     required this.badgeText,
     required this.badgeColor,
+    this.badgeIcon,
     this.fullWidth = false,
   });
   @override
@@ -2168,13 +2221,25 @@ class KPICard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            badgeText,
-            style: TextStyle(
-              color: badgeColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              if (badgeIcon != null) ...[
+                Icon(badgeIcon, color: badgeColor, size: 12),
+                const SizedBox(width: 3),
+              ],
+              Expanded(
+                child: Text(
+                  badgeText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
