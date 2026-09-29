@@ -4,7 +4,6 @@ import '../../services/session_service.dart';
 import '../../widgets/loading_screen.dart';
 import '../../services/admin/dispositivos_services.dart';
 import '../../widgets/admin_notification_bell.dart';
-import '../../widgets/admin_only_drawer_item.dart';
 import '../../widgets/admin_navigation_drawer.dart';
 import 'avisosadmin_screen.dart';
 import 'cambios_screen.dart';
@@ -587,42 +586,6 @@ class _DispositivosScreenState extends State<DispositivosScreen> {
         ],
       ),
     );*/
-  }
-
-  Widget _drawerItem(
-    IconData icon,
-    String title, {
-    bool selected = false,
-    bool isExit = false,
-    VoidCallback? onTap,
-  }) {
-    final color = isExit
-        ? Colors.white70
-        : selected
-        ? Colors.white
-        : const Color(0xFF94A3B8);
-
-    final item = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        tileColor: selected ? const Color(0xFF2563EB) : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        leading: Icon(icon, color: color, size: 20),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: color,
-            fontSize: 14,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        onTap: onTap,
-      ),
-    );
-    if (title == 'Cambios' || title == 'Usuarios') {
-      return AdminOnlyDrawerItem(child: item);
-    }
-    return item;
   }
 
   Future<void> _cerrarSesion() async {

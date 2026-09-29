@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -10,7 +9,6 @@ import '../../widgets/loading_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/admin_notification_bell.dart';
-import '../../widgets/admin_only_drawer_item.dart';
 import '../../widgets/admin_navigation_drawer.dart';
 import 'cambios_screen.dart';
 import 'dispositivos_screen.dart';
@@ -174,18 +172,9 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
 
   Future<void> _seleccionarArchivo({StateSetter? modalSetState}) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-        withData: true,
-      );
-      if (result == null || result.isEmpty) return;
-
-      final archivo = result.first;
-      Uint8List? bytes;
-      if (archivo.path != null && archivo.path!.isNotEmpty) {
-        bytes = await File(archivo.path!).readAsBytes();
-      }
+      final archivo = await FilePicker.pickFile(type: FileType.any);
+      if (archivo == null) return;
+      final Uint8List bytes = await archivo.readAsBytes();
 
       if (!mounted) return;
       setState(() {
@@ -1605,45 +1594,6 @@ class _AvisosadminScreenState extends State<AvisosadminScreen> {
         ),
       ),
     );*/
-  }
-
-  Widget _drawerItem(
-    BuildContext context,
-    IconData icon,
-    String title, {
-    required bool selected,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    final itemColor = isDestructive
-        ? Colors.white70
-        : selected
-        ? Colors.white
-        : AdminScreen.textMuted;
-
-    final item = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Material(
-        color: selected ? AdminScreen.primaryBlue : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: ListTile(
-          leading: Icon(icon, color: itemColor, size: 20),
-          title: Text(
-            title,
-            style: TextStyle(
-              color: itemColor,
-              fontSize: 14,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          onTap: onTap,
-        ),
-      ),
-    );
-    if (title == 'Cambios' || title == 'Usuarios') {
-      return AdminOnlyDrawerItem(child: item);
-    }
-    return item;
   }
 
   Future<void> _cerrarSesion() async {

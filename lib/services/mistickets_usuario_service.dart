@@ -28,7 +28,7 @@ class MisTicketsUsuarioService {
 
     try {
       final response = await ApiService.client.get(uri, headers: _headers(token));
-      return _procesar(response, 'No se pudieron obtener los tickets');
+      return await _procesar(response, 'No se pudieron obtener los tickets');
     } on Exception {
       rethrow;
     } catch (_) {
@@ -45,7 +45,7 @@ class MisTicketsUsuarioService {
         Uri.parse('${ApiService.baseUrl}/mis-tickets/$id'),
         headers: _headers(token),
       );
-      return _procesar(response, 'No se pudo obtener el ticket');
+      return await _procesar(response, 'No se pudo obtener el ticket');
     } on Exception {
       rethrow;
     } catch (_) {
@@ -62,7 +62,7 @@ class MisTicketsUsuarioService {
         Uri.parse('${ApiService.baseUrl}/mis-tickets-resumen'),
         headers: _headers(token),
       );
-      return _procesar(response, 'No se pudo obtener el resumen');
+      return await _procesar(response, 'No se pudo obtener el resumen');
     } on Exception {
       rethrow;
     } catch (_) {
@@ -121,7 +121,7 @@ class MisTicketsUsuarioService {
         );
       }
 
-      return _procesar(response, 'No se pudo enviar el comentario');
+      return await _procesar(response, 'No se pudo enviar el comentario');
     } on Exception {
       rethrow;
     } catch (_) {
