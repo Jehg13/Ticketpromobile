@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import 'screens/splash_screen.dart';
 import 'services/deep_link_service.dart';
-import 'services/notification_service.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,7 +24,6 @@ Future<void> main() async {
       DeviceOrientation.portraitUp,
     ]));
     unawaited(deepLinkService.initialize());
-    unawaited(NotificationService.initialize());
   });
 }
 

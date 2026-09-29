@@ -6,11 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
 import 'session_service.dart';
 
-/// Registers an FCM token once a Firebase Messaging integration provides one.
-///
-/// Firebase is intentionally not initialized here because this project does
-/// not contain platform Firebase configuration files. Calling this service
-/// with no token is a safe no-op and does not affect login or app startup.
+/// Requests notification permission and registers an FCM token after login.
 class NotificationService {
   static bool _tokenListenerRegistered = false;
   static bool _firebaseReady = false;

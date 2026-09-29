@@ -136,8 +136,7 @@ Future<void> _verificarSesion() async {
     if (!mounted) return;
 
     if (tieneSesion) {
-      // The initial Firebase setup runs before authentication; retry token
-      // registration now that the stored Sanctum session is available.
+      // Re-register notifications for users who already have a saved session.
       await NotificationService.initialize();
 
       if (!mounted) return;
